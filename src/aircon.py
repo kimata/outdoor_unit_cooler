@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import pprint
+import logging
+
 from influxdb import InfluxDBClient
-from datetime import datetime
 
 INFLUXDB_ADDR = "192.168.0.10"
 INFLUXDB_PORT = 8086
@@ -29,11 +28,24 @@ def get_state(name):
                 lambda x: not x is None, map(lambda x: x["mean"], result.get_points())
             )
         )
+        judge = points[0] > POWER_THRESHOLD
 
-        return points[0] > POWER_THRESHOLD
+        logging.info(
+            "{name}: {power:,} W [state: {judge}]".format(
+                name=name, power=round(points[0], 1), judge=judge
+            )
+        )
+        return judge
     except:
         return False
 
 
 if __name__ == "__main__":
-    print(get_state("書斎エアコン"))
+    import logger
+    import time
+
+    logger.init("test")
+
+    while True:
+        get_state("書斎エアコン")
+        time.sleep(60)
