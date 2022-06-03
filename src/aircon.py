@@ -13,7 +13,7 @@ INFLUXDB_QUERY = """
 SELECT mean("power") FROM "fplug" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 2
 """
 
-POWER_THRESHOLD = 100
+POWER_THRESHOLD = 50
 
 
 def get_state(name):
