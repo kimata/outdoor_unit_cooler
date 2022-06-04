@@ -18,7 +18,7 @@ logger.init("unit_cooler")
 with open(str(pathlib.Path(os.path.dirname(__file__), "config.yaml"))) as file:
     config = yaml.safe_load(file)
 
-state = aircon.get_state("書斎エアコン")
+state = aircon.get_state("書斎エアコン") or aircon.get_state("和室エアコン")
 duration = valve.set_state(state)
 
 flow = fd_q10c.sense()

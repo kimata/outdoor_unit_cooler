@@ -58,4 +58,5 @@ if __name__ == "__main__":
 
     while True:
         get_state("書斎エアコン")
+        get_state("和室エアコン")
         time.sleep(60)
