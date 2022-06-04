@@ -46,7 +46,8 @@ def get_state(name):
             )
         )
         return judge
-    except:
+    except Exception as e:
+        logging.warn(e.message)
         return False
 
 
