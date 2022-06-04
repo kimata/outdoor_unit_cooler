@@ -85,9 +85,9 @@ def set_valve_off():
 # バルブを間欠制御し，実際にバルブを開いたり閉じたりしてからの経過時間(秒)を出力します
 def set_state(state):
     if state:
-        set_valve_on()
+        return set_valve_on()
     else:
-        set_valve_off()
+        return set_valve_off()
 
 
 if __name__ == "__main__":
