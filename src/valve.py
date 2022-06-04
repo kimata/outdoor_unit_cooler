@@ -7,7 +7,7 @@ import time
 try:
     import RPi.GPIO as GPIO
 except:
-
+    # NOTE: Raspbeery Pi 以外で動かした時は，ダミーにする
     class GPIO:
         BCM = 0
         OUT = 0
