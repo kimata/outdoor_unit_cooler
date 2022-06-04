@@ -33,8 +33,12 @@ def info(message):
     logging.info(message)
 
 
+def debug(message):
+    logging.debug(message)
+
+
 def dump_byte_list(label, byte_list):
-    logging.info("{}: {}".format(label, ", ".join(hex(x) for x in byte_list)))
+    logging.debug("{}: {}".format(label, ", ".join(hex(x) for x in byte_list)))
 
 
 def ltc2874_reg_read(spi, reg):
@@ -93,7 +97,7 @@ def com_start(spi):
 
     if enl1 != 0x11:
         # Power on, CQ OC Timeout = 480us
-        info("***** Power-On IO-Link ****")
+        debug("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
         time.sleep(2)
 
@@ -120,7 +124,7 @@ def com_stop(spi, ser, is_power_off=False):
 
     if is_power_off:
         # Power off
-        info("***** Power-Off IO-Link ****")
+        debug("***** Power-Off IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x00)
 
 
@@ -147,7 +151,7 @@ def com_read(spi, ser, length):
 
 
 def dir_param_read(spi, ser, addr):
-    info("***** CALL: dir_param_read(addr: 0x{:x}) ****".format(addr))
+    debug("***** CALL: dir_param_read(addr: 0x{:x}) ****".format(addr))
 
     msq = msq_build(
         io_link.MSQ_RW_READ, io_link.MSQ_CH_PAGE, addr, io_link.MSQ_TYPE_0, None
@@ -165,7 +169,7 @@ def dir_param_read(spi, ser, addr):
 
 
 def dir_param_write(spi, ser, addr, value):
-    info(
+    debug(
         "***** CALL: dir_param_write(addr: 0x{:x}, value: 0x{:x}) ****".format(
             addr, value
         )
@@ -223,7 +227,7 @@ def isdu_res_read(spi, ser, flow):
 
 
 def isdu_read(spi, ser, index, data_type):
-    info("***** CALL: isdu_read(index: 0x{:x}) ****".format(index))
+    debug("***** CALL: isdu_read(index: 0x{:x}) ****".format(index))
 
     isdu_req = isdu_req_build(index)
 
@@ -247,7 +251,7 @@ def isdu_read(spi, ser, index, data_type):
                 remain = (header & 0x0F) - 1
             break
         elif header == 0x01:
-            info("WAIT response")
+            debug("WAIT response")
             continue
         elif (header >> 4) == 0x0C:
             error("ERROR reponse")
