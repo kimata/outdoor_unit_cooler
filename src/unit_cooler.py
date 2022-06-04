@@ -20,7 +20,7 @@ duration = valve.set_state(state)
 
 flow = fd_q10c.sense()
 
-logger.info("flow: {flow} L/min".format(flow=flow))
+logging.info("flow: {flow} L/min".format(flow=flow))
 
 if state:
     if (duration > 10) and (flow < 0.01):
