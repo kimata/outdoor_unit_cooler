@@ -1,1 +1,1 @@
-*/1 * * * *	ubuntu  setlock -xn /dev/shm/unit_cooler.lock /home/ubuntu/outdoor_unit_cooler/src/unit_cooler.py
+*/1 * * * *	ubuntu  setlock -xn /dev/shm/unit_cooler.lock /home/ubuntu/outdoor_unit_cooler/src/unit_cooler.py > /dev/null
