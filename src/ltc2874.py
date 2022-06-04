@@ -99,7 +99,7 @@ def com_start(spi):
         # Power on, CQ OC Timeout = 480us
         debug("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
-        time.sleep(2)
+        time.sleep(5)
 
     # Wakeup
     ltc2874_reg_write(spi, 0x0D, 0x10)
