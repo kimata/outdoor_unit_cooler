@@ -35,6 +35,8 @@ def stop():
 
 
 if __name__ == "__main__":
-    import pprint
+    import logger
 
-    pprint.pprint(sense())
+    logger.init("test")
+
+    sense()
