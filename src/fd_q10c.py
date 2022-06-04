@@ -15,9 +15,18 @@ def sense():
         flow = driver.isdu_read(spi, ser, 0x94, driver.DATA_TYPE_UINT16) * 0.01
         driver.com_stop(spi, ser)
 
-        return {"flow": round(flow, 2)}
+        return round(flow, 2)
     except RuntimeError:
         driver.com_stop(spi, ser, True)
+        raise
+
+
+def stop():
+    try:
+        spi = driver.com_open()
+        ser = driver.com_start(spi)
+        driver.com_stop(spi, ser, True)
+    except RuntimeError:
         raise
 
 
