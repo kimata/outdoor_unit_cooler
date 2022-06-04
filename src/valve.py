@@ -51,32 +51,38 @@ def set_valve_on():
         STAT_PATH_VALVE_ON.touch()
         logging.info("controll OFF -> ON")
         ctrl_valve(True)
+        return 0
     else:
-        on_duration = (time.time() - STAT_PATH_VALVE_ON.stat().st_mtime) / 60
-        if on_duration < INTERVAL_MIN_ON:
+        on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
+        if (on_duration / 60) < INTERVAL_MIN_ON:
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
-        elif on_duration > (INTERVAL_MIN_ON + INTERVAL_MIN_OFF):
+            return on_duration
+        elif (on_duration / 60) > (INTERVAL_MIN_ON + INTERVAL_MIN_OFF):
             STAT_PATH_VALVE_ON.touch()
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
+            return 0
         else:
             logging.info("controll ON (OFF duty)")
             ctrl_valve(False)
+            return 0
 
 
 def set_valve_off():
     STAT_PATH_VALVE_ON.unlink(missing_ok=True)
 
-    if not STAT_PATH_VALVE_OFF.exists:
+    if not STAT_PATH_VALVE_OFF.exists():
         STAT_PATH_VALVE_OFF.touch()
         logging.info("controll ON -> OFF")
         ctrl_valve(False)
+        return 0
     else:
-        STAT_PATH_VALVE_OFF.touch()
         logging.info("controll OFF")
+        return time.time() - STAT_PATH_VALVE_OFF.stat().st_mtime
 
 
+# バルブを間欠制御し，実際にバルブを開いたり閉じたりしてからの経過時間(秒)を出力します
 def set_state(state):
     if state:
         set_valve_on()
