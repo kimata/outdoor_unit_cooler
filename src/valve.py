@@ -28,7 +28,7 @@ import logging
 # NOTE: バルブを ON にする場合，常に ON にするわけではなく，
 # 次の時間(分)毎に ON と OFF を繰り返すようにする
 INTERVAL_MIN_ON = 2
-INTERVAL_MIN_OFF = 8
+INTERVAL_MIN_OFF = 2
 
 GPIO_PIN = 17
 
