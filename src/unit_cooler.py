@@ -22,14 +22,14 @@ state = aircon.get_state("書斎エアコン") or aircon.get_state("和室エア
 duration = valve.set_state(state)
 
 if state:
+    flow = fd_q10c.sense()
     if duration > 10:
-        flow = fd_q10c.sense()
         if flow < 0.01:
             notifier.send(config, "元栓が閉じています．")
 else:
     if duration / (60 * 60) > 1:
         fd_q10c.stop()
-    elif duration > 100:
+    else:
         flow = fd_q10c.sense()
-        if flow > 0.01:
+        if (duration > 100) and (flow > 0.01):
             notifier.send(config, "電磁弁が壊れています．")
