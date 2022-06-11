@@ -92,10 +92,14 @@ def com_close(spi):
     spi.close()
 
 
-def com_start(spi):
+def com_status(spi):
     enl1 = ltc2874_reg_read(spi, 0x0E)
 
-    if enl1 != 0x11:
+    return enl1 == 0x11
+
+
+def com_start(spi):
+    if not com_status(spi):
         # Power on, CQ OC Timeout = 480us
         debug("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
