@@ -24,7 +24,7 @@ def sense(is_power_on=True):
     try:
         spi = driver.com_open()
 
-        if is_power_on or driver.com_status():
+        if is_power_on or driver.com_status(spi):
             ser = driver.com_start(spi)
 
             flow = driver.isdu_read(spi, ser, 0x94, driver.DATA_TYPE_UINT16) * 0.01
