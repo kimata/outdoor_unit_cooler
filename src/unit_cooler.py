@@ -4,7 +4,6 @@
 import yaml
 import pathlib
 import os
-import logging
 
 import fd_q10c
 import aircon
