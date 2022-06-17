@@ -26,6 +26,8 @@ class GZipRotator:
 def init(name, dir_path="/dev/shm", is_stderr=True):
     if is_stderr:
         coloredlogs.install(fmt=LOG_FORMAT)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
 
     log_path = pathlib.Path(dir_path)
     os.makedirs(str(log_path), exist_ok=True)
