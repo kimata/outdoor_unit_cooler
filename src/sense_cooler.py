@@ -11,7 +11,7 @@ import re
 import fd_q10c
 import logger
 
-logger.init("unit_cooler", "/dev/shm", False)
+logger.init("sense_cooler", "/dev/shm", False)
 
 value_map = {"flow": fd_q10c.sense(False)}
 
