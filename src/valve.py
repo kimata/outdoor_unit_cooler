@@ -21,6 +21,9 @@ except:
         def output(dummy1, dummy2):
             return
 
+        def setwarnings(dummy):
+            return
+
 
 import logging
 
@@ -40,6 +43,7 @@ STAT_PATH_VALVE_OFF = STAT_DIR_PATH / "valve_off"
 def ctrl_valve(state):
     logging.info("controll valve = {state}".format(state="on" if state else "off"))
 
+    GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(GPIO_PIN, GPIO.OUT)
     GPIO.output(GPIO_PIN, state)
