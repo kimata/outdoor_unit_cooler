@@ -99,6 +99,10 @@ def set_state(state):
 
 # 実際のバルブの状態を返します
 def get_state():
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(GPIO_PIN, GPIO.OUT)
+
     return GPIO.input(GPIO_PIN)
 
 
