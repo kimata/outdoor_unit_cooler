@@ -21,6 +21,9 @@ except:
         def output(dummy1, dummy2):
             return
 
+        def input(dummy):
+            return
+
         def setwarnings(dummy):
             return
 
