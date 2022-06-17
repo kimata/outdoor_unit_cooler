@@ -10,10 +10,10 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = "sensor"
 
 INFLUXDB_POWER_QUERY = """
-SELECT mean("power") FROM "fplug" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 2
+SELECT mean("power") FROM "fplug" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
 """
 INFLUXDB_TEMP_QUERY = """
-SELECT mean("temp") FROM "sensor.esp32" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 2
+SELECT mean("temp") FROM "sensor.esp32" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
 """
 
 TEMP_THRESHOLD = 20
