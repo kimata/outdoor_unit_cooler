@@ -109,4 +109,5 @@ if __name__ == "__main__":
 
     while True:
         set_state(True)
+        print(get_state())
         time.sleep(60)
