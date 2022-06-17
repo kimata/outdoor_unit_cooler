@@ -94,6 +94,11 @@ def set_state(state):
         return set_valve_off()
 
 
+# 実際のバルブの状態を返します
+def get_state():
+    return GPIO.output(GPIO_PIN)
+
+
 if __name__ == "__main__":
     import logger
 

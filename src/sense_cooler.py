@@ -8,12 +8,13 @@ import json
 import subprocess
 import re
 
+import valve
 import fd_q10c
 import logger
 
 logger.init("sense_cooler", "/dev/shm", False)
 
-value_map = {"flow": fd_q10c.sense(False)}
+value_map = {"flow": fd_q10c.sense(False), "valve": valve.get_state()}
 
 wifi_rssi = subprocess.check_output(
     "sudo iwconfig 2>/dev/null | grep 'Signal level' | sed 's/.*Signal level=\\(.*\\) dBm.*/\\1/'",
