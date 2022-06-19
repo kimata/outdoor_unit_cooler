@@ -32,7 +32,7 @@ def sense(is_power_on=True):
 
             driver.com_stop(spi, ser)
         else:
-            flow = 0
+            flow = 0.0
 
         _release()
 
