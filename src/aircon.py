@@ -10,7 +10,7 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = "sensor"
 
 INFLUXDB_POWER_QUERY = """
-SELECT mean("power") FROM "fplug" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
+SELECT mean("power") FROM "{tag}" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
 """
 INFLUXDB_TEMP_QUERY = """
 SELECT mean("temp") FROM "sensor.esp32" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
@@ -33,9 +33,9 @@ def get_db_value(query):
     return points[0]
 
 
-def get_state(name):
+def get_state(tag, name):
     try:
-        power = get_db_value(INFLUXDB_POWER_QUERY.format(name=name))
+        power = get_db_value(INFLUXDB_POWER_QUERY.format(tag=tag, name=name))
         temp = get_db_value(INFLUXDB_TEMP_QUERY.format(name="ESP32-outdoor-1"))
 
         judge = (power > POWER_THRESHOLD) and (temp > TEMP_THRESHOLD)
@@ -58,6 +58,7 @@ if __name__ == "__main__":
     logger.init("test")
 
     while True:
-        get_state("書斎エアコン")
-        get_state("和室エアコン")
+        get_state("hems.sharp", "リビングエアコン")
+        get_state("fplug", "書斎エアコン")
+        get_state("fplug", "和室エアコン")
         time.sleep(60)

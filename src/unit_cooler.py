@@ -12,12 +12,25 @@ import notifier
 import logger
 
 
+def get_aircon_state():
+    item_list = [
+        {"tag": "hems.sharp", "name": "リビングエアコン"},
+        {"tag": "fplug", "name": "書斎エアコン"},
+        {"tag": "fplug", "name": "和室エアコン"},
+    ]
+
+    for item in item_list:
+        if aircon.get_state(item["tag"], item["name"]):
+            return True
+    return False
+
+
 logger.init("unit_cooler")
 
 with open(str(pathlib.Path(os.path.dirname(__file__), "config.yaml"))) as file:
     config = yaml.safe_load(file)
 
-state = aircon.get_state("書斎エアコン") or aircon.get_state("和室エアコン")
+state = get_aircon_state()
 duration = valve.set_state(state)
 
 if state:
