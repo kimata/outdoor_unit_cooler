@@ -42,7 +42,7 @@ def get_state(tag, name):
 
         logging.info(
             "{name}: {power:,}W, 外気温: {temp}℃  [state: {judge}]".format(
-                name=name, power=round(power, 1), temp=round(temp, 1), judge=judge
+                name=name, power=int(power), temp=round(temp, 1), judge=judge
             )
         )
         return judge
