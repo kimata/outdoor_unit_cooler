@@ -47,6 +47,7 @@ def get_state(tag, name):
         )
         return judge
     except Exception as e:
+        logging.warn("{name} の電力，もしくは，外気温の取得に失敗しました．")
         logging.warn(e)
         return False
 
