@@ -33,8 +33,8 @@ import logging
 
 # NOTE: バルブを ON にする場合，常に ON にするわけではなく，
 # 次の時間(分)毎に ON と OFF を繰り返すようにする
-INTERVAL_MIN_ON = 1
-INTERVAL_MIN_OFF = 1
+INTERVAL_MIN_ON = 0.85
+INTERVAL_MIN_OFF = 0.85
 
 GPIO_PIN = 17
 
@@ -61,11 +61,11 @@ def set_valve_on():
         return 0
     else:
         on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
-        if (on_duration / 60) < INTERVAL_MIN_ON:
+        if (on_duration / 60.0) < INTERVAL_MIN_ON:
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
             return on_duration
-        elif (on_duration / 60) > (INTERVAL_MIN_ON + INTERVAL_MIN_OFF):
+        elif (on_duration / 60.0) > (INTERVAL_MIN_ON + INTERVAL_MIN_OFF):
             STAT_PATH_VALVE_ON.touch()
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
