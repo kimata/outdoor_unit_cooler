@@ -36,7 +36,7 @@ duration = valve.set_state(state)
 if state:
     flow = fd_q10c.sense()
     if duration > 10:
-        if flow < 0.01:
+        if flow < 0.02:
             notifier.send(config, "元栓が閉じています．")
         elif flow > 1:
             notifier.send(config, "水漏れしています．")
