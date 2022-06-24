@@ -38,6 +38,8 @@ if state:
     if duration > 10:
         if flow < 0.01:
             notifier.send(config, "元栓が閉じています．")
+        elif flow > 1:
+            notifier.send(config, "水漏れしています．")
 else:
     if duration / (60 * 60) > 1:
         fd_q10c.stop()
