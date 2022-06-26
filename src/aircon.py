@@ -33,10 +33,14 @@ def get_db_value(query):
     return points[0]
 
 
+def get_outdoor_temp():
+    return get_db_value(INFLUXDB_TEMP_QUERY.format(name="ESP32-outdoor-1"))
+
+
 def get_state(tag, name):
     try:
         power = get_db_value(INFLUXDB_POWER_QUERY.format(tag=tag, name=name))
-        temp = get_db_value(INFLUXDB_TEMP_QUERY.format(name="ESP32-outdoor-1"))
+        temp = get_outdoor_temp()
 
         judge = (power > POWER_THRESHOLD) and (temp > TEMP_THRESHOLD)
 

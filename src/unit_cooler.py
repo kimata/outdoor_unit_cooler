@@ -11,6 +11,9 @@ import valve
 import notifier
 import logger
 
+# 外気温がこの温度を超えていたら間欠制御を停止し，常時 ON にする
+INTERM_TEMP_THRESHOLD = 30
+
 
 def get_aircon_state():
     item_list = [
@@ -31,7 +34,13 @@ with open(str(pathlib.Path(os.path.dirname(__file__), "config.yaml"))) as file:
     config = yaml.safe_load(file)
 
 state = get_aircon_state()
-duration = valve.set_state(state)
+
+try:
+    interm = aircon.get_outdoor_temp() < INTERM_TEMP_THRESHOLD
+except:
+    interm = False
+
+duration = valve.set_state(state, interm)
 
 if state:
     flow = fd_q10c.sense()
