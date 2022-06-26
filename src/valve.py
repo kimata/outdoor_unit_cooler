@@ -52,15 +52,16 @@ def ctrl_valve(state):
     GPIO.output(GPIO_PIN, state)
 
 
-def set_valve_on():
+def set_valve_on(interm):
     STAT_PATH_VALVE_OFF.unlink(missing_ok=True)
     if not STAT_PATH_VALVE_ON.exists():
         STAT_PATH_VALVE_ON.touch()
         logging.info("controll OFF -> ON")
         ctrl_valve(True)
         return 0
-    else:
-        on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
+
+    on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
+    if interm:
         if (on_duration / 60.0) < INTERVAL_MIN_ON:
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
@@ -74,9 +75,12 @@ def set_valve_on():
             logging.info("controll ON (OFF duty)")
             ctrl_valve(False)
             return 0
+    else:
+        logging.info("controll ON")
+        return on_duration
 
 
-def set_valve_off():
+def set_valve_off(interm):
     STAT_PATH_VALVE_ON.unlink(missing_ok=True)
 
     if not STAT_PATH_VALVE_OFF.exists():
@@ -90,11 +94,11 @@ def set_valve_off():
 
 
 # バルブを間欠制御し，実際にバルブを開いたり閉じたりしてからの経過時間(秒)を出力します
-def set_state(state):
+def set_state(state, interm=True):
     if state:
-        return set_valve_on()
+        return set_valve_on(interm)
     else:
-        return set_valve_off()
+        return set_valve_off(interm)
 
 
 # 実際のバルブの状態を返します
