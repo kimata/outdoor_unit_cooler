@@ -56,7 +56,11 @@ def init(pin):
 def ctrl_valve(state):
     global pin_no
 
-    logging.info("controll valve = {state}".format(state="on" if state else "off"))
+    logging.info(
+        "controll valve = {state} (GPIO: {pin_no})".format(
+            state="on" if state else "off", pin_no=pin_no
+        )
+    )
 
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
