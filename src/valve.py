@@ -93,6 +93,7 @@ def set_valve_on(interm):
             return 0
     else:
         logging.info("controll ON")
+        ctrl_valve(True)
         return on_duration
 
 
@@ -106,6 +107,7 @@ def set_valve_off(interm):
         return 0
     else:
         logging.info("controll OFF")
+        ctrl_valve(False)
         return time.time() - STAT_PATH_VALVE_OFF.stat().st_mtime
 
 
