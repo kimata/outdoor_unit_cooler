@@ -36,20 +36,32 @@ import logging
 INTERVAL_MIN_ON = 0.85
 INTERVAL_MIN_OFF = 0.85
 
-GPIO_PIN = 17
-
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_VALVE_ON = STAT_DIR_PATH / "valve_on"
 STAT_PATH_VALVE_OFF = STAT_DIR_PATH / "valve_off"
 
+# 電磁弁制御用の GPIO 端子番号．
+# この端子が H 担った場合に，水が出るように回路を組んでおく．
+GPIO_PIN_DEFAULT = 17
+
+pin_no = GPIO_PIN_DEFAULT
+
+
+def init(pin):
+    global pin_no
+
+    pin_no = pin
+
 
 def ctrl_valve(state):
+    global pin_no
+
     logging.info("controll valve = {state}".format(state="on" if state else "off"))
 
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(GPIO_PIN, GPIO.OUT)
-    GPIO.output(GPIO_PIN, state)
+    GPIO.setup(pin_no, GPIO.OUT)
+    GPIO.output(pin_no, state)
 
 
 def set_valve_on(interm):
@@ -114,6 +126,9 @@ if __name__ == "__main__":
     import logger
 
     logger.init("test")
+
+    GPIO_PIN = 17
+    init(GPIO_PIN)
 
     while True:
         set_state(True)
