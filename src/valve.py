@@ -115,11 +115,13 @@ def set_state(state, interm=True):
 
 # 実際のバルブの状態を返します
 def get_state():
+    global pin_no
+
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(GPIO_PIN, GPIO.OUT)
+    GPIO.setup(pin_no, GPIO.OUT)
 
-    return GPIO.input(GPIO_PIN)
+    return GPIO.input(pin_no)
 
 
 if __name__ == "__main__":
