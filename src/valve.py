@@ -94,7 +94,15 @@ def set_valve_on(interm):
     else:
         logging.info("controll ON")
         ctrl_valve(True)
-        return on_duration
+
+        # NOTE: interm が True から False に変わったタイミングで OFF Duty だと
+        # 実際はバルブが閉じているのに返り値が大きくなるので，補正する．
+        if ((on_duration / 60.0) >= INTERVAL_MIN_ON) and (
+            (on_duration / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF)
+        ):
+            return 0
+        else:
+            return on_duration
 
 
 def set_valve_off(interm):
