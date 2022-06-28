@@ -97,8 +97,9 @@ def set_valve_on(interm):
 
         # NOTE: interm が True から False に変わったタイミングで OFF Duty だと
         # 実際はバルブが閉じているのに返り値が大きくなるので，補正する．
+        # 「+1」は境界での誤判定防止．
         if ((on_duration / 60.0) >= INTERVAL_MIN_ON) and (
-            (on_duration / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF)
+            (on_duration / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF + 1)
         ):
             return 0
         else:
