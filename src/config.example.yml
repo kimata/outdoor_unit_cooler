@@ -1,0 +1,14 @@
+influxdb:
+  url: http://tanzania.green-rabbit.net:8086
+  token: fffjkjkgfklhjglkjiojtroijojhkljhklghklfjklhhlnklhnklfgnhklgnhgfdlhfgnhlkngdfnfnhgdkfnh==
+  org: home
+  bucket: sensor
+
+valve:
+  pin_no: 17 # BCM で指定
+
+mail:
+  user: XXXX@gmail.com
+  pass: XXXXXX
+  to: XXXX@gmail.com
+  from: XXXX@gmail.com

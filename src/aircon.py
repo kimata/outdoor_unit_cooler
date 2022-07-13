@@ -3,44 +3,66 @@
 
 import logging
 
-from influxdb import InfluxDBClient
+import influxdb_client
 
-INFLUXDB_ADDR = "192.168.0.10"
-INFLUXDB_PORT = 8086
-INFLUXDB_DB = "sensor"
-
-INFLUXDB_POWER_QUERY = """
-SELECT mean("power") FROM "{tag}" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
+FLUX_QUERY = """
+from(bucket: "{bucket}")
+    |> range(start: -{period})
+    |> filter(fn:(r) => r._measurement == "{measure}")
+    |> filter(fn: (r) => r.hostname == "{hostname}")
+    |> filter(fn: (r) => r["_field"] == "{param}")
+    |> aggregateWindow(every: 3m, fn: mean, createEmpty: false)
+    |> exponentialMovingAverage(n: 3)
+    |> sort(columns: ["_time"], desc: true)
+    |> limit(n: 1)
 """
-INFLUXDB_TEMP_QUERY = """
-SELECT mean("temp") FROM "sensor.esp32" WHERE ("hostname" = \'{name}\') AND time >= now() - 1h GROUP BY time(5m) fill(previous) ORDER by time desc LIMIT 10
-"""
 
+# InfluxDB から外気温を取得するためのパラメータ
+TEMP_MEASURE = "sensor.rasp"
+TEMP_HOSTNAME = "rasp-meter-8"
+
+# エアコン動作中と判定する温度閾値
+POWER_THRESHOLD = 20
+# クーラー動作と判定する温度閾値
 TEMP_THRESHOLD = 20
-POWER_THRESHOLD = 50
 
 
-def get_db_value(query):
-    client = InfluxDBClient(
-        host=INFLUXDB_ADDR, port=INFLUXDB_PORT, database=INFLUXDB_DB
+def get_db_value(
+    config,
+    hostname,
+    measure,
+    param,
+):
+    client = influxdb_client.InfluxDBClient(
+        url=config["influxdb"]["url"],
+        token=config["influxdb"]["token"],
+        org=config["influxdb"]["org"],
     )
-    result = client.query(query)
 
-    points = list(
-        filter(lambda x: not x is None, map(lambda x: x["mean"], result.get_points()))
+    query_api = client.query_api()
+
+    table_list = query_api.query(
+        query=FLUX_QUERY.format(
+            bucket=config["influxdb"]["bucket"],
+            measure=measure,
+            hostname=hostname,
+            param=param,
+            period="1h",
+        )
     )
 
-    return points[0]
+    return table_list[0].records[0].get_value()
 
 
-def get_outdoor_temp():
-    return get_db_value(INFLUXDB_TEMP_QUERY.format(name="ESP32-outdoor-1"))
+def get_outdoor_temp(config):
+    return get_db_value(config, TEMP_HOSTNAME, TEMP_MEASURE, "temp")
 
 
-def get_state(tag, name):
+def get_state(config, tag, name):
     try:
-        power = get_db_value(INFLUXDB_POWER_QUERY.format(tag=tag, name=name))
-        temp = get_outdoor_temp()
+
+        power = get_db_value(config, name, "fplug", "power")
+        temp = get_outdoor_temp(config)
 
         judge = (power > POWER_THRESHOLD) and (temp > TEMP_THRESHOLD)
 
@@ -51,19 +73,24 @@ def get_state(tag, name):
         )
         return judge
     except Exception as e:
-        logging.warn("{name} の電力，もしくは，外気温の取得に失敗しました．")
-        logging.warn(e)
+        logging.warning("{name} の電力，もしくは，外気温の取得に失敗しました．".format(name=name))
+        logging.warning(e)
         return False
 
 
 if __name__ == "__main__":
+    import yaml
+    import os
     import logger
     import time
+    import pathlib
 
     logger.init("test")
+    with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
+        config = yaml.safe_load(file)
 
     while True:
-        get_state("hems.sharp", "リビングエアコン")
-        get_state("fplug", "書斎エアコン")
-        get_state("fplug", "和室エアコン")
+        get_state(config, "hems.sharp", "リビングエアコン")
+        get_state(config, "fplug", "書斎エアコン")
+        get_state(config, "fplug", "和室エアコン")
         time.sleep(60)
