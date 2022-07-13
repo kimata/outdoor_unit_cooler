@@ -24,7 +24,7 @@ Ubuntu の場合，`install.sh` を実行すると apt を使って必要なラ�
 
 ## 設定
 
-`src/config.yaml.example` を `src/config.yaml` に名前変更し，
+`src/config.example.yml` を `src/config.yml` に名前変更し，
 電磁弁制御用の GPIO 端子番号とメール通知に関する設定を行います．
 
 ## 実行

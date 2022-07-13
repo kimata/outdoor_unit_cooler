@@ -49,7 +49,7 @@ if __name__ == "__main__":
     import logger
 
     logger.init("test")
-    with open(str(pathlib.Path(os.path.dirname(__file__), "config.yaml"))) as file:
+    with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
         config = yaml.safe_load(file)
 
     send(config, "Testです")
