@@ -19,7 +19,7 @@ INTERM_TEMP_THRESHOLD = 30
 STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
 
-def get_aircon_state():
+def get_aircon_state(config):
     item_list = [
         {"tag": "hems.sharp", "name": "リビングエアコン"},
         {"tag": "fplug", "name": "書斎エアコン"},
@@ -27,7 +27,7 @@ def get_aircon_state():
     ]
 
     for item in item_list:
-        if aircon.get_state(item["tag"], item["name"]):
+        if aircon.get_state(config, item["tag"], item["name"]):
             return True
     return False
 
@@ -43,7 +43,7 @@ logger.init("unit_cooler")
 with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
     config = yaml.safe_load(file)
 
-state = get_aircon_state()
+state = get_aircon_state(config)
 
 try:
     interm = aircon.get_outdoor_temp() < INTERM_TEMP_THRESHOLD
