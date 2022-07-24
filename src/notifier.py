@@ -8,7 +8,7 @@ import pathlib
 from email.mime.text import MIMEText
 import logging
 
-INTERVAL_MIN = 60 * 3
+INTERVAL_MIN = 60
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_NOTIFY = STAT_DIR_PATH / "cooler_notify"
