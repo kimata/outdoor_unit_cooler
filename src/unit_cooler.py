@@ -10,6 +10,7 @@ import fd_q10c
 import aircon
 import valve
 import notifier
+
 import logger
 
 
@@ -20,14 +21,8 @@ STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
 
 def get_aircon_state(config):
-    item_list = [
-        {"tag": "hems.sharp", "name": "リビングエアコン"},
-        {"tag": "fplug", "name": "書斎エアコン"},
-        {"tag": "fplug", "name": "和室エアコン"},
-    ]
-
-    for item in item_list:
-        if aircon.get_state(config, item["tag"], item["name"]):
+    for item in config["sensor"]["power"]:
+        if aircon.get_state(config, item["measure"], item["hostname"]):
             return True
     return False
 

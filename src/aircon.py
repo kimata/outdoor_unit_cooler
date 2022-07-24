@@ -17,10 +17,6 @@ from(bucket: "{bucket}")
     |> limit(n: 1)
 """
 
-# InfluxDB から外気温を取得するためのパラメータ
-TEMP_MEASURE = "sensor.rasp"
-TEMP_HOSTNAME = "rasp-meter-8"
-
 # エアコン動作中と判定する温度閾値
 POWER_THRESHOLD = 20
 # クーラー動作と判定する温度閾値
@@ -55,13 +51,18 @@ def get_db_value(
 
 
 def get_outdoor_temp(config):
-    return get_db_value(config, TEMP_HOSTNAME, TEMP_MEASURE, "temp")
+    return get_db_value(
+        config,
+        config["sensor"]["temperature"][0]["hostname"],
+        config["sensor"]["temperature"][0]["measure"],
+        "temp",
+    )
 
 
-def get_state(config, tag, name):
+def get_state(config, measure, name):
     try:
 
-        power = get_db_value(config, name, "fplug", "power")
+        power = get_db_value(config, name, measure, "power")
         temp = get_outdoor_temp(config)
 
         judge = (power > POWER_THRESHOLD) and (temp > TEMP_THRESHOLD)
@@ -90,7 +91,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(file)
 
     while True:
-        get_state(config, "hems.sharp", "リビングエアコン")
-        get_state(config, "fplug", "書斎エアコン")
-        get_state(config, "fplug", "和室エアコン")
+        for aircon in config["sensor"]["power"]:
+            get_state(config, aircon["measure"], aircon["hostname"])
+
         time.sleep(60)
