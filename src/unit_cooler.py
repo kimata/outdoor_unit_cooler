@@ -5,6 +5,7 @@ import yaml
 import pathlib
 import os
 import sys
+import logging
 
 import fd_q10c
 import aircon
@@ -41,7 +42,13 @@ with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
 state = get_aircon_state(config)
 
 try:
-    interm = aircon.get_outdoor_temp() < INTERM_TEMP_THRESHOLD
+    temp = aircon.get_outdoor_temp()
+    interm = temp < INTERM_TEMP_THRESHOLD
+    logging.info(
+        "interm = {interm} (外気温: {temp}℃)".format(
+            interm="ON" if interm else "OFF", temp=round(temp, 1)
+        )
+    )
 except:
     interm = False
 
