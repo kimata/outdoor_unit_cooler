@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+import datetime
 import time
 
 try:
@@ -68,6 +69,25 @@ def ctrl_valve(state):
     GPIO.output(pin_no, state)
 
 
+def get_hour():
+    return datetime.datetime.now(
+        datetime.timezone(datetime.timedelta(hours=9), "JST")
+    ).hour
+
+
+def get_interval_on():
+    return INTERVAL_MIN_ON
+
+
+def get_interval_off():
+    hour = get_hour()
+    if (hour < 6) or (hour > 19):
+        # NOTE: 夜間は OFF 期間を長くする
+        return INTERVAL_MIN_OFF * 3
+    else:
+        return INTERVAL_MIN_OFF
+
+
 def set_valve_on(interm):
     STAT_PATH_VALVE_OFF.unlink(missing_ok=True)
     if not STAT_PATH_VALVE_ON.exists():
@@ -78,11 +98,11 @@ def set_valve_on(interm):
 
     on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
     if interm:
-        if (on_duration / 60.0) < INTERVAL_MIN_ON:
+        if (on_duration / 60.0) < get_interval_on():
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
             return on_duration
-        elif (on_duration / 60.0) > (INTERVAL_MIN_ON + INTERVAL_MIN_OFF):
+        elif (on_duration / 60.0) > (get_interval_on() + get_interval_off()):
             STAT_PATH_VALVE_ON.touch()
             logging.info("controll ON (ON duty)")
             ctrl_valve(True)
