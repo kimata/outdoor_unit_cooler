@@ -50,7 +50,7 @@ try:
         )
     )
 except:
-    interm = False
+    interm = True
 
 valve.init(config["valve"]["pin_no"])
 duration = valve.set_state(state, interm)
