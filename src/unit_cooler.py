@@ -57,7 +57,7 @@ if state:
     if duration > 10:
         if flow < 0.02:
             notifier.send(config, "元栓が閉じています．")
-        elif flow > 1:
+        elif flow > 2:
             notifier.send(config, "水漏れしています．")
             hazard_detected()
 
