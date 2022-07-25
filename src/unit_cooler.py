@@ -15,7 +15,7 @@ import logger
 
 
 # 外気温がこの温度を超えていたら間欠制御を停止し，常時 ON にする
-INTERM_TEMP_THRESHOLD = 30
+INTERM_TEMP_THRESHOLD = 32
 
 STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
