@@ -42,7 +42,7 @@ with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
 state = get_aircon_state(config)
 
 try:
-    temp = aircon.get_outdoor_temp()
+    temp = aircon.get_outdoor_temp(config)
     interm = temp < INTERM_TEMP_THRESHOLD
     logging.info(
         "interm = {interm} (外気温: {temp}℃)".format(
