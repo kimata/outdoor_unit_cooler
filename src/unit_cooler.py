@@ -57,7 +57,7 @@ duration = valve.set_state(state, interm)
 
 if STAT_HAZARD.exists():
     notifier.send(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
-    sys.exit(0)
+    hazard_detected()
 
 if state:
     flow = fd_q10c.sense()
