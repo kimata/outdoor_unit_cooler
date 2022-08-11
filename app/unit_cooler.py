@@ -51,6 +51,7 @@ def is_cooler_working(config, temp):
 
 
 def judge_control_mode(config):
+    logging.info("Judge control mode")
     temp = get_outdoor_temp(config)
     state = is_cooler_working(config, temp)
 
@@ -67,12 +68,11 @@ def hazard_detected(config, message):
 
 
 def control_valve(config, valve_mode):
-    logging.info("Judge mode")
+    logging.info("Control valve")
 
     if STAT_HAZARD.exists():
         hazard_detected(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
 
-    logging.info("Control valve")
     valve.init(config["valve"]["pin_no"])
     duration = valve.set_state(valve_mode["state"], valve_mode["interm"])
 
@@ -80,6 +80,7 @@ def control_valve(config, valve_mode):
 
 
 def check_valve(config, valve_state):
+    logging.info("Check valve")
     flow = -1
     if valve_state:
         if duration > 10:
