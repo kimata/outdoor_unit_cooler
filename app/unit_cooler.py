@@ -120,7 +120,7 @@ config = load_config()
 
 hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
 
-logging.info("Hostanm: {hostname}".format(hostname=hostname))
+logging.info("Hostname: {hostname}".format(hostname=hostname))
 
 sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
 
