@@ -98,17 +98,29 @@ def set_valve_on(interm):
 
     on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
     if interm:
-        if (on_duration / 60.0) < get_interval_on():
-            logging.info("controll ON (ON duty)")
+        interval_on = get_interval_on()
+        interval_off = get_interval_off()
+        if (on_duration / 60.0) < interval_on:
+            logging.info(
+                "controll ON (ON duty, {left:.0f} sec left)".format(
+                    left=interval_on - (on_duration / 60.0)
+                )
+            )
             ctrl_valve(True)
             return on_duration
-        elif (on_duration / 60.0) > (get_interval_on() + get_interval_off()):
+        elif (on_duration / 60.0) > (interval_on + interval_off):
             STAT_PATH_VALVE_ON.touch()
-            logging.info("controll ON (ON duty)")
+            logging.info(
+                "controll ON (ON duty, {left:.0f} sec left)".format(left=interval_on)
+            )
             ctrl_valve(True)
             return 0
         else:
-            logging.info("controll ON (OFF duty)")
+            logging.info(
+                "controll ON (OFF duty, {left:.0f} sec left)".format(
+                    left=(interval_on + interval_off) - (on_duration / 60.0)
+                )
+            )
             ctrl_valve(False)
             return 0
     else:
