@@ -109,7 +109,7 @@ def send_spray_state(sender, hostname, spray_state):
 
     logging.info(
         "valve = {valve}, flow = {flow:.2f} L/min".format(
-            valve="ON" if valve else "OFF", flow=flow
+            valve="ON" if valve == 1 else "OFF", flow=flow
         )
     )
 
