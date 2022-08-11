@@ -96,7 +96,7 @@ def check_valve(config, valve_state):
         else:
             flow = fd_q10c.sense()
             if (duration > 100) and (flow > 0.01):
-                hazard_detected(config, "電磁弁が壊れています．")
+                hazard_detected(config, "電磁弁が壊れていますので制御を停止します．")
 
     if flow == -1:
         flow = fd_q10c.sense(False)
