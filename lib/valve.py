@@ -100,7 +100,7 @@ def set_valve_on(interm):
         interval_off = get_interval_off()
         if (on_duration_sec / 60.0) < interval_on:
             logging.info(
-                "controll ON (ON duty, {left:.1f} sec left)".format(
+                "controll ON (ON duty, {left:.0f} sec left)".format(
                     left=(interval_on * 60) - on_duration_sec
                 )
             )
