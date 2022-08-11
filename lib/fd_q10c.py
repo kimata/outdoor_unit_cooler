@@ -28,7 +28,7 @@ def sense(is_power_on=True):
             ser = driver.com_start(spi)
 
             flow = driver.isdu_read(spi, ser, 0x94, driver.DATA_TYPE_UINT16) * 0.01
-            logging.info("flow: {flow} L/min".format(flow=flow))
+            logging.info("flow: {flow:.2f} L/min".format(flow=flow))
 
             driver.com_stop(spi, ser)
         else:

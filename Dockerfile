@@ -9,7 +9,8 @@ RUN apt-get install -y python3 python3-pip
 
 RUN apt-get install -y python3-yaml python3-coloredlogs
 RUN apt-get install -y python3-fluent-logger
-RUN apt-get install -y python3-smbus python3-spidev python3-serial
+RUN apt-get install -y python3-smbus python3-spidev
+RUN apt-get install -y python3-serial python3-rpi.gpio
 
 RUN pip3 install 'influxdb-client[ciso]'
 
