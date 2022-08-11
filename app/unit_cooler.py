@@ -102,6 +102,8 @@ def check_valve(config, valve_state):
         flow = fd_q10c.sense(False)
     logging.info("flow = {flow:.2f} L/min".format(flow=flow))
 
+    return flow
+
 
 def send_spray_state(sender, hostname, spray_state):
     logging.info("Send valve state")
