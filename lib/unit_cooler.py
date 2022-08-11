@@ -21,19 +21,6 @@ INTERM_TEMP_THRESHOLD = 34
 STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
 
-def get_aircon_state(config):
-    for item in config["sensor"]["power"]:
-        if aircon.get_state(config, item["measure"], item["hostname"]):
-            return True
-    return False
-
-
-def hazard_detected():
-    STAT_HAZARD.touch()
-    valve.ctrl_valve(False)
-    sys.exit(-1)
-
-
 logger.init("unit_cooler")
 
 with open(str(pathlib.Path(os.path.dirname(__file__), "config.yml"))) as file:
