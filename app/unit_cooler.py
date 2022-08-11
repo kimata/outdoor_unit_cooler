@@ -104,7 +104,7 @@ def check_valve(config, valve_state):
 def send_spray_state(sender, hostname, spray_state):
     logging.info("Send valve state")
 
-    valve_state.update({"hostname": hostname})
+    spray_state.update({"hostname": hostname})
     if sender.emit("rasp", spray_state):
         logging.info("Send OK")
     else:
