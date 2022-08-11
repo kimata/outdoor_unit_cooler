@@ -94,29 +94,31 @@ def set_valve_on(interm):
         ctrl_valve(True)
         return 0
 
-    on_duration = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
+    on_duration_sec = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
     if interm:
         interval_on = get_interval_on()
         interval_off = get_interval_off()
-        if (on_duration / 60.0) < interval_on:
+        if (on_duration_sec / 60.0) < interval_on:
             logging.info(
-                "controll ON (ON duty, {left:.0f} sec left)".format(
-                    left=interval_on - (on_duration / 60.0)
+                "controll ON (ON duty, {left:.1f} sec left)".format(
+                    left=(interval_on * 60) - on_duration_sec
                 )
             )
             ctrl_valve(True)
-            return on_duration
-        elif (on_duration / 60.0) > (interval_on + interval_off):
+            return on_duration_sec
+        elif (on_duration_sec / 60.0) > (interval_on + interval_off):
             STAT_PATH_VALVE_ON.touch()
             logging.info(
-                "controll ON (ON duty, {left:.0f} sec left)".format(left=interval_on)
+                "controll ON (ON duty, {left:.0f} sec left)".format(
+                    left=interval_on * 60
+                )
             )
             ctrl_valve(True)
             return 0
         else:
             logging.info(
                 "controll ON (OFF duty, {left:.0f} sec left)".format(
-                    left=(interval_on + interval_off) - (on_duration / 60.0)
+                    left=(interval_on + interval_off) * 60 - on_duration_sec
                 )
             )
             ctrl_valve(False)
@@ -128,12 +130,12 @@ def set_valve_on(interm):
         # NOTE: interm が True から False に変わったタイミングで OFF Duty だと
         # 実際はバルブが閉じているのに返り値が大きくなるので，補正する．
         # 「+1」は境界での誤判定防止．
-        if ((on_duration / 60.0) >= INTERVAL_MIN_ON) and (
-            (on_duration / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF + 1)
+        if ((on_duration_sec / 60.0) >= INTERVAL_MIN_ON) and (
+            (on_duration_sec / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF + 1)
         ):
             return 0
         else:
-            return on_duration
+            return on_duration_sec
 
 
 def set_valve_off(interm):
