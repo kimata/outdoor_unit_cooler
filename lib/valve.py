@@ -32,8 +32,8 @@ except:
 import logging
 
 
-INTERVAL_MIN_ON = 2
-INTERVAL_MIN_OFF = 2
+INTERVAL_MIN_ON = 1
+INTERVAL_MIN_OFF = 1
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_VALVE_ON = STAT_DIR_PATH / "valve_on"
@@ -81,7 +81,7 @@ def get_interval_off():
     hour = get_hour()
     if (hour < 6) or (hour > 19):
         # NOTE: 夜間は OFF 期間を長くする
-        return INTERVAL_MIN_OFF * 3
+        return INTERVAL_MIN_OFF * 2
     else:
         return INTERVAL_MIN_OFF
 
