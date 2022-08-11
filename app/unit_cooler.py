@@ -100,13 +100,18 @@ def check_valve(config, valve_state):
 
     if flow == -1:
         flow = fd_q10c.sense(False)
-    logging.info("flow = {flow:.2f} L/min".format(flow=flow))
 
     return flow
 
 
 def send_spray_state(sender, hostname, spray_state):
     logging.info("Send valve state")
+
+    logging.info(
+        "valve = {valve}, flow = {flow:.2f} L/min".format(
+            valve="ON" if valve else "OFF", flow=flow
+        )
+    )
 
     spray_state.update({"hostname": hostname})
     if sender.emit("rasp", spray_state):
