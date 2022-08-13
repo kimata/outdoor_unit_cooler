@@ -40,22 +40,28 @@ def get_outdoor_temp(config):
 
 
 def is_cooler_working(config, temp):
+    mode = 0
     for item in config["sensor"]["power"]:
         try:
-            if aircon.get_cooler_state(config, item["measure"], item["hostname"], temp):
-                return True
+            mode = max(
+                mode,
+                aircon.get_cooler_state(
+                    config, item["measure"], item["hostname"], temp
+                ),
+            )
         except:
             pass
-    else:
-        return False
+
+    return mode
 
 
 def judge_control_mode(config):
     logging.info("Judge control mode")
     temp = get_outdoor_temp(config)
-    state = is_cooler_working(config, temp)
+    mode = is_cooler_working(config, temp)
 
-    interm = temp < INTERM_TEMP_THRESHOLD
+    state = mode != 0
+    interm = (mode < 3) and (temp < INTERM_TEMP_THRESHOLD)
 
     return {"state": state, "interm": interm}
 
