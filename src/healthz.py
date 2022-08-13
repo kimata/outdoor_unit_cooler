@@ -20,7 +20,8 @@ if not liveness_file.exists():
 elapsed = datetime.datetime.now() - datetime.datetime.fromtimestamp(
     liveness_file.stat().st_mtime
 )
-if elapsed.seconds > config["sense"]["interval"]:
+# NOTE: interval を短めにしているので，閾値は 3 倍にする
+if elapsed.seconds > (config["sense"]["interval"] * 3):
     print(
         "Execution interval is too long. ({elapsed:,} sec)".format(
             elapsed=elapsed.seconds
