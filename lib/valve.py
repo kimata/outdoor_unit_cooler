@@ -79,9 +79,9 @@ def get_interval_on():
 
 def get_interval_off():
     hour = get_hour()
-    if (hour < 6) or (hour > 19):
+    if (hour < 7) or (hour > 19):
         # NOTE: 夜間は OFF 期間を長くする
-        return INTERVAL_MIN_OFF * 2
+        return INTERVAL_MIN_OFF * 5
     else:
         return INTERVAL_MIN_OFF
 
