@@ -61,7 +61,7 @@ def judge_control_mode(config):
     mode = is_cooler_working(config, temp)
 
     state = mode != 0
-    interm = (mode < 3) and (temp < INTERM_TEMP_THRESHOLD)
+    interm = (mode < 2) and (temp < INTERM_TEMP_THRESHOLD)
 
     return {"state": state, "interm": interm}
 
