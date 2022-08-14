@@ -8,7 +8,7 @@ if [ $(uname -m) != "aarch64" ]; then
     exit -1
 fi
 
-git push
+git pull
 docker build --platform linux/arm64 . -t ${NAME}
 docker tag ${NAME} ${REGISTRY}/${NAME}
 docker push ${REGISTRY}/${NAME}
