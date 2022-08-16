@@ -127,7 +127,7 @@ def send_spray_state(sender, hostname, spray_state):
 
 
 ######################################################################
-logger.init("Outdoor unit coolerr")
+logger.init("hems.unit_cooler")
 
 logging.info("Load config...")
 config = load_config()
