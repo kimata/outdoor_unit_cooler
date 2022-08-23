@@ -73,6 +73,14 @@ def hazard_detected(config, message):
     valve.ctrl_valve(False)
 
 
+def init_valve():
+    # NOTE: バルブの故障を誤判定しないよう，まずはバルブを閉じた状態にする
+    logging.info("Initialize valve")
+    valve.init(config["valve"]["pin_no"])
+    valve.set_state(False, False)
+    time.sleep(5)
+
+
 def control_valve(config, valve_mode):
     logging.info("Control valve")
 
@@ -137,6 +145,8 @@ hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
 logging.info("Hostname: {hostname}".format(hostname=hostname))
 
 sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
+
+init_valve()
 
 prev_mode = {"state": False, "interm": True}
 while True:
