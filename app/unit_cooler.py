@@ -148,7 +148,7 @@ while True:
 
     if (
         prev_mode["state"]
-        and valve_mode["interm"]
+        and valve_mode["state"]
         and (prev_mode["interm"] != valve_mode["interm"])
     ):
         # NOTE: 間欠制御モードが変化した場合は duration を 0 にする．
