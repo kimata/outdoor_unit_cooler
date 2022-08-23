@@ -146,7 +146,11 @@ while True:
     duration = control_valve(config, valve_mode)
     valve_state = valve.get_state()
 
-    if prev_mode["interm"] != valve_mode["interm"]:
+    if (
+        prev_mode["state"]
+        and valve_mode["interm"]
+        and (prev_mode["interm"] != valve_mode["interm"])
+    ):
         # NOTE: 間欠制御モードが変化した場合は duration を 0 にする．
         # これをしないと，OFF Duty 中に間欠制御から定常制御に変わった場合に，
         # 元栓が閉じていると誤判定してしまう．
