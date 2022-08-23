@@ -85,7 +85,7 @@ def control_valve(config, valve_mode):
     return duration
 
 
-def check_valve(config, valve_state):
+def check_valve(config, valve_state, duration):
     logging.info("Check valve")
     flow = -1
     if valve_state:
@@ -138,13 +138,21 @@ logging.info("Hostname: {hostname}".format(hostname=hostname))
 
 sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
 
+prev_mode = {"state": False, "interm": True}
 while True:
     logging.info("Start.")
 
     valve_mode = judge_control_mode(config)
     duration = control_valve(config, valve_mode)
     valve_state = valve.get_state()
-    flow = check_valve(config, valve_state)
+
+    if prev_mode["interm"] != valve_mode["interm"]:
+        # NOTE: 間欠制御モードが変化した場合は duration を 0 にする．
+        # これをしないと，OFF Duty 中に間欠制御から定常制御に変わった場合に，
+        # 元栓が閉じていると誤判定してしまう．
+        duration = 0
+
+    flow = check_valve(config, valve_state, duration)
 
     spray_state = {"flow": flow, "valve": valve_state}
     send_spray_state(sender, hostname, spray_state)
