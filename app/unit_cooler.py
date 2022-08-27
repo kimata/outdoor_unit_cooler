@@ -148,7 +148,7 @@ sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
 
 init_valve()
 
-prev_mode = {"state": False, "interm": True}
+prev_mode = {"state": False, "interm": False}
 while True:
     logging.info("Start.")
 
@@ -170,6 +170,7 @@ while True:
 
     spray_state = {"flow": flow, "valve": valve_state}
     send_spray_state(sender, hostname, spray_state)
+    prev_mode = valve_mode
 
     logging.info("Finish.")
     pathlib.Path(config["liveness"]["file"]).touch()
