@@ -49,11 +49,13 @@ if __name__ == "__main__":
     logger.init("test")
 
     config = load_config()
-    temp = get_db_value(
-        config["influxdb"],
-        config["sensor"]["temperature"][0]["hostname"],
-        config["sensor"]["temperature"][0]["measure"],
-        "temp",
-    )
-
-    print("temp: {temp}".format(temp=temp))
+    for sensor_type, sensor_list in config["sensor"].items():
+        for sensor in sensor_list:
+            value = get_db_value(
+                config["influxdb"], sensor["hostname"], sensor["measure"], sensor_type
+            )
+            print(
+                "{name} ({sensor_type}): {value:.1f}".format(
+                    name=sensor["name"], sensor_type=sensor_type, value=value
+                )
+            )

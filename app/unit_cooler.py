@@ -22,24 +22,27 @@ import notifier
 from config import load_config
 import logger
 
-
-# 外気温がこの温度を超えていたら間欠制御を停止し，常時 ON にする
+# 屋外の照度がこの値を下回っていたら，制御を停止する
+NIGHT_LUX_THRESHOLD = 10
+# 屋外の湿度がこの値を超えていたら常時 OFF にする
+INTERM_HUMI_THRESHOLD = 98
+# 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
 INTERM_TEMP_THRESHOLD = 34
 
 # 電磁弁の故障を検出したときに作成するファイル
 STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
 
-def get_outdoor_temp(config):
+def get_sensor_value(config, sensor_type):
     return sense_data.get_db_value(
         config["influxdb"],
-        config["sensor"]["temperature"][0]["hostname"],
-        config["sensor"]["temperature"][0]["measure"],
-        "temp",
+        config["sensor"][sensor_type][0]["hostname"],
+        config["sensor"][sensor_type][0]["measure"],
+        sensor_type,
     )
 
 
-def is_cooler_working(config, temp):
+def get_cooler_mode(config, temp):
     mode = 0
     for item in config["sensor"]["power"]:
         try:
@@ -57,11 +60,37 @@ def is_cooler_working(config, temp):
 
 def judge_control_mode(config):
     logging.info("Judge control mode")
-    temp = get_outdoor_temp(config)
-    mode = is_cooler_working(config, temp)
+    temp = get_sensor_value(config, "temp")
+    humi = get_sensor_value(config, "humi")
+    lux = get_sensor_value(config, "lux")
+    mode = get_cooler_mode(config, temp)
 
-    state = mode != 0
-    interm = (mode < 2) and (temp < INTERM_TEMP_THRESHOLD)
+    logging.info(
+        "input: temp={temp:.1f}℃, humi={humi:.1f}% lux={lux:,.0f}, mode={mode}".format(
+            temp=temp, humi=humi, lux=lux, mode=mode
+        )
+    )
+
+    # NOTE: 屋外が暗かったり湿度が非常に高い場合は無条件に動作停止
+    if (lux < NIGHT_LUX_THRESHOLD) or (humi > INTERM_HUMI_THRESHOLD):
+        state = False
+        interm = False
+    else:
+        # NOTE: エアコンが動いていたら，とりあえず動かす
+        state = mode != 0
+
+        # NOTE: 間欠動作にするかどうかは，屋外の温度とクーラーの動作モードで決める
+        if temp < INTERM_TEMP_THRESHOLD:
+            if mode < 2:
+                interm = True
+            else:
+                interm = False
+        else:
+            interm = False
+
+    logging.info(
+        "output: state={state}, interm={interm}".format(state=state, interm=interm)
+    )
 
     return {"state": state, "interm": interm}
 

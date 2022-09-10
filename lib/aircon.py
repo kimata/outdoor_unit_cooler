@@ -7,7 +7,7 @@ import logging
 # エアコン動作中と判定する電力閾値
 POWER_THRESHOLD_WORK = 20
 # エアコンフル稼働中と判定する電力閾値
-POWER_THRESHOLD_FULL = 500
+POWER_THRESHOLD_FULL = 400
 # エアコンの冷房動作と判定する温度閾値
 TEMP_THRESHOLD = 20
 
