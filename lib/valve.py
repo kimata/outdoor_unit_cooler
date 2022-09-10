@@ -33,7 +33,7 @@ import logging
 
 
 INTERVAL_MIN_ON = 1
-INTERVAL_MIN_OFF = 1
+INTERVAL_MIN_OFF = 2
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_VALVE_ON = STAT_DIR_PATH / "valve_on"
