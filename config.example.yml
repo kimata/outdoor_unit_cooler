@@ -5,19 +5,27 @@ influxdb:
   bucket: sensor
 
 sensor:
-  temperature:
-    - name: 外気温
+  temp:
+    - name: 屋外の気温
       measure: sensor.esp32
       hostname: ESP32-outdoor-1
+  humi:
+    - name: 屋外の湿度
+      measure: sensor.esp32
+      hostname: ESP32-outdoor-1
+  lux:
+    - name: 屋外の照度
+      measure: sensor.rasp
+      hostname: rasp-meter-8
   power:
     - name: リビングエアコン
       measure: hems.sharp
       hostname: リビングエアコン
     - name: 書斎エアコン
-      measure: fplug
+      measure: hems.sharp
       hostname: 書斎エアコン
     - name: 和室エアコン
-      measure: fplug
+      measure: hems.sharp
       hostname: 和室エアコン
 
 valve:
