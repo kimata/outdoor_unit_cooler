@@ -39,9 +39,9 @@ class INTERM(Enum):
 
 
 INTERVAL_MIN_ON = 1
-INTERVAL_MIN_OFF = 2
+INTERVAL_MIN_OFF = 3
 # NOTE: LOW モード時に，OFF Duty 時間を何倍するか
-INTERVAL_SCALE = 2.5
+INTERVAL_SCALE = 3
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_VALVE_ON = STAT_DIR_PATH / "valve_on"
