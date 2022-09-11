@@ -8,6 +8,7 @@ import os
 import socket
 import sys
 import time
+import datetime
 import pathlib
 import logging
 import fluent.sender
@@ -23,7 +24,8 @@ from config import load_config
 import logger
 
 # 屋外の照度がこの値を下回っていたら，制御を停止する
-NIGHT_LUX_THRESHOLD = 100
+LUX_AM_THRESHOLD = 500
+LUX_PM_THRESHOLD = 10
 # 屋外の湿度がこの値を超えていたら常時 OFF にする
 INTERM_HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
@@ -58,6 +60,17 @@ def get_cooler_mode(config, temp):
     return mode
 
 
+def check_lux(lux):
+    hour = datetime.datetime.now(
+        datetime.timezone(datetime.timedelta(hours=9), "JST")
+    ).hour
+
+    if hour < 12:
+        return lux > LUX_AM_THRESHOLD
+    else:
+        return lux > LUX_PM_THRESHOLD
+
+
 def judge_control_mode(config):
     logging.info("Judge control mode")
     temp = get_sensor_value(config, "temp")
@@ -72,7 +85,7 @@ def judge_control_mode(config):
     )
 
     # NOTE: 屋外が暗かったり湿度が非常に高い場合は無条件に動作停止
-    if (lux < NIGHT_LUX_THRESHOLD) or (humi > INTERM_HUMI_THRESHOLD):
+    if (not check_lux(lux)) or (humi > INTERM_HUMI_THRESHOLD):
         state = False
         interm = False
     else:
