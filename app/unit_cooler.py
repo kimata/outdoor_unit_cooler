@@ -24,8 +24,10 @@ from config import load_config
 import logger
 
 # 屋外の照度がこの値を下回っていたら，制御を停止する
-LUX_AM_THRESHOLD = 500
-LUX_PM_THRESHOLD = 10
+LUX_OFF_THRESHOLD_AM = 500
+LUX_OFF_THRESHOLD_PM = 10
+# 太陽の日射量がこの値未満の場合，間欠動作の OFF Duty を広げる
+SOLAR_RAD_THRESHOLD = 300
 # 屋外の湿度がこの値を超えていたら常時 OFF にする
 INTERM_HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
@@ -71,9 +73,9 @@ def check_lux(lux):
     ).hour
 
     if hour < 12:
-        return lux > LUX_AM_THRESHOLD
+        return lux > LUX_OFF_THRESHOLD_AM
     else:
-        return lux > LUX_PM_THRESHOLD
+        return lux > LUX_OFF_THRESHOLD_PM
 
 
 def judge_control_mode(config):
@@ -81,6 +83,7 @@ def judge_control_mode(config):
     temp = get_sensor_value(config, "temp")
     humi = get_sensor_value(config, "humi")
     lux = get_sensor_value(config, "lux")
+    rad = get_sensor_value(config, "solar_rad")
     mode = get_cooler_mode(config, temp)
 
     logging.info(
@@ -94,19 +97,23 @@ def judge_control_mode(config):
         (not check_lux(lux)) or (humi > INTERM_HUMI_THRESHOLD)
     ):
         state = False
-        interm = False
+        interm = valve.INTERM.OFF
     else:
         # NOTE: エアコンが動いていたら，とりあえず動かす
         state = mode != aircon.MODE.OFF
 
-        # NOTE: 間欠動作にするかどうかは，屋外の温度とクーラーの動作モードで決める
-        if temp < INTERM_TEMP_THRESHOLD:
-            if mode == aircon.MODE.IDLE or mode == aircon.MODE.NORMAL:
-                interm = True
-            else:
-                interm = False
+        if mode == aircon.MODE.FULL:
+            # NOTE: エアコンフル稼働の場合は，間欠動作しない
+            state = True
+            interm = valve.INTERM.OFF
+        elif (rad > SOLAR_RAD_THRESHOLD) and (mode == aircon.MODE.NORMAL):
+            # NOTE: 日射量が多く，エアコンがそこそこ動いている場合，最低限の間欠動作
+            state = True
+            interm = valve.INTERM.SHORT
         else:
-            interm = False
+            # NOTE: それ以外の場合，間欠動作の OFF Duty を長くする
+            state = True
+            interm = valve.INTERM.LONG
 
     logging.info(
         "output: state={state}, interm={interm}".format(state=state, interm=interm)

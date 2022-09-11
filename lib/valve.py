@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+from enum import Enum
 import pathlib
 import datetime
 import time
@@ -32,8 +32,16 @@ except:
 import logging
 
 
+class INTERM(Enum):
+    OFF = 0
+    SHORT = 1
+    LONG = 2
+
+
 INTERVAL_MIN_ON = 1
 INTERVAL_MIN_OFF = 2
+# NOTE: LOW モード時に，OFF Duty 時間を何倍するか
+INTERVAL_SCALE = 2.5
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
 STAT_PATH_VALVE_ON = STAT_DIR_PATH / "valve_on"
@@ -73,15 +81,13 @@ def get_hour():
     ).hour
 
 
-def get_interval_on():
+def get_interval_on(interm):
     return INTERVAL_MIN_ON
 
 
-def get_interval_off():
-    hour = get_hour()
-    if (hour < 7) or (hour > 19):
-        # NOTE: 夜間は OFF 期間を長くする
-        return INTERVAL_MIN_OFF * 5
+def get_interval_off(interm):
+    if interm == INTERM.LONG:
+        return INTERVAL_MIN_OFF * INTERVAL_SCALE
     else:
         return INTERVAL_MIN_OFF
 
@@ -95,9 +101,22 @@ def set_valve_on(interm):
         return 0
 
     on_duration_sec = time.time() - STAT_PATH_VALVE_ON.stat().st_mtime
-    if interm:
-        interval_on = get_interval_on()
-        interval_off = get_interval_off()
+    if interm == INTERM.OFF:
+        logging.info("controll ON")
+        ctrl_valve(True)
+
+        # NOTE: interm が True から False に変わったタイミングで OFF Duty だと
+        # 実際はバルブが閉じているのに返り値が大きくなるので，補正する．
+        # 「+1」は境界での誤判定防止．
+        if ((on_duration_sec / 60.0) >= INTERVAL_MIN_ON) and (
+            (on_duration_sec / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF + 1)
+        ):
+            return 0
+        else:
+            return on_duration_sec
+    else:
+        interval_on = get_interval_on(interm)
+        interval_off = get_interval_off(interm)
         if (on_duration_sec / 60.0) < interval_on:
             logging.info(
                 "controll ON (ON duty, {left:.0f} sec left)".format(
@@ -123,19 +142,6 @@ def set_valve_on(interm):
             )
             ctrl_valve(False)
             return 0
-    else:
-        logging.info("controll ON")
-        ctrl_valve(True)
-
-        # NOTE: interm が True から False に変わったタイミングで OFF Duty だと
-        # 実際はバルブが閉じているのに返り値が大きくなるので，補正する．
-        # 「+1」は境界での誤判定防止．
-        if ((on_duration_sec / 60.0) >= INTERVAL_MIN_ON) and (
-            (on_duration_sec / 60.0) <= (INTERVAL_MIN_ON + INTERVAL_MIN_OFF + 1)
-        ):
-            return 0
-        else:
-            return on_duration_sec
 
 
 def set_valve_off(interm):
@@ -153,7 +159,7 @@ def set_valve_off(interm):
 
 
 # バルブを間欠制御し，実際にバルブを開いたり閉じたりしてからの経過時間(秒)を出力します
-def set_state(state, interm=True):
+def set_state(state, interm=INTERM.OFF):
     if state:
         return set_valve_on(interm)
     else:
