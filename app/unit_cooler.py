@@ -84,17 +84,19 @@ def judge_control_mode(config):
         )
     )
 
-    # NOTE: 屋外が暗かったり湿度が非常に高い場合は無条件に動作停止
-    if (not check_lux(lux)) or (humi > INTERM_HUMI_THRESHOLD):
+    # NOTE: エアコンフル稼働でなく，屋外が暗かったり湿度が非常に高い場合は無条件に動作停止
+    if (mode != aircon.MODE.FULL) and (
+        (not check_lux(lux)) or (humi > INTERM_HUMI_THRESHOLD)
+    ):
         state = False
         interm = False
     else:
         # NOTE: エアコンが動いていたら，とりあえず動かす
-        state = mode != 0
+        state = mode != aircon.MODE.OFF
 
         # NOTE: 間欠動作にするかどうかは，屋外の温度とクーラーの動作モードで決める
         if temp < INTERM_TEMP_THRESHOLD:
-            if mode < 2:
+            if mode == aircon.MODE.IDLE or mode == aircon.MODE.NORMAL:
                 interm = True
             else:
                 interm = False
