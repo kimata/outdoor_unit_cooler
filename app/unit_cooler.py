@@ -23,7 +23,7 @@ from config import load_config
 import logger
 
 # 屋外の照度がこの値を下回っていたら，制御を停止する
-NIGHT_LUX_THRESHOLD = 10
+NIGHT_LUX_THRESHOLD = 100
 # 屋外の湿度がこの値を超えていたら常時 OFF にする
 INTERM_HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
