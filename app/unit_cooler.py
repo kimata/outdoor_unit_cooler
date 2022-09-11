@@ -45,15 +45,20 @@ def get_sensor_value(config, sensor_type):
 
 
 def get_cooler_mode(config, temp):
-    mode = 0
+    mode = aircon.MODE.OFF
     for item in config["sensor"]["power"]:
         try:
-            mode = max(
-                mode,
-                aircon.get_cooler_state(
-                    config, item["measure"], item["hostname"], temp
-                ),
+            item_mode = aircon.get_cooler_state(
+                config, item["measure"], item["hostname"], temp
             )
+            if item_mode == aircon.MODE.FULL:
+                mode = aircon.MODE.FULL
+            elif item_mode == aircon.MODE.NORMAL:
+                if mode != aircon.MODE.FULL:
+                    mode = aircon.MODE.NORMAL
+            elif item_mode == aircon.MODE.IDLE:
+                if mode == aircon.MODE.OFF:
+                    mode = aircon.MODE.IDLE
         except:
             pass
 
