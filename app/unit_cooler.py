@@ -27,7 +27,7 @@ import logger
 LUX_OFF_THRESHOLD_AM = 500
 LUX_OFF_THRESHOLD_PM = 10
 # 太陽の日射量がこの値未満の場合，間欠動作の OFF Duty を広げる
-SOLAR_RAD_THRESHOLD = 300
+SOLAR_RAD_THRESHOLD = 400
 # 屋外の湿度がこの値を超えていたら常時 OFF にする
 INTERM_HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
