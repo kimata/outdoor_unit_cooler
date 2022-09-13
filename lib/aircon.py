@@ -30,7 +30,7 @@ def get_cooler_state(config, measure, name, temp):
             if power > POWER_THRESHOLD_FULL:
                 mode = MODE.FULL
             elif power > POWER_THRESHOLD_NORMAL:
-                mode = MODE.FULL.NORMAL
+                mode = MODE.NORMAL
             elif power > POWER_THRESHOLD_WORK:
                 mode = MODE.IDLE
         logging.info(
