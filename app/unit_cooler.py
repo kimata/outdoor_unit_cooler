@@ -87,8 +87,8 @@ def judge_control_mode(config):
     mode = get_cooler_mode(config, temp)
 
     logging.info(
-        "input: temp={temp:.1f}℃, humi={humi:.1f}% lux={lux:,.0f}, mode={mode}".format(
-            temp=temp, humi=humi, lux=lux, mode=mode
+        "input: temp={temp:.1f}, humi={humi:.1f}% lux={lux:,.0f}, rad={rad:,.0f}, mode={mode}".format(
+            temp=temp, humi=humi, lux=lux, rad=rad, mode=mode
         )
     )
 
