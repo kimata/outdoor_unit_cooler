@@ -104,15 +104,12 @@ def judge_control_mode(config):
 
         if mode == aircon.MODE.FULL:
             # NOTE: エアコンフル稼働の場合は，間欠動作しない
-            state = True
             interm = valve.INTERM.OFF
         elif (rad > SOLAR_RAD_THRESHOLD) and (mode == aircon.MODE.NORMAL):
             # NOTE: 日射量が多く，エアコンがそこそこ動いている場合，最低限の間欠動作
-            state = True
             interm = valve.INTERM.SHORT
         else:
             # NOTE: それ以外の場合，間欠動作の OFF Duty を長くする
-            state = True
             interm = valve.INTERM.LONG
 
     logging.info(
