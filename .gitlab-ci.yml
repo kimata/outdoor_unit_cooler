@@ -11,25 +11,25 @@ build-image:
 
   script:
     # - docker rm $(docker ps -a --filter 'status=exited' -q) || true
+    - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
+    - mv hems_config/unit_cooler.yaml config.yaml
     - docker pull ${CI_REGISTRY_IMAGE} || true
     - docker build . -t ${CI_REGISTRY_IMAGE}
     - docker push ${CI_REGISTRY_IMAGE}
 
-# # 雨雲レーダ画像のテスト
-# # NOTE: 通常モードだと，雨雲レーダ画像の生成に失敗してもスクリプトはエラー画像を生成して
-# # 正常終了するので，別建ててテストを実施する．
-# test-rain-cloud:
-#   stage: test
+# コントローラをテスト
+test-rain-cloud:
+  stage: test
 
-#   script:
-#     - docker pull ${CI_REGISTRY_IMAGE}
-#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/rain_cloud_panel.py -f config.yaml -o ${CI_JOB_NAME}.png
-#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
-#     - docker wait ${CID}
-#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
-#   artifacts:
-#     paths:
-#       - ${CI_JOB_NAME}.png
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}
+    - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/cooler_controller.pyel.py -f config.yaml -o ${CI_JOB_NAME}.png
+    - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+    - docker wait ${CID}
+    - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+  artifacts:
+    paths:
+      - ${CI_JOB_NAME}.png
 
 # # サンプル設定ファイルで，問題なく動くかチェック
 # test-sample:
