@@ -240,7 +240,7 @@ config = load_config(config_file)
 try:
     control_pubsub.start_server(
         server_port,
-        lambda: gen_control_msg(config, is_one_time),
+        lambda: gen_control_msg(config),
         config["control"]["interval"],
         is_one_time,
     )
