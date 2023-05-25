@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# - coding: utf-8 --
+# -*- coding: utf-8 -*-
 import coloredlogs
 import logging
 import logging.handlers
@@ -21,14 +21,14 @@ class GZipRotator:
         os.remove(source)
 
 
-def init(name, is_str=False):
-    coloredlogs.install(fmt=LOG_FORMAT.format(name=name))
+def init(name, level=logging.WARNING, is_str=False):
+    coloredlogs.install(fmt=LOG_FORMAT.format(name=name), level=level)
 
     if is_str:
         str_io = io.StringIO()
         handler = logging.StreamHandler(str_io)
         handler.formatter = logging.Formatter(
-            fmt=LOG_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"
+            fmt=LOG_FORMAT.format(name=name), datefmt="%Y-%m-%d %H:%M:%S"
         )
         logging.getLogger().addHandler(handler)
 
