@@ -10,7 +10,7 @@ CH = "unit_cooler"
 SER_TIMEOUT = 10
 
 
-def start_server(server_port, func, interval_sec):
+def start_server(server_port, func, interval_sec, is_one_time=False):
     logging.info("Start serial server...")
 
     context = zmq.Context()
@@ -22,6 +22,9 @@ def start_server(server_port, func, interval_sec):
 
     while True:
         socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
+
+        if is_one_time:
+            break
         time.sleep(interval_sec)
 
 

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-電子ペーパ表示用の画像を生成します．
+エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-f CONFIG] [-p SERVER_PORT] [-d]
+  cooler_controller.py [-f CONFIG] [-p SERVER_PORT] [-O] [-d]
   cooler_controller.py -C [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
 
 Options:
   -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -O                : 1回のみ実行
   -d                : デバッグモードで動作します．
   -C                : テスト用のクライアントモードで動作します．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
@@ -203,7 +204,10 @@ def test_client(server_host, server_port):
     control_pubsub.start_client(
         server_host,
         server_port,
-        lambda message: logging.info("receive: {message}".format(message=message)),
+        lambda message: (
+            logging.info("receive: {message}".format(message=message)),
+            os._exit(0),
+        ),
     )
 
 
@@ -215,6 +219,7 @@ server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 debug_mode = args["-d"]
 client_mode = args["-C"]
 server_host = args["-s"]
+is_one_time = args["-O"]
 
 if debug_mode:
     log_level = logging.DEBUG
@@ -234,7 +239,10 @@ config = load_config(config_file)
 
 try:
     control_pubsub.start_server(
-        server_port, lambda: gen_control_msg(config), config["control"]["interval"]
+        server_port,
+        lambda: gen_control_msg(config, is_one_time),
+        config["control"]["interval"],
+        is_one_time,
     )
 except:
     notify_error(config)

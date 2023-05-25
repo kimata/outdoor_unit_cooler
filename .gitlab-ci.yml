@@ -1,0 +1,122 @@
+image: docker:23.0
+
+stages:
+  - build
+  - test
+  - deploy
+
+build-image:
+  stage: build
+  image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:latest
+
+  script:
+    # - docker rm $(docker ps -a --filter 'status=exited' -q) || true
+    - docker pull ${CI_REGISTRY_IMAGE} || true
+    - docker build . -t ${CI_REGISTRY_IMAGE}
+    - docker push ${CI_REGISTRY_IMAGE}
+
+# # 雨雲レーダ画像のテスト
+# # NOTE: 通常モードだと，雨雲レーダ画像の生成に失敗してもスクリプトはエラー画像を生成して
+# # 正常終了するので，別建ててテストを実施する．
+# test-rain-cloud:
+#   stage: test
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/rain_cloud_panel.py -f config.yaml -o ${CI_JOB_NAME}.png
+#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+#     - docker wait ${CID}
+#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+#   artifacts:
+#     paths:
+#       - ${CI_JOB_NAME}.png
+
+# # サンプル設定ファイルで，問題なく動くかチェック
+# test-sample:
+#   stage: test
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/create_image.py -f config.example.yaml -o ${CI_JOB_NAME}.png
+#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+#     - docker wait ${CID}
+#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+
+#   artifacts:
+#     paths:
+#       - ${CI_JOB_NAME}.png
+
+# test-sample-small:
+#   stage: test
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/create_image.py -s -f config-small.example.yaml -o ${CI_JOB_NAME}.png
+#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+#     - docker wait ${CID}
+#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+
+#   artifacts:
+#     paths:
+#       - ${CI_JOB_NAME}.png
+
+
+# # 本番設定ファイルで，問題なく動くかチェック
+# test-regular:
+#   stage: test
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/create_image.py -o ${CI_JOB_NAME}.png
+#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+#     - docker wait ${CID}
+#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+
+#   artifacts:
+#     paths:
+#       - ${CI_JOB_NAME}.png
+
+# test-regular-small:
+#   stage: test
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} src/create_image.py -s -f config-small.yaml -o ${CI_JOB_NAME}.png
+#     - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
+#     - docker wait ${CID}
+#     - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
+
+#   artifacts:
+#     paths:
+#       - ${CI_JOB_NAME}.png
+
+# # 本番設定ファイルで，問題なく動くかチェック
+# test-display:
+#   stage: test
+
+#   variables:
+#     RASP_HOSTNAME: rasp-meter-1
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t ${CI_REGISTRY_IMAGE} src/display_image.py -f config.yaml -t ${RASP_HOSTNAME} -O
+
+# test-display-small:
+#   stage: test
+
+#   variables:
+#     RASP_HOSTNAME: rasp-display-2
+
+#   script:
+#     - docker pull ${CI_REGISTRY_IMAGE}
+#     - docker run -t ${CI_REGISTRY_IMAGE} src/display_image.py -s -f config-small.yaml -t ${RASP_HOSTNAME} -O
+
+# deploy:
+#   stage: deploy
+#   image:
+#     name: bitnami/kubectl:latest
+#     entrypoint: ['']
+#   script:
+#     - kubectl config get-contexts
+#     - kubectl config use-context kimata/e-ink_weather_panel:pod-rollout
+#     - kubectl --insecure-skip-tls-verify=true rollout restart -n panel deployment e-ink-weather-panel-deployment
