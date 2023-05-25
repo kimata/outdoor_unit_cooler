@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     python3-yaml python3-coloredlogs \
     python3-fluent-logger \
     python3-smbus python3-spidev \
-    python3-rpi.gpio \
     python3-zmq \
  && apt-get clean \
  && rm -rf /va/rlib/apt/lists/*
@@ -18,6 +17,8 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install 'influxdb-client[ciso]'
 
 WORKDIR /opt/unit_cooler
+
 COPY . .
+RUN pip3 install -r requirements.txt
 
 CMD ["./app/unit_cooler.py"]
