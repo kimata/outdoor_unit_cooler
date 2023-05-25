@@ -1,2 +1,3 @@
 influxdb-client[ciso]
 RPi.GPIO
+slack_bolt
