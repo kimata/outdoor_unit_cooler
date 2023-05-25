@@ -23,13 +23,7 @@ test-rain-cloud:
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
-    - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/cooler_controller.pyel.py -f config.yaml -o ${CI_JOB_NAME}.png
-    - CID=`docker ps -q -l -f "ancestor=${CI_REGISTRY_IMAGE}" -f "label=job=${CI_JOB_NAME}"`
-    - docker wait ${CID}
-    - docker cp ${CID}:/opt/e-ink_weather/${CI_JOB_NAME}.png .
-  artifacts:
-    paths:
-      - ${CI_JOB_NAME}.png
+    - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/cooler_controller.py -f config.yaml -O
 
 # # サンプル設定ファイルで，問題なく動くかチェック
 # test-sample:
