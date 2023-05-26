@@ -12,7 +12,7 @@ Options:
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
   -d                : デバッグモードで動作します．
-  -C                : テスト用のクライアントモードで動作します．
+  -C                : クライアントモード(ダミー)で動作します．CI でのテスト用．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
 """
 
@@ -26,6 +26,7 @@ import traceback
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "lib"))
 
+from valve import COOLING_STATE
 import control_pubsub
 from sensor_data import fetch_data
 import aircon
@@ -51,7 +52,7 @@ TEMP_THRESHOLD = 33
 def notify_error(config):
     notify_slack.error(
         config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"],
+        config["slack"]["error"]["channel"]["name"],
         config["slack"]["from"],
         traceback.format_exc(),
         config["slack"]["error"]["interval_min"],
@@ -189,7 +190,52 @@ def judge_control_mode(config):
 
 
 def gen_control_msg(config):
-    control_msg = {"control": judge_control_mode(config)}
+    control_mode = judge_control_mode(config)
+
+    match control_mode:
+        case 0:
+            control_msg = { "state": COOLING_STATE.IDLE.value }
+        case 1:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 1, "off_min": 30},
+            }
+        case 2:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 2, "off_min": 30},
+            }
+        case 3:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 1, "off_min": 20},
+            }
+        case 4:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 2, "off_min": 20},
+            }
+        case 5:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 1, "off_min": 10},
+            }
+        case 6:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 2, "off_min": 10},
+            }
+        case 7:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 1, "off_min": 5},
+            }
+        case 8:
+            control_msg = {
+                "state": COOLING_STATE.WORKING.value,
+                "duty": {"mode": True, "on_min": 2, "off_min": 5},
+            }
+    
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
 
     return control_msg
@@ -244,6 +290,7 @@ try:
         config["control"]["interval"],
         is_one_time,
     )
+
 except:
     notify_error(config)
     raise
