@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from enum import Enum
+from enum import IntEnum
 import pathlib
 import time
 import logging
@@ -31,14 +31,14 @@ except:
             return
 
 
-class VALVE_STATE(Enum):
+class VALVE_STATE(IntEnum):
     OPEN = 1
     CLOSE = 0
 
 
-class COOLING_STATE(Enum):
-    WORKING = True
-    IDLE = False
+class COOLING_STATE(IntEnum):
+    WORKING = 1
+    IDLE = 0
 
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
@@ -157,7 +157,7 @@ def set_cooling_working(duty_info):
         logging.info("COOLING: IDLE -> WORKING")
         return set_valve_state(VALVE_STATE.OPEN)
 
-    if not duty_info["mode"]:
+    if not duty_info["enable"]:
         # NOTE Duty 制御しない場合
         return set_valve_state(VALVE_STATE.OPEN)
 
@@ -200,9 +200,9 @@ def set_cooling_idle():
         return set_valve_state(VALVE_STATE.CLOSE)
 
 
-def set_cooling_state(cooling_state, duty_info):
-    if cooling_state == COOLING_STATE.WORKING:
-        return set_cooling_working(duty_info)
+def set_cooling_state(cooling_mode):
+    if cooling_mode["state"] == COOLING_STATE.WORKING:
+        return set_cooling_working(cooling_mode["duty"])
     else:
         return set_cooling_idle()
 
@@ -217,6 +217,9 @@ if __name__ == "__main__":
 
     while True:
         set_cooling_state(
-            COOLING_STATE.WORKING, {"mode": True, "on_min": 1, "off_min": 2}
+            {
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 1, "off_min": 2},
+            }
         )
         time.sleep(30)

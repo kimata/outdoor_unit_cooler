@@ -194,46 +194,46 @@ def gen_control_msg(config):
 
     match control_mode:
         case 0:
-            control_msg = { "state": COOLING_STATE.IDLE.value }
+            control_msg = { "state": COOLING_STATE.IDLE }
         case 1:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 1, "off_min": 30},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 1, "off_min": 30},
             }
         case 2:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 2, "off_min": 30},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 2, "off_min": 30},
             }
         case 3:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 1, "off_min": 20},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 1, "off_min": 20},
             }
         case 4:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 2, "off_min": 20},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 2, "off_min": 20},
             }
         case 5:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 1, "off_min": 10},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 1, "off_min": 10},
             }
         case 6:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 2, "off_min": 10},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 2, "off_min": 10},
             }
         case 7:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 1, "off_min": 5},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 1, "off_min": 5},
             }
         case 8:
             control_msg = {
-                "state": COOLING_STATE.WORKING.value,
-                "duty": {"mode": True, "on_min": 2, "off_min": 5},
+                "state": COOLING_STATE.WORKING,
+                "duty": {"enable": True, "on_min": 2, "off_min": 5},
             }
     
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
