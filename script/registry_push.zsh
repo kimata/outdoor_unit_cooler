@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
-NAME=unit_cooler
-REGISTRY=registry.green-rabbit.net/library
+NAME=outdoor_unit_cooler
+REGISTRY=registry.green-rabbit.net:5000/kimata
 
 if [ $(uname -m) != "aarch64" ]; then
     echo "Raspberry Pi 上で実行してください．"
