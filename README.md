@@ -29,7 +29,7 @@ Ubuntu の場合，`install.sh` を実行すると apt を使って必要なラ�
 
 ## 実行
 
-`src/unit_cooler.py` を実行します．
+`app/cooler_controller.py` と `app/unit_cooler.py` を実行します．
 
 問題ないようでしたら，`cron/unit_cooler` を適宜編集した上で，
 `/etc/cron.d` に配置して一定間隔で自動実行されるようにします．
