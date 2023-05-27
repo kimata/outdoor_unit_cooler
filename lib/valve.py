@@ -5,11 +5,26 @@ import pathlib
 import time
 import logging
 
+
+class VALVE_STATE(IntEnum):
+    OPEN = 1
+    CLOSE = 0
+
+
+class COOLING_STATE(IntEnum):
+    WORKING = 1
+    IDLE = 0
+
+
 try:
     import RPi.GPIO as GPIO
+    import fd_q10c
 except:
+    logging.warning("Using dummy GPIO")
+
     # NOTE: Raspbeery Pi 以外で動かした時は，ダミーにする
     class GPIO:
+        IS_DUMMY = True
         BCM = 0
         OUT = 0
         state = 0
@@ -30,15 +45,15 @@ except:
         def setwarnings(warnings):
             return
 
+    class fd_q10c:
+        def sense():
+            if GPIO.state == VALVE_STATE.OPEN.value:
+                return 1.23
+            else:
+                return 0
 
-class VALVE_STATE(IntEnum):
-    OPEN = 1
-    CLOSE = 0
-
-
-class COOLING_STATE(IntEnum):
-    WORKING = 1
-    IDLE = 0
+        def stop():
+            return
 
 
 STAT_DIR_PATH = pathlib.Path("/dev/shm")
@@ -76,15 +91,15 @@ def init(pin):
     STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
     STAT_PATH_VALVE_STATE_IDLE.touch()
 
-    set_valve_state(VALVE_STATE.CLOSE)
+    set_state(VALVE_STATE.CLOSE)
 
 
 # NOTE: 実際にバルブを開きます．
 # 現在のバルブの状態と，バルブが現在の状態になってからの経過時間を返します．
-def set_valve_state(valve_state):
+def set_state(valve_state):
     global pin_no
 
-    curr_state = get_valve_state()
+    curr_state = get_state()
 
     if valve_state != curr_state:
         logging.info(
@@ -98,24 +113,20 @@ def set_valve_state(valve_state):
     GPIO.setup(pin_no, GPIO.OUT)
     GPIO.output(pin_no, valve_state.value)
 
-    if valve_state:
+    if valve_state == VALVE_STATE.OPEN:
         STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-        if STAT_PATH_VALVE_OPEN.exists():
-            return (valve_state, time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime)
-        else:
+        if not STAT_PATH_VALVE_OPEN.exists():
             STAT_PATH_VALVE_OPEN.touch()
-            return (valve_state, 0)
     else:
         STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
-        if STAT_PATH_VALVE_CLOSE.exists():
-            return (valve_state, time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime)
-        else:
+        if not STAT_PATH_VALVE_CLOSE.exists():
             STAT_PATH_VALVE_CLOSE.touch()
-            return (valve_state, 0)
+
+    return get_status()
 
 
 # NOTE: 実際のバルブの状態を返します
-def get_valve_state():
+def get_state():
     global pin_no
 
     GPIO.setwarnings(False)
@@ -128,38 +139,53 @@ def get_valve_state():
         return VALVE_STATE.CLOSE
 
 
-# def get_interval_on(interm):
-#     return INTERVAL_MIN_ON
+# NOTE: バルブの状態と，その状態になってからの経過時間を返します
+def get_status():
+    valve_state = get_state()
+
+    if valve_state == VALVE_STATE.OPEN:
+        return {
+            "state": valve_state,
+            "duration": time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime,
+        }
+    else:
+        return {
+            "state": valve_state,
+            "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
+        }
 
 
-# def get_interval_off(interm):
-#     if interm == INTERM.LONG:
-#         return INTERVAL_MIN_OFF * INTERVAL_SCALE
-#     else:
-#         return INTERVAL_MIN_OFF
+def get_flow(force_power_on=True):
+    flow = fd_q10c.sense()
+
+    if flow is not None:
+        logging.info("Valve flow = {flow:.2f}".format(flow=flow))
+    else:
+        logging.info("Valve flow = UNKNOWN")
+
+    return flow
 
 
-# cooling_mode = {
-#     "state": COOLER_STATE.IDLE,
-#     "duty": {  "mode": False  }
-# }
+def stop_sensing():
+    fd_q10c.stop()
 
 
 # NOTE: バルブを動作状態にします．
 # Duty 制御を実現するため，OFF Duty 期間の場合はバルブを閉じます．
 # 実際にバルブを開いてからの経過時間を返します．
-# duty_info = { "mode": bool, "on": on_min, "off": off_min }
+# duty_info = { "enable": bool, "on": on_min, "off": off_min }
 def set_cooling_working(duty_info):
     STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
 
     if not STAT_PATH_VALVE_STATE_WORKING.exists():
         STAT_PATH_VALVE_STATE_WORKING.touch()
         logging.info("COOLING: IDLE -> WORKING")
-        return set_valve_state(VALVE_STATE.OPEN)
+        return set_state(VALVE_STATE.OPEN)
 
     if not duty_info["enable"]:
         # NOTE Duty 制御しない場合
-        return set_valve_state(VALVE_STATE.OPEN)
+        logging.info("COOLING: WORKING")
+        return set_state(VALVE_STATE.OPEN)
 
     on_duration_sec = time.time() - STAT_PATH_VALVE_STATE_WORKING.stat().st_mtime
 
@@ -169,7 +195,7 @@ def set_cooling_working(duty_info):
                 left=(duty_info["on_min"] * 60) - on_duration_sec
             )
         )
-        return set_valve_state(VALVE_STATE.OPEN)
+        return set_state(VALVE_STATE.OPEN)
     elif on_duration_sec > ((duty_info["on_min"] + duty_info["off_min"]) * 60):
         STAT_PATH_VALVE_STATE_WORKING.touch()
         logging.info(
@@ -178,7 +204,7 @@ def set_cooling_working(duty_info):
                 - on_duration_sec
             )
         )
-        return set_valve_state(VALVE_STATE.OPEN)
+        return set_state(VALVE_STATE.OPEN)
     else:
         logging.info(
             "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
@@ -186,7 +212,7 @@ def set_cooling_working(duty_info):
                 - on_duration_sec
             )
         )
-        return set_valve_state(VALVE_STATE.CLOSE)
+        return set_state(VALVE_STATE.CLOSE)
 
 
 def set_cooling_idle():
@@ -195,9 +221,10 @@ def set_cooling_idle():
     if not STAT_PATH_VALVE_STATE_IDLE.exists():
         STAT_PATH_VALVE_STATE_IDLE.touch()
         logging.info("COOLING: WORKING -> IDLE")
-        return set_valve_state(VALVE_STATE.CLOSE)
+        return set_state(VALVE_STATE.CLOSE)
     else:
-        return set_valve_state(VALVE_STATE.CLOSE)
+        logging.info("COOLING: IDLE")
+        return set_state(VALVE_STATE.CLOSE)
 
 
 def set_cooling_state(cooling_mode):
