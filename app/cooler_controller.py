@@ -4,13 +4,14 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-f CONFIG] [-p SERVER_PORT] [-O] [-d]
+  cooler_controller.py [-f CONFIG] [-p SERVER_PORT] [-O] [-D] [-d]
   cooler_controller.py -C [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
 
 Options:
   -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
+  -D                : ダミーモードで実行します．(冷却モードをランダムに生成します)  
   -d                : デバッグモードで動作します．
   -C                : クライアントモード(ダミー)で動作します．CI でのテスト用．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
@@ -189,8 +190,32 @@ def judge_control_mode(config):
     return control_mode
 
 
-def gen_control_msg(config):
-    control_mode = judge_control_mode(config)
+def dummy_control_mode():
+    import random
+
+    # NOTE: ある程度連続性を持ったランダムな制御量を生成する
+    dice = int(random.random() * 10)
+    if dice < 2:
+        control_mode = max(min(int(random.random() * 15) - 4, 8), 0)
+    elif dice < 8:
+        control_mode = max(min(int(dummy_control_mode.prev_mode + (random.random()-0.5)*4), 8), 0)
+    else:
+        control_mode = dummy_control_mode.prev_mode
+
+    logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
+
+    dummy_control_mode.prev_mode = control_mode
+    
+    return control_mode
+
+dummy_control_mode.prev_mode = 0
+
+
+def gen_control_msg(config, dummy_mode=False):
+    if dummy_mode:
+        control_mode = dummy_control_mode()
+    else:
+        control_mode = judge_control_mode(config)
 
     match control_mode:
         case 0:
@@ -263,6 +288,7 @@ args = docopt(__doc__)
 config_file = args["-f"]
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 debug_mode = args["-d"]
+dummy_mode = args["-D"]
 client_mode = args["-C"]
 server_host = args["-s"]
 is_one_time = args["-O"]
@@ -280,14 +306,17 @@ if client_mode:
 
 logging.info("Start controller (port: {port})".format(port=server_port))
 
-logging.info("Using config config: {config_file}".format(config_file=config_file))
+if dummy_mode:
+    logging.warn("DUMMY mode")
+
+    logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
 
 try:
     control_pubsub.start_server(
         server_port,
-        lambda: gen_control_msg(config),
-        config["control"]["interval"],
+        lambda: gen_control_msg(config, dummy_mode),
+        config["calculation"]["interval_sec"],
         is_one_time,
     )
 
