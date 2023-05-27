@@ -64,7 +64,6 @@ def _acquire():
     global lock_fd
     lock_fd = os.open(LOCK_FILE_PATH, os.O_RDWR | os.O_CREAT | os.O_TRUNC)
 
-    timeout = 5.0
     time_start = time.time()
     while time.time() < time_start + TIMEOUT_SEC:
         try:
