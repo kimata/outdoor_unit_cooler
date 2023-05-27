@@ -7,7 +7,7 @@ stages:
 
 build-image:
   stage: build
-  image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d3c1a49
+  image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:62f71bad
 
   variables:
     BUILDER: arm_builder
