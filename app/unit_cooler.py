@@ -1,234 +1,208 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+エアコン室外機の冷却モードの指示を出します．
 
-# エアコン室外機冷却システム用スクリプト．
-# 室外機への噴霧を制御しつつ，実際に噴霧した量のモニタリングを行います．
+Usage:
+  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
+
+Options:
+  -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
+  -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -d                : デバッグモードで動作します．
+"""
+
+from docopt import docopt
 
 import os
-import socket
 import sys
+
+import threading
+
+import socket
 import time
-import datetime
+
 import pathlib
+import queue
 import logging
+
 import fluent.sender
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "lib"))
 
-import sense_data
-import fd_q10c
-import aircon
-import valve
-import notifier
+import control_pubsub
+
+import traceback
 from config import load_config
+import notify_slack
 import logger
 
-# 屋外の照度がこの値を下回っていたら，制御を停止する
-LUX_OFF_THRESHOLD_AM = 500
-LUX_OFF_THRESHOLD_PM = 10
-# 太陽の日射量がこの値未満の場合，間欠動作の OFF Duty を広げる
-SOLAR_RAD_THRESHOLD = 400
-# 屋外の湿度がこの値を超えていたら常時 OFF にする
-INTERM_HUMI_THRESHOLD = 98
-# 屋外の温度がこの値を超えていたら間欠制御を停止し，常時 ON にする
-INTERM_TEMP_THRESHOLD = 34
-
 # 電磁弁の故障を検出したときに作成するファイル
-STAT_HAZARD = pathlib.Path("/dev/shm") / "hazard"
+STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 
 
-def get_sensor_value(config, sensor_type):
-    return sense_data.get_db_value(
-        config["influxdb"],
-        config["sensor"][sensor_type][0]["hostname"],
-        config["sensor"][sensor_type][0]["measure"],
-        sensor_type,
+def notify_error(config, message=traceback.format_exc()):
+    notify_slack.error(
+        config["slack"]["bot_token"],
+        config["slack"]["error"]["channel"]["name"],
+        config["slack"]["from"],
+        traceback.format_exc(),
+        config["slack"]["error"]["interval_min"],
     )
-
-
-def get_cooler_mode(config, temp):
-    mode = aircon.MODE.OFF
-    for item in config["sensor"]["power"]:
-        try:
-            item_mode = aircon.get_cooler_state(
-                config, item["measure"], item["hostname"], temp
-            )
-            if item_mode == aircon.MODE.FULL:
-                mode = aircon.MODE.FULL
-            elif item_mode == aircon.MODE.NORMAL:
-                if mode != aircon.MODE.FULL:
-                    mode = aircon.MODE.NORMAL
-            elif item_mode == aircon.MODE.IDLE:
-                if mode == aircon.MODE.OFF:
-                    mode = aircon.MODE.IDLE
-        except:
-            pass
-
-    return mode
-
-
-def check_lux(lux):
-    hour = datetime.datetime.now(
-        datetime.timezone(datetime.timedelta(hours=9), "JST")
-    ).hour
-
-    if hour < 12:
-        return lux > LUX_OFF_THRESHOLD_AM
-    else:
-        return lux > LUX_OFF_THRESHOLD_PM
-
-
-def judge_control_mode(config):
-    logging.info("Judge control mode")
-    temp = get_sensor_value(config, "temp")
-    humi = get_sensor_value(config, "humi")
-    lux = get_sensor_value(config, "lux")
-    rad = get_sensor_value(config, "solar_rad")
-    mode = get_cooler_mode(config, temp)
-
-    logging.info(
-        "input: temp={temp:.1f}, humi={humi:.1f}% lux={lux:,.0f}, rad={rad:,.0f}, mode={mode}".format(
-            temp=temp, humi=humi, lux=lux, rad=rad, mode=mode
-        )
-    )
-
-    # NOTE: エアコンフル稼働でなく，屋外が暗かったり湿度が非常に高い場合は無条件に動作停止
-    if (mode != aircon.MODE.FULL) and (
-        (not check_lux(lux)) or (humi > INTERM_HUMI_THRESHOLD)
-    ):
-        state = False
-        interm = valve.INTERM.OFF
-    else:
-        # NOTE: エアコンが動いていたら，とりあえず動かす
-        state = mode != aircon.MODE.OFF
-
-        if mode == aircon.MODE.FULL:
-            # NOTE: エアコンフル稼働の場合は，間欠動作しない
-            interm = valve.INTERM.OFF
-        elif (rad > SOLAR_RAD_THRESHOLD) and (mode == aircon.MODE.NORMAL):
-            # NOTE: 日射量が多く，エアコンがそこそこ動いている場合，最低限の間欠動作
-            interm = valve.INTERM.SHORT
-        else:
-            # NOTE: それ以外の場合，間欠動作の OFF Duty を長くする
-            interm = valve.INTERM.LONG
-
-    logging.info(
-        "output: state={state}, interm={interm}".format(state=state, interm=interm)
-    )
-
-    return {"state": state, "interm": interm}
 
 
 def hazard_detected(config, message):
-    notifier.send(config, message)
+    notify_error(config, message)
 
-    STAT_HAZARD.touch()
-    valve.ctrl_valve(False)
-
-
-def init_valve():
-    # NOTE: バルブの故障を誤判定しないよう，まずはバルブを閉じた状態にする
-    logging.info("Initialize valve")
-    valve.init(config["valve"]["pin_no"])
-    valve.set_state(False, False)
-    time.sleep(5)
+    STAT_PATH_HAZARD.touch()
+    valve.set_state(valve.VALVE_STATE.CLOSE)
 
 
-def control_valve(config, valve_mode):
-    logging.info("Control valve")
-
-    if STAT_HAZARD.exists():
+def set_cooling_state(cooling_mode):
+    if STAT_PATH_HAZARD.exists():
         hazard_detected(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
 
-    valve.init(config["valve"]["pin_no"])
-    duration = valve.set_state(valve_mode["state"], valve_mode["interm"])
-
-    return duration
+    return valve.set_cooling_state(cooling_mode)
 
 
-def check_valve(config, valve_state, duration):
+def check_valve_status(config, valve_status):
     logging.info("Check valve")
+
     flow = -1
-    if valve_state:
-        if duration > 10:
-            flow = fd_q10c.sense()
+    if valve_status["state"] == valve.VALVE_STATE.OPEN:
+        if valve_status["duration"] > 10:
+            # バルブが開いてから時間が経っている場合
+            flow = valve.get_flow()
             if flow < 0.02:
-                notifier.send(config, "元栓が閉じています．")
+                notify_error(config, "元栓が閉じています．")
             elif flow > 2:
                 hazard_detected(config, "水漏れしています．")
     else:
-        if duration / (60 * 60) > 1:
-            # NOTE: 電磁弁をしばらく使っていない場合は，流量計の電源を切る
-            fd_q10c.stop()
+        if valve_status["duration"] > (60 * 60):
+            # バルブが開いてから時間が経っている場合
+            logging.info("Power off the flow sensor")
+            valve.stop_sensing()
         else:
-            flow = fd_q10c.sense()
-            if (duration > 100) and (flow > 0.01):
+            flow = valve.get_flow()
+            if (valve_status["duration"] > 120) and (flow > 0.01):
                 hazard_detected(config, "電磁弁が壊れていますので制御を停止します．")
 
     if flow == -1:
-        flow = fd_q10c.sense(False)
+        flow = valve.get_flow(False)
 
-    return flow
+    if flow is None:
+        if valve_status["state"] == valve.VALVE_STATE.OPEN:
+            logging.error("バグがあります，")
+        flow = 0.0
+
+    return {"state": valve_status["state"], "flow": flow}
 
 
-def send_spray_state(sender, hostname, spray_state):
-    logging.info("Send valve state")
+def send_valve_condition(sender, hostname, valve_condition):
+    logging.info("Send valve condition")
 
     logging.info(
-        "valve = {valve}, flow = {flow:.2f} L/min".format(
-            valve="ON" if valve == 1 else "OFF", flow=flow
+        "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
+            state=valve_condition["state"].name, flow=valve_condition["flow"]
         )
     )
 
-    spray_state.update({"hostname": hostname})
-    if sender.emit("rasp", spray_state):
-        logging.info("Send OK")
+    valve_condition.update({"state": valve_condition["state"].value})
+    valve_condition.update({"hostname": hostname})
+
+    if hasattr(valve.GPIO, "IS_DUMMY"):
+        logging.info("Send: {valve_condition}".format(valve_condition=valve_condition))
     else:
-        logging.error(sender.last_error)
+        if sender.emit("rasp", valve_condition):
+            logging.info("Send OK")
+        else:
+            logging.error(sender.last_error)
+
+
+# NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
+def cmd_receive_worker(server_host, server_port, cmd_queue):
+    logging.info(
+        "Start command receive worker ({host}:{port})".format(
+            host=server_host, port=server_port
+        )
+    )
+    control_pubsub.start_client(
+        server_host, server_port, lambda message: cmd_queue.put(message)
+    )
+
+
+# NOTE: バルブを制御するワーカ
+def valve_ctrl_worker(config, cmd_queue):
+    logging.info("Start control worker")
+
+    logging.info("Initialize valve")
+    valve.init(config["valve"]["pin_no"])
+
+    cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+    while True:
+        start_time = time.time()
+
+        if not cmd_queue.empty():
+            cooling_mode = cmd_queue.get()
+            logging.info(
+                "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
+            )
+        set_cooling_state(cooling_mode)
+
+        pathlib.Path(config["liveness"]["file"]).touch()
+
+        sleep_sec = config["control"]["interval_sec"] - (time.time() - start_time)
+        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        time.sleep(sleep_sec)
+
+
+# NOTE: バルブの状態をモニタするワーカ
+def valve_monitor_worker(config):
+    logging.info("Start monitor worker")
+
+    sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
+    hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
+    while True:
+        start_time = time.time()
+
+        valve_status = valve.get_status()
+        valve_condition = check_valve_status(config, valve_status)
+
+        send_valve_condition(sender, hostname, valve_condition)
+
+        sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
+        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        time.sleep(sleep_sec)
 
 
 ######################################################################
-logger.init("hems.unit_cooler")
+args = docopt(__doc__)
 
-logging.info("Load config...")
-config = load_config()
+config_file = args["-f"]
+server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
+server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+debug_mode = args["-d"]
 
-hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
+if debug_mode:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.INFO
 
-logging.info("Hostname: {hostname}".format(hostname=hostname))
+logger.init("hems.unit_cooler", level=log_level)
 
-sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
+logging.info("Using config config: {config_file}".format(config_file=config_file))
+config = load_config(config_file)
 
-init_valve()
+# NOTE: Raspberry Pi 以外で実行したときにログで通知したいので，
+# ロガーを初期化した後に import する
+import valve
 
-prev_mode = {"state": False, "interm": False}
-while True:
-    logging.info("Start.")
+cmd_queue = queue.Queue()
 
-    valve_mode = judge_control_mode(config)
-    duration = control_valve(config, valve_mode)
-    valve_state = valve.get_state()
+threading.Thread(
+    target=cmd_receive_worker, args=(server_host, server_port, cmd_queue)
+).start()
 
-    if (
-        prev_mode["state"]
-        and valve_mode["state"]
-        and (prev_mode["interm"] != valve_mode["interm"])
-    ):
-        # NOTE: 間欠制御モードが変化した場合は duration を 0 にする．
-        # これをしないと，OFF Duty 中に間欠制御から定常制御に変わった場合に，
-        # 元栓が閉じていると誤判定してしまう．
-        duration = 0
-
-    flow = check_valve(config, valve_state, duration)
-
-    spray_state = {"flow": flow, "valve": valve_state}
-    send_spray_state(sender, hostname, spray_state)
-    prev_mode = valve_mode
-
-    logging.info("Finish.")
-    pathlib.Path(config["liveness"]["file"]).touch()
-
-    logging.info(
-        "sleep {sleep_time} sec...".format(sleep_time=config["sense"]["interval"])
-    )
-    time.sleep(config["sense"]["interval"])
+threading.Thread(target=valve_ctrl_worker, args=(config, cmd_queue)).start()
+threading.Thread(target=valve_monitor_worker, args=(config,)).start()
