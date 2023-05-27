@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from enum import IntEnum
+import os
 import pathlib
 import time
 import logging
@@ -191,6 +192,9 @@ def set_cooling_working(duty_info):
         return set_state(VALVE_STATE.OPEN)
 
     on_duration_sec = time.time() - STAT_PATH_VALVE_STATE_WORKING.stat().st_mtime
+    on_duration_sec = on_duration_sec % (
+        ((duty_info["on_min"] + duty_info["off_min"]) * 60) * 2
+    )
 
     if on_duration_sec < (duty_info["on_min"] * 60):
         logging.info(
@@ -199,21 +203,32 @@ def set_cooling_working(duty_info):
             )
         )
         return set_state(VALVE_STATE.OPEN)
-    elif on_duration_sec > ((duty_info["on_min"] + duty_info["off_min"]) * 60):
-        STAT_PATH_VALVE_STATE_WORKING.touch()
-        logging.info(
-            "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                left=((2 * duty_info["on_min"] + duty_info["off_min"]) * 60)
-                - on_duration_sec
-            )
-        )
-        return set_state(VALVE_STATE.OPEN)
-    else:
+    elif on_duration_sec < ((duty_info["on_min"] + duty_info["off_min"]) * 60):
         logging.info(
             "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
                 left=((duty_info["on_min"] + duty_info["off_min"]) * 60)
                 - on_duration_sec
             )
+        )
+        return set_state(VALVE_STATE.CLOSE)
+    elif on_duration_sec < ((duty_info["on_min"] * 2 + duty_info["off_min"]) * 60):
+        STAT_PATH_VALVE_STATE_WORKING.touch()
+        logging.info(
+            "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
+                left=((2 * duty_info["on_min"] * 2 + duty_info["off_min"]) * 60)
+                - on_duration_sec
+            )
+        )
+        return set_state(VALVE_STATE.OPEN)
+    else:
+        # NOTE: Duty 設定が変更された場合，ここにくる可能性がある
+        left = (2 * (duty_info["on_min"] + duty_info["off_min"]) * 60) - on_duration_sec
+
+        mtime = time.time() - (duty_info["off_min"] - left)
+        os.utime(str(STAT_PATH_VALVE_STATE_WORKING), (mtime, mtime))
+
+        logging.info(
+            "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(left=left)
         )
         return set_state(VALVE_STATE.CLOSE)
 

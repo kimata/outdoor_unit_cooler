@@ -205,7 +205,7 @@ def dummy_control_mode():
     logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
 
     dummy_control_mode.prev_mode = control_mode
-    
+
     return control_mode
 
 dummy_control_mode.prev_mode = 0
