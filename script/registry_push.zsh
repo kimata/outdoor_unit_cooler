@@ -12,5 +12,5 @@ docker buildx use arm_builder
 docker buildx build --platform linux/amd64,linux/arm64/v8 \
        --cache-from type=registry,ref=${REGISTRY}/${NAME}:cache \
        --cache-to type=registry,ref=${REGISTRY}/${NAME}:cache \
-       --output=type=image,push=true --tag ${REGISTRY}/${NAME} .
+       --push --tag ${REGISTRY}/${NAME} .
 
