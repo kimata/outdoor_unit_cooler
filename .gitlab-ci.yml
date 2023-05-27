@@ -106,12 +106,12 @@ test-rain-cloud:
 #     - docker pull ${CI_REGISTRY_IMAGE}
 #     - docker run -t ${CI_REGISTRY_IMAGE} src/display_image.py -s -f config-small.yaml -t ${RASP_HOSTNAME} -O
 
-# deploy:
-#   stage: deploy
-#   image:
-#     name: bitnami/kubectl:latest
-#     entrypoint: ['']
-#   script:
-#     - kubectl config get-contexts
-#     - kubectl config use-context kimata/e-ink_weather_panel:pod-rollout
-#     - kubectl --insecure-skip-tls-verify=true rollout restart -n panel deployment e-ink-weather-panel-deployment
+deploy:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+    - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
