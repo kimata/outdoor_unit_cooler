@@ -4,11 +4,11 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-f CONFIG] [-p SERVER_PORT] [-O] [-D] [-d]
-  cooler_controller.py -C [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D] [-d]
+  cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
 
 Options:
-  -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
   -D                : ダミーモードで実行します．(冷却モードをランダムに生成します)  
@@ -302,7 +302,7 @@ def test_client(server_host, server_port):
 ######################################################################
 args = docopt(__doc__)
 
-config_file = args["-f"]
+config_file = args["-c"]
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
 debug_mode = args["-d"]

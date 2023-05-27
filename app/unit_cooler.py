@@ -4,10 +4,10 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-d]
+  unit_cooler.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-d]
 
 Options:
-  -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
@@ -218,7 +218,7 @@ def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
 ######################################################################
 args = docopt(__doc__)
 
-config_file = args["-f"]
+config_file = args["-c"]
 server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
