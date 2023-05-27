@@ -4,12 +4,13 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
+  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-D] [-d]
 
 Options:
   -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -D                : ダミーモードで実行します．
   -d                : デバッグモードで動作します．
 """
 
@@ -40,6 +41,8 @@ import logger
 
 # 電磁弁の故障を検出したときに作成するファイル
 STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "hazard"
+
+DUMMY_MODE_SPEEDUP = 12.0
 
 
 def notify_error(config, message=traceback.format_exc()):
@@ -109,13 +112,12 @@ def send_valve_condition(sender, hostname, valve_condition):
     valve_condition.update({"state": valve_condition["state"].value})
     valve_condition.update({"hostname": hostname})
 
-    if hasattr(valve.GPIO, "IS_DUMMY"):
-        logging.debug("Send: {valve_condition}".format(valve_condition=valve_condition))
+    logging.debug("Send: {valve_condition}".format(valve_condition=valve_condition))
+
+    if sender.emit("rasp", valve_condition):
+        logging.debug("Send OK")
     else:
-        if sender.emit("rasp", valve_condition):
-            logging.debug("Send OK")
-        else:
-            logging.error(sender.last_error)
+        logging.error(sender.last_error)
 
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
@@ -131,11 +133,17 @@ def cmd_receive_worker(server_host, server_port, cmd_queue):
 
 
 # NOTE: バルブを制御するワーカ
-def valve_ctrl_worker(config, cmd_queue):
+def valve_ctrl_worker(config, cmd_queue, dummy_mode=False):
     logging.info("Start control worker")
 
     logging.info("Initialize valve")
     valve.init(config["valve"]["pin_no"])
+
+    if dummy_mode:
+        logging.warning("DUMMY mode")
+        interval_sec = config["control"]["interval_sec"] / DUMMY_MODE_SPEEDUP
+    else:
+        interval_sec = config["control"]["interval_sec"]
 
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
     while True:
@@ -150,7 +158,7 @@ def valve_ctrl_worker(config, cmd_queue):
 
         pathlib.Path(config["liveness"]["file"]).touch()
 
-        sleep_sec = config["control"]["interval_sec"] - (time.time() - start_time)
+        sleep_sec = interval_sec - (time.time() - start_time)
         logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
         time.sleep(sleep_sec)
 
@@ -180,6 +188,7 @@ args = docopt(__doc__)
 config_file = args["-f"]
 server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+dummy_mode = args["-D"]
 debug_mode = args["-d"]
 
 if debug_mode:
@@ -202,5 +211,5 @@ threading.Thread(
     target=cmd_receive_worker, args=(server_host, server_port, cmd_queue)
 ).start()
 
-threading.Thread(target=valve_ctrl_worker, args=(config, cmd_queue)).start()
+threading.Thread(target=valve_ctrl_worker, args=(config, cmd_queue, dummy_mode)).start()
 threading.Thread(target=valve_monitor_worker, args=(config,)).start()

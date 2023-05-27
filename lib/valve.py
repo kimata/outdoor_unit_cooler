@@ -177,7 +177,7 @@ def stop_sensing():
 # NOTE: バルブを動作状態にします．
 # Duty 制御を実現するため，OFF Duty 期間の場合はバルブを閉じます．
 # 実際にバルブを開いてからの経過時間を返します．
-# duty_info = { "enable": bool, "on": on_min, "off": off_min }
+# duty_info = { "enable": bool, "on": on_sec, "off": off_sec }
 def set_cooling_working(duty_info):
     STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
 
@@ -193,38 +193,36 @@ def set_cooling_working(duty_info):
 
     on_duration_sec = time.time() - STAT_PATH_VALVE_STATE_WORKING.stat().st_mtime
     on_duration_sec = on_duration_sec % (
-        ((duty_info["on_min"] + duty_info["off_min"]) * 60) * 2
+        (duty_info["on_sec"] + duty_info["off_sec"]) * 2
     )
 
-    if on_duration_sec < (duty_info["on_min"] * 60):
+    if on_duration_sec < duty_info["on_sec"]:
         logging.info(
             "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                left=(duty_info["on_min"] * 60) - on_duration_sec
+                left=duty_info["on_sec"] - on_duration_sec
             )
         )
         return set_state(VALVE_STATE.OPEN)
-    elif on_duration_sec < ((duty_info["on_min"] + duty_info["off_min"]) * 60):
+    elif on_duration_sec < (duty_info["on_sec"] + duty_info["off_sec"]):
         logging.info(
             "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
-                left=((duty_info["on_min"] + duty_info["off_min"]) * 60)
-                - on_duration_sec
+                left=(duty_info["on_sec"] + duty_info["off_sec"]) - on_duration_sec
             )
         )
         return set_state(VALVE_STATE.CLOSE)
-    elif on_duration_sec < ((duty_info["on_min"] * 2 + duty_info["off_min"]) * 60):
+    elif on_duration_sec < (duty_info["on_sec"] * 2 + duty_info["off_sec"]):
         STAT_PATH_VALVE_STATE_WORKING.touch()
         logging.info(
             "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                left=((2 * duty_info["on_min"] * 2 + duty_info["off_min"]) * 60)
-                - on_duration_sec
+                left=duty_info["on_sec"]
             )
         )
         return set_state(VALVE_STATE.OPEN)
     else:
         # NOTE: Duty 設定が変更された場合，ここにくる可能性がある
-        left = (2 * (duty_info["on_min"] + duty_info["off_min"]) * 60) - on_duration_sec
+        left = 2 * (duty_info["on_sec"] + duty_info["off_sec"]) - on_duration_sec
 
-        mtime = time.time() - (duty_info["off_min"] - left)
+        mtime = time.time() - (duty_info["off_sec"] - left)
         os.utime(str(STAT_PATH_VALVE_STATE_WORKING), (mtime, mtime))
 
         logging.info(
@@ -264,7 +262,7 @@ if __name__ == "__main__":
         set_cooling_state(
             {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 1, "off_min": 2},
+                "duty": {"enable": True, "on_sec": 1, "off_sec": 2},
             }
         )
         time.sleep(30)

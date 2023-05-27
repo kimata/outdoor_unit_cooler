@@ -49,6 +49,7 @@ HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
 TEMP_THRESHOLD = 33
 
+DUMMY_MODE_SPEEDUP = 12.0
 
 def notify_error(config):
     notify_slack.error(
@@ -219,50 +220,63 @@ def gen_control_msg(config, dummy_mode=False):
 
     match control_mode:
         case 0:
-            control_msg = { "state": COOLING_STATE.IDLE }
+            control_msg = {
+                "state": COOLING_STATE.IDLE,
+                "duty": {"enable": False, "on_sec": 0*60, "off_sec": 0*60},
+            }
         case 1:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 1, "off_min": 30},
+                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 30*60},
             }
         case 2:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 2, "off_min": 30},
+                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 30*60},
             }
         case 3:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 1, "off_min": 20},
+                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 20*60},
             }
         case 4:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 2, "off_min": 20},
+                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 20*60},
             }
         case 5:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 1, "off_min": 10},
+                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 10*60},
             }
         case 6:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 2, "off_min": 10},
+                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 10*60},
             }
         case 7:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 1, "off_min": 5},
+                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 5*60},
             }
         case 8:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_min": 2, "off_min": 5},
+                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 5*60},
             }
     
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
 
+    if dummy_mode:
+        control_msg = {
+            "state": control_msg["state"],
+            "duty": {
+                "enable": control_msg["duty"]["enable"],
+                "on_sec": control_msg["duty"]["on_sec"] / DUMMY_MODE_SPEEDUP,
+                "off_sec": control_msg["duty"]["off_sec"] / DUMMY_MODE_SPEEDUP,
+            }
+        }
+    
     return control_msg
 
 
@@ -287,8 +301,8 @@ args = docopt(__doc__)
 
 config_file = args["-f"]
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
-debug_mode = args["-d"]
 dummy_mode = args["-D"]
+debug_mode = args["-d"]
 client_mode = args["-C"]
 server_host = args["-s"]
 is_one_time = args["-O"]
@@ -306,17 +320,20 @@ if client_mode:
 
 logging.info("Start controller (port: {port})".format(port=server_port))
 
+logging.info("Using config config: {config_file}".format(config_file=config_file))
+config = load_config(config_file)
+
 if dummy_mode:
     logging.warn("DUMMY mode")
-
-    logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
+    interval_sec = config["calculation"]["interval_sec"] / DUMMY_MODE_SPEEDUP
+else:
+    interval_sec = config["calculation"]["interval_sec"] 
 
 try:
     control_pubsub.start_server(
         server_port,
         lambda: gen_control_msg(config, dummy_mode),
-        config["calculation"]["interval_sec"],
+        interval_sec,
         is_one_time,
     )
 
