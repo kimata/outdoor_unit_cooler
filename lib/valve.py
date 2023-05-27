@@ -149,19 +149,22 @@ def get_status():
             "duration": time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime,
         }
     else:
-        return {
-            "state": valve_state,
-            "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
-        }
+        if STAT_PATH_VALVE_CLOSE.exists():
+            return {
+                "state": valve_state,
+                "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
+            }
+        else:
+            return {"state": valve_state, "duration": 0}
 
 
 def get_flow(force_power_on=True):
     flow = fd_q10c.sense()
 
     if flow is not None:
-        logging.info("Valve flow = {flow:.2f}".format(flow=flow))
+        logging.debug("Valve flow = {flow:.2f}".format(flow=flow))
     else:
-        logging.info("Valve flow = UNKNOWN")
+        logging.debug("Valve flow = UNKNOWN")
 
     return flow
 

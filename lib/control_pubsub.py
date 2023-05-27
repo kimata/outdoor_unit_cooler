@@ -28,7 +28,7 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
             break
 
         sleep_sec = interval_sec - (time.time() - start_time)
-        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
         time.sleep(sleep_sec)
 
 

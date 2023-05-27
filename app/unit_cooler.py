@@ -67,7 +67,7 @@ def set_cooling_state(cooling_mode):
 
 
 def check_valve_status(config, valve_status):
-    logging.info("Check valve")
+    logging.debug("Check valve")
 
     flow = -1
     if valve_status["state"] == valve.VALVE_STATE.OPEN:
@@ -100,8 +100,6 @@ def check_valve_status(config, valve_status):
 
 
 def send_valve_condition(sender, hostname, valve_condition):
-    logging.info("Send valve condition")
-
     logging.info(
         "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
             state=valve_condition["state"].name, flow=valve_condition["flow"]
@@ -112,10 +110,10 @@ def send_valve_condition(sender, hostname, valve_condition):
     valve_condition.update({"hostname": hostname})
 
     if hasattr(valve.GPIO, "IS_DUMMY"):
-        logging.info("Send: {valve_condition}".format(valve_condition=valve_condition))
+        logging.debug("Send: {valve_condition}".format(valve_condition=valve_condition))
     else:
         if sender.emit("rasp", valve_condition):
-            logging.info("Send OK")
+            logging.debug("Send OK")
         else:
             logging.error(sender.last_error)
 
@@ -153,7 +151,7 @@ def valve_ctrl_worker(config, cmd_queue):
         pathlib.Path(config["liveness"]["file"]).touch()
 
         sleep_sec = config["control"]["interval_sec"] - (time.time() - start_time)
-        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
         time.sleep(sleep_sec)
 
 
@@ -172,7 +170,7 @@ def valve_monitor_worker(config):
         send_valve_condition(sender, hostname, valve_condition)
 
         sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
-        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
         time.sleep(sleep_sec)
 
 
