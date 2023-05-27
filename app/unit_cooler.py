@@ -127,9 +127,12 @@ def cmd_receive_worker(server_host, server_port, cmd_queue):
             host=server_host, port=server_port
         )
     )
-    control_pubsub.start_client(
-        server_host, server_port, lambda message: cmd_queue.put(message)
-    )
+    try:
+        control_pubsub.start_client(
+            server_host, server_port, lambda message: cmd_queue.put(message)
+        )
+    except:
+        notify_error(config)
 
 
 # NOTE: バルブを制御するワーカ
@@ -137,49 +140,57 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False):
     logging.info("Start control worker")
 
     logging.info("Initialize valve")
-    valve.init(config["valve"]["pin_no"])
+    valve.init(config["actuator"]["valve"]["pin_no"])
 
     if dummy_mode:
         logging.warning("DUMMY mode")
-        interval_sec = config["control"]["interval_sec"] / DUMMY_MODE_SPEEDUP
+        interval_sec = config["actuator"]["interval_sec"] / DUMMY_MODE_SPEEDUP
     else:
-        interval_sec = config["control"]["interval_sec"]
+        interval_sec = config["actuator"]["interval_sec"]
 
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
-    while True:
-        start_time = time.time()
+    try:
+        while True:
+            start_time = time.time()
 
-        if not cmd_queue.empty():
-            cooling_mode = cmd_queue.get()
-            logging.info(
-                "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
-            )
-        set_cooling_state(cooling_mode)
+            if not cmd_queue.empty():
+                cooling_mode = cmd_queue.get()
+                logging.info(
+                    "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
+                )
+            set_cooling_state(cooling_mode)
 
-        pathlib.Path(config["liveness"]["file"]).touch()
+            pathlib.Path(config["liveness"]["file"]).touch()
 
-        sleep_sec = interval_sec - (time.time() - start_time)
-        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
-        time.sleep(sleep_sec)
+            sleep_sec = interval_sec - (time.time() - start_time)
+            logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+            time.sleep(sleep_sec)
+    except:
+        notify_error(config)
 
 
 # NOTE: バルブの状態をモニタするワーカ
 def valve_monitor_worker(config):
     logging.info("Start monitor worker")
 
-    sender = fluent.sender.FluentSender("sensor", host=config["fluent"]["host"])
+    sender = fluent.sender.FluentSender(
+        "sensor", host=config["monitor"]["fluent"]["host"]
+    )
     hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
-    while True:
-        start_time = time.time()
+    try:
+        while True:
+            start_time = time.time()
 
-        valve_status = valve.get_status()
-        valve_condition = check_valve_status(config, valve_status)
+            valve_status = valve.get_status()
+            valve_condition = check_valve_status(config, valve_status)
 
-        send_valve_condition(sender, hostname, valve_condition)
+            send_valve_condition(sender, hostname, valve_condition)
 
-        sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
-        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
-        time.sleep(sleep_sec)
+            sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
+            logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+            time.sleep(sleep_sec)
+    except:
+        notify_error(config)
 
 
 ######################################################################
@@ -210,6 +221,5 @@ cmd_queue = queue.Queue()
 threading.Thread(
     target=cmd_receive_worker, args=(server_host, server_port, cmd_queue)
 ).start()
-
 threading.Thread(target=valve_ctrl_worker, args=(config, cmd_queue, dummy_mode)).start()
 threading.Thread(target=valve_monitor_worker, args=(config,)).start()
