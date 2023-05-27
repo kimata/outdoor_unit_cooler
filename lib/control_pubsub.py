@@ -11,7 +11,7 @@ SER_TIMEOUT = 10
 
 
 def start_server(server_port, func, interval_sec, is_one_time=False):
-    logging.info("Start serial server...")
+    logging.info("Start control server...")
 
     context = zmq.Context()
 
@@ -21,15 +21,19 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
     logging.info("Server initialize done.")
 
     while True:
+        start_time = time.time()
         socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
 
         if is_one_time:
             break
-        time.sleep(interval_sec)
+
+        sleep_sec = interval_sec - (time.time() - start_time)
+        logging.info("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+        time.sleep(sleep_sec)
 
 
 def start_client(server_host, server_port, func):
-    logging.info("Start serial client...")
+    logging.info("Start control client...")
 
     socket = zmq.Context().socket(zmq.SUB)
     socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
