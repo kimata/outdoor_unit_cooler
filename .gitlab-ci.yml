@@ -14,6 +14,8 @@ build-image:
   
   script:
     # - docker rm $(docker ps -a --filter 'status=exited' -q) || true
+    - id
+    - pwd
     - export GIT_SSL_NO_VERIFY=1
     - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
     - mv hems_config/unit_cooler.yaml config.yaml
