@@ -19,7 +19,7 @@ build-image:
     - docker push ${CI_REGISTRY_IMAGE}
 
 # コントローラをテスト
-test-rain-cloud:
+test-controller:
   stage: test
 
   script:
