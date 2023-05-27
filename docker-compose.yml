@@ -1,0 +1,9 @@
+version: '2.4'
+services:
+  unit_cooler:
+    image: fregistry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
+    environment:
+      - HEMS_SERVER_HOST=192.168.0.20
+    devices:
+    - /dev/gpiomem
+    - /dev/spidev0.0
