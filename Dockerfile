@@ -14,8 +14,6 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /va/rlib/apt/lists/*
 
-RUN pip3 install 'influxdb-client[ciso]'
-
 WORKDIR /opt/unit_cooler
 
 COPY . .
