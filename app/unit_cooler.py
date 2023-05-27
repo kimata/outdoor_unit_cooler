@@ -230,7 +230,11 @@ if debug_mode:
 else:
     log_level = logging.INFO
 
-logger.init("hems.unit_cooler", level=log_level, dir_path="log")
+logger.init(
+    "hems.unit_cooler",
+    level=log_level,
+    dir_path=pathlib.Path(os.path.dirname(__file__)) / "log",
+)
 
 logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
