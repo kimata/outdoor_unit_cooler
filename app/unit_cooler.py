@@ -233,7 +233,7 @@ else:
 logger.init(
     "hems.unit_cooler",
     level=log_level,
-    dir_path=pathlib.Path(os.path.dirname(__file__)) / "log",
+    dir_path=pathlib.Path(os.path.dirname(__file__)).parent / "log",
 )
 
 logging.info("Using config config: {config_file}".format(config_file=config_file))
