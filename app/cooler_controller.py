@@ -64,11 +64,11 @@ def notify_error(config):
 def get_sense_data(config):
     sense_data = {}
 
-    for kind in config["sensor"]:
+    for kind in config["controller"]["sensor"]:
         kind_data = []
-        for sensor in config["sensor"][kind]:
+        for sensor in config["controller"]["sensor"][kind]:
             data = fetch_data(
-                config["influxdb"],
+                config["controller"]["influxdb"],
                 sensor["measure"],
                 sensor["hostname"],
                 kind,
@@ -325,9 +325,9 @@ config = load_config(config_file)
 
 if dummy_mode:
     logging.warn("DUMMY mode")
-    interval_sec = config["calculation"]["interval_sec"] / DUMMY_MODE_SPEEDUP
+    interval_sec = config["controller"]["interval_sec"] / DUMMY_MODE_SPEEDUP
 else:
-    interval_sec = config["calculation"]["interval_sec"] 
+    interval_sec = config["controller"]["interval_sec"] 
 
 try:
     control_pubsub.start_server(
