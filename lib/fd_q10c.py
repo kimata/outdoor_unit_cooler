@@ -17,26 +17,28 @@ TIMEOUT_SEC = 5
 lock_fd = None
 
 
-def sense(is_power_on=True):
+def sense(force_power_on=True):
     if not _acquire():
-        raise RuntimeError("ロックを取得できませんでした．")
+        raise RuntimeError("Unable to acquire the lock.")
 
     try:
         spi = driver.com_open()
 
-        if is_power_on or driver.com_status(spi):
+        if force_power_on or driver.com_status(spi):
             ser = driver.com_start(spi)
 
-            flow = driver.isdu_read(spi, ser, 0x94, driver.DATA_TYPE_UINT16) * 0.01
+            flow = round(
+                driver.isdu_read(spi, ser, 0x94, driver.DATA_TYPE_UINT16) * 0.01, 2
+            )
             logging.info("flow: {flow:.2f} L/min".format(flow=flow))
 
             driver.com_stop(spi, ser)
         else:
-            flow = 0.0
+            flow = None
 
         _release()
 
-        return round(flow, 2)
+        return flow
     except RuntimeError:
         driver.com_stop(spi, ser, True)
 
@@ -46,7 +48,7 @@ def sense(is_power_on=True):
 
 def stop():
     if not _acquire():
-        raise RuntimeError("ロックを取得できませんでした．")
+        raise RuntimeError("Unable to acquire the lock.")
 
     try:
         spi = driver.com_open()
