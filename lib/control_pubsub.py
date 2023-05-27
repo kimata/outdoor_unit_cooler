@@ -32,7 +32,7 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
         time.sleep(sleep_sec)
 
 
-def start_client(server_host, server_port, func):
+def start_client(server_host, server_port, func, is_one_time=False):
     logging.info("Start control client...")
 
     socket = zmq.Context().socket(zmq.SUB)
@@ -46,3 +46,6 @@ def start_client(server_host, server_port, func):
         json_data = json.loads(json_str)
         logging.debug("recv {json}".format(json=json_data))
         func(json_data)
+
+        if is_one_time:
+            break

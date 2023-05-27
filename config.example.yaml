@@ -1,38 +1,62 @@
-influxdb:
-  url: http://tanzania.green-rabbit.net:8086
-  token: fffjkjkgfklhjglkjiojtroijojhkljhklghklfjklhhlnklhnklfgnhklgnhgfdlhfgnhlkngdfnfnhgdkfnh==
-  org: home
-  bucket: sensor
+controller:
+  influxdb:
+    url: http://proxy.green-rabbit.net:8086
+    token: strBCB9segqccgxsR5Xe_9RnCqkBFYX9aOKvxVR4lr3iLEb7HXuGqsN40YU6DIb6TZm9bvKLW5OWQS7sB8AQbQ==
+    org: home
+    bucket: sensor
+  
+  sensor:
+    temp:
+      - name: 屋外の気温
+        measure: sensor.esp32
+        hostname: ESP32-outdoor-1
+    humi:
+      - name: 屋外の湿度
+        measure: sensor.esp32
+        hostname: ESP32-outdoor-1
+    lux:
+      - name: 屋外の照度
+        measure: sensor.rasp
+        hostname: rasp-meter-8
+    solar_rad:
+      - name: 太陽の日射量
+        measure: sensor.rasp
+        hostname: rasp-storeroom
+    power:
+      - name: リビングエアコン
+        measure: hems.sharp
+        hostname: リビングエアコン
+      - name: 書斎エアコン
+        measure: hems.sharp
+        hostname: 書斎エアコン
+      - name: 和室エアコン
+        measure: hems.sharp
+        hostname: 和室エアコン
 
-sensor:
-  temp:
-    - name: 屋外の気温
-      measure: sensor.esp32
-      hostname: ESP32-outdoor-1
-  humi:
-    - name: 屋外の湿度
-      measure: sensor.esp32
-      hostname: ESP32-outdoor-1
-  lux:
-    - name: 屋外の照度
-      measure: sensor.rasp
-      hostname: rasp-meter-8
-  power:
-    - name: リビングエアコン
-      measure: hems.sharp
-      hostname: リビングエアコン
-    - name: 書斎エアコン
-      measure: hems.sharp
-      hostname: 書斎エアコン
-    - name: 和室エアコン
-      measure: hems.sharp
-      hostname: 和室エアコン
+  interval_sec: 60
 
-valve:
-  pin_no: 17 # BCM で指定
+actuator:
+  valve:
+    pin_no: 17 # BCM で指定
 
-mail:
-  user: XXXX@gmail.com
-  pass: XXXXXX
-  to: XXXX@gmail.com
-  from: XXXX@gmail.com
+  interval_sec: 20
+
+monitor:
+  fluent:
+    host: proxy.green-rabbit.net
+
+  interval_sec: 10
+  
+liveness:
+  file: /dev/shm/healthz
+
+slack:
+  bot_token: xoxb-120632377092-5284784196263-ykqpD4q9qusxrneLRikdXwhn
+
+  from: Outdoor Unit Cooler
+
+  error:
+    channel:
+      name: "#error"
+      id: C04Q1CEGW9K
+    interval_min: 180

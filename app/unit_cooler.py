@@ -4,12 +4,13 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-D] [-d]
+  unit_cooler.py [-f CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-d]
 
 Options:
   -f CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -O                : 1回のみ実行
   -D                : ダミーモードで実行します．
   -d                : デバッグモードで動作します．
 """
@@ -19,7 +20,7 @@ from docopt import docopt
 import os
 import sys
 
-import threading
+from multiprocessing.pool import ThreadPool
 
 import socket
 import time
@@ -102,7 +103,7 @@ def check_valve_status(config, valve_status):
     return {"state": valve_status["state"], "flow": flow}
 
 
-def send_valve_condition(sender, hostname, valve_condition):
+def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
     logging.info(
         "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
             state=valve_condition["state"].name, flow=valve_condition["flow"]
@@ -114,6 +115,9 @@ def send_valve_condition(sender, hostname, valve_condition):
 
     logging.debug("Send: {valve_condition}".format(valve_condition=valve_condition))
 
+    if dummy_mode:
+        return
+
     if sender.emit("rasp", valve_condition):
         logging.debug("Send OK")
     else:
@@ -121,7 +125,7 @@ def send_valve_condition(sender, hostname, valve_condition):
 
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
-def cmd_receive_worker(server_host, server_port, cmd_queue):
+def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
     logging.info(
         "Start command receive worker ({host}:{port})".format(
             host=server_host, port=server_port
@@ -129,14 +133,19 @@ def cmd_receive_worker(server_host, server_port, cmd_queue):
     )
     try:
         control_pubsub.start_client(
-            server_host, server_port, lambda message: cmd_queue.put(message)
+            server_host,
+            server_port,
+            lambda message: cmd_queue.put(message),
+            is_one_time,
         )
+        return 0
     except:
         notify_error(config)
+        return -1
 
 
 # NOTE: バルブを制御するワーカ
-def valve_ctrl_worker(config, cmd_queue, dummy_mode=False):
+def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
     logging.info("Start control worker")
 
     logging.info("Initialize valve")
@@ -149,12 +158,14 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False):
         interval_sec = config["actuator"]["interval_sec"]
 
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+    is_receive = False
     try:
         while True:
             start_time = time.time()
 
             if not cmd_queue.empty():
                 cooling_mode = cmd_queue.get()
+                is_receive = True
                 logging.info(
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
@@ -162,15 +173,19 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False):
 
             pathlib.Path(config["liveness"]["file"]).touch()
 
+            if is_one_time and is_receive:
+                return 0
+
             sleep_sec = interval_sec - (time.time() - start_time)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
         notify_error(config)
+        return -1
 
 
 # NOTE: バルブの状態をモニタするワーカ
-def valve_monitor_worker(config):
+def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
     logging.info("Start monitor worker")
 
     sender = fluent.sender.FluentSender(
@@ -184,13 +199,17 @@ def valve_monitor_worker(config):
             valve_status = valve.get_status()
             valve_condition = check_valve_status(config, valve_status)
 
-            send_valve_condition(sender, hostname, valve_condition)
+            send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+
+            if is_one_time:
+                return 0
 
             sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
         notify_error(config)
+        return -1
 
 
 ######################################################################
@@ -200,6 +219,7 @@ config_file = args["-f"]
 server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
+is_one_time = args["-O"]
 debug_mode = args["-d"]
 
 if debug_mode:
@@ -218,8 +238,23 @@ import valve
 
 cmd_queue = queue.Queue()
 
-threading.Thread(
-    target=cmd_receive_worker, args=(server_host, server_port, cmd_queue)
-).start()
-threading.Thread(target=valve_ctrl_worker, args=(config, cmd_queue, dummy_mode)).start()
-threading.Thread(target=valve_monitor_worker, args=(config,)).start()
+# NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
+pool = ThreadPool(processes=3)
+
+result_list = []
+result_list.append(
+    pool.apply_async(
+        cmd_receive_worker, (server_host, server_port, cmd_queue, is_one_time)
+    )
+)
+result_list.append(
+    pool.apply_async(valve_ctrl_worker, (config, cmd_queue, dummy_mode, is_one_time))
+)
+result_list.append(
+    pool.apply_async(valve_monitor_worker, (config, dummy_mode, is_one_time))
+)
+
+for result in result_list:
+    if result.get() != 0:
+        sys.exit(-1)
+sys.exit(0)
