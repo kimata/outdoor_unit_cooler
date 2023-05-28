@@ -86,6 +86,7 @@ def check_valve_status(config, valve_status):
             elif flow > 2:
                 hazard_detected(config, "水漏れしています．")
     else:
+        logging.info(valve_status)
         if valve_status["duration"] > (60 * 60):
             # バルブが開いてから時間が経っている場合
             valve.stop_sensing()
