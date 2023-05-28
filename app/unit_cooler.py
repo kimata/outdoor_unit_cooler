@@ -47,6 +47,8 @@ DUMMY_MODE_SPEEDUP = 12.0
 
 
 def notify_error(config, message=traceback.format_exc()):
+    logging.error(messaeg)
+
     if "slack" not in config:
         return
 
@@ -60,7 +62,6 @@ def notify_error(config, message=traceback.format_exc()):
 
 
 def notify_hazard(config, message):
-    logging.eorr(messaeg)
     notify_error(config, message)
 
     STAT_PATH_HAZARD.touch()
@@ -69,9 +70,7 @@ def notify_hazard(config, message):
 
 def check_hazard(config):
     if STAT_PATH_HAZARD.exists():
-        message = "過去に故障が発生しているので制御を停止しています．"
-        logging.eorr(message)
-        notify_error(config, message)
+        notify_error(config, "過去に故障が発生しているので制御を停止しています．")
         return True
     else:
         return False
