@@ -4,14 +4,14 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D N] [-d]
   cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
-  -D                : ダミーモードで実行します．(冷却モードをランダムに生成します)  
+  -D N              : 冷却モードをランダムに生成するモードで動作すします．N に2以上の値を指定するとスピードアップします．[default: 1]
   -d                : デバッグモードで動作します．
   -C                : クライアントモード(ダミー)で動作します．CI でのテスト用．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
@@ -48,8 +48,6 @@ SOLAR_RAD_THRESHOLD_HIGH = 700
 HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
 TEMP_THRESHOLD = 33
-
-DUMMY_MODE_SPEEDUP = 12.0
 
 def notify_error(config):
     if "slack" not in config:
@@ -219,7 +217,7 @@ def dummy_control_mode():
 dummy_control_mode.prev_mode = 0
 
 
-def gen_control_msg(config, dummy_mode=False):
+def gen_control_msg(config, dummy_mode=0):
     if dummy_mode:
         control_mode = dummy_control_mode()
     else:
@@ -274,13 +272,13 @@ def gen_control_msg(config, dummy_mode=False):
     
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
 
-    if dummy_mode:
+    if dummy_mode != 0:
         control_msg = {
             "state": control_msg["state"],
             "duty": {
                 "enable": control_msg["duty"]["enable"],
-                "on_sec": control_msg["duty"]["on_sec"] / DUMMY_MODE_SPEEDUP,
-                "off_sec": control_msg["duty"]["off_sec"] / DUMMY_MODE_SPEEDUP,
+                "on_sec": int(control_msg["duty"]["on_sec"] / dummy_mode),
+                "off_sec": int(control_msg["duty"]["off_sec"] / dummy_mode),
             }
         }
     
@@ -330,9 +328,9 @@ logging.info("Start controller (port: {port})".format(port=server_port))
 logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
 
-if dummy_mode:
+if dummy_mode != 0:
     logging.warn("DUMMY mode")
-    interval_sec = config["controller"]["interval_sec"] / DUMMY_MODE_SPEEDUP
+    interval_sec = config["controller"]["interval_sec"] / dummy_mode
 else:
     interval_sec = config["controller"]["interval_sec"] 
 
