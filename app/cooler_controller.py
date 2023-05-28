@@ -4,14 +4,15 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D N] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D] [-t SPEEDUP] [-d]
   cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
-  -D N              : 冷却モードをランダムに生成するモードで動作すします．N に2以上の値を指定するとスピードアップします．[default: 1]
+  -D                : 冷却モードをランダムに生成するモードで動作すします．
+  -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
   -C                : クライアントモード(ダミー)で動作します．CI でのテスト用．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
@@ -217,7 +218,7 @@ def dummy_control_mode():
 dummy_control_mode.prev_mode = 0
 
 
-def gen_control_msg(config, dummy_mode=0):
+def gen_control_msg(config, dummy_mode=False, speedup=1):
     if dummy_mode:
         control_mode = dummy_control_mode()
     else:
@@ -272,13 +273,13 @@ def gen_control_msg(config, dummy_mode=0):
     
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
 
-    if dummy_mode != 0:
+    if dummy_mode:
         control_msg = {
             "state": control_msg["state"],
             "duty": {
                 "enable": control_msg["duty"]["enable"],
-                "on_sec": int(control_msg["duty"]["on_sec"] / dummy_mode),
-                "off_sec": int(control_msg["duty"]["off_sec"] / dummy_mode),
+                "on_sec": int(control_msg["duty"]["on_sec"] / speedup),
+                "off_sec": int(control_msg["duty"]["off_sec"] / speedup),
             }
         }
     
@@ -307,6 +308,7 @@ args = docopt(__doc__)
 config_file = args["-c"]
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
+speedup = args["-t"]
 debug_mode = args["-d"]
 client_mode = args["-C"]
 server_host = args["-s"]
@@ -328,17 +330,14 @@ logging.info("Start controller (port: {port})".format(port=server_port))
 logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
 
-if dummy_mode != 0:
+if dummy_mode:
     logging.warn("DUMMY mode")
-    interval_sec = config["controller"]["interval_sec"] / dummy_mode
-else:
-    interval_sec = config["controller"]["interval_sec"] 
 
 try:
     control_pubsub.start_server(
         server_port,
-        lambda: gen_control_msg(config, dummy_mode),
-        interval_sec,
+        lambda: gen_control_msg(config, dummy_mode, speedup),
+        config["controller"]["interval_sec"] / speedup,
         is_one_time,
     )
 
