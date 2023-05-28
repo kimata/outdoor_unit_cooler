@@ -175,9 +175,13 @@ def judge_control_mode(config):
     sense_data = get_sense_data(config)
 
     cooler_status = get_cooler_status(sense_data)
-    outdoor_status = get_outdoor_status(sense_data)
 
-    control_mode = max(cooler_status + outdoor_status, 0)
+    if cooler_status == 0:
+        outdoor_status = None
+        control_mode = cooler_status
+    else:
+        outdoor_status = get_outdoor_status(sense_data)
+        control_mode = max(cooler_status + outdoor_status, 0)
 
     logging.info(
         (
