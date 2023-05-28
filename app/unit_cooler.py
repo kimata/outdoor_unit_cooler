@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-エアコン室外機の冷却モードの指示を出します．
+エアコン室外機の冷却を行うと共に流量を Fluentd に送信します
 
 Usage:
   unit_cooler.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-d]
