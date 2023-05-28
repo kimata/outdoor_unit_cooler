@@ -88,21 +88,23 @@ def check_valve_status(config, valve_status):
 
     flow = -1
     if valve_status["state"] == valve.VALVE_STATE.OPEN:
+        flow = valve.get_flow()
         if valve_status["duration"] > 10:
             # バルブが開いてから時間が経っている場合
-            flow = valve.get_flow()
-            if flow < 0.02:
+            if flow < config["actuator"]["valve"]["on"]["min"]:
                 notify_error(config, "元栓が閉じています．")
-            elif flow > 2:
+            elif flow > config["actuator"]["valve"]["on"]["max"]:
                 notify_hazard(config, "水漏れしています．")
     else:
         logging.info(valve_status)
-        if valve_status["duration"] > (60 * 2):
+        if valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]:
             # バルブが開いてから時間が経っている場合
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
-            if (valve_status["duration"] > 120) and (flow > 0.01):
+            if (valve_status["duration"] > 120) and (
+                flow > config["actuator"]["valve"]["off"]["max"]
+            ):
                 notify_hazard(config, "電磁弁が壊れていますので制御を停止します．")
 
     if flow == -1:
