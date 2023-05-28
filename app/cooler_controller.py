@@ -233,42 +233,42 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
         case 1:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 30*60},
+                "duty": {"enable": True, "on_sec": 0.1*60, "off_sec": 30*60},
             }
         case 2:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 30*60},
+                "duty": {"enable": True, "on_sec": 0.1*60, "off_sec": 20*60},
             }
         case 3:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 20*60},
+                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 30*60},
             }
         case 4:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 20*60},
+                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 20*60},
             }
         case 5:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 10*60},
+                "duty": {"enable": True, "on_sec": 0.1*60, "off_sec": 10*60},
             }
         case 6:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 10*60},
+                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 10*60},
             }
         case 7:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 1*60, "off_sec": 5*60},
+                "duty": {"enable": True, "on_sec": 0.1*60, "off_sec": 5*60},
             }
         case 8:
             control_msg = {
                 "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 2*60, "off_sec": 5*60},
+                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 5*60},
             }
     
     pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
