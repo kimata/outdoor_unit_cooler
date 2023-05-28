@@ -184,7 +184,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
             if check_hazard(config):
-                cooling_mode = {"state": COOLING_STATE.IDLE}
+                cooling_mode = {"state": valve.COOLING_STATE.IDLE}
 
             set_cooling_state(cooling_mode)
 
