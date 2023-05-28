@@ -176,7 +176,11 @@ def get_flow(force_power_on=True):
 
 def stop_sensing():
     logging.info("Stop flow sensing")
-    fd_q10c.stop()
+
+    try:
+        fd_q10c.stop()
+    except RuntimeError as e:
+        logging.error(e.name)
 
 
 # NOTE: バルブを動作状態にします．
