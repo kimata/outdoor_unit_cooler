@@ -207,10 +207,15 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
 def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
     logging.info("Start monitor worker")
 
-    sender = fluent.sender.FluentSender(
-        "sensor", host=config["monitor"]["fluent"]["host"]
-    )
-    hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
+    sender = None
+    try:
+        sender = fluent.sender.FluentSender(
+            "sensor", host=config["monitor"]["fluent"]["host"]
+        )
+        hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
+    except:
+        notify_error("Failed to initialize monitor worker")
+
     try:
         while True:
             start_time = time.time()
