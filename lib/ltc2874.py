@@ -121,8 +121,10 @@ def com_start(spi):
     )
 
 
-def com_stop(spi, ser, is_power_off=False):
-    ser.close()
+def com_stop(spi, ser=None, is_power_off=False):
+    if ser is not None:
+        ser.close()
+
     # Drive disable
     ltc2874_reg_write(spi, 0x0D, 0x00)
 

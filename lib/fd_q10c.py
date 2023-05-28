@@ -53,9 +53,7 @@ def stop():
     try:
         spi = driver.com_open()
 
-        if driver.com_status(spi):
-            ser = driver.com_start(spi)
-            driver.com_stop(spi, ser, True)
+        driver.com_stop(spi, is_power_off=True)
         _release()
     except RuntimeError:
         _release()
