@@ -47,7 +47,7 @@ DUMMY_MODE_SPEEDUP = 12.0
 
 
 def notify_error(config, message=traceback.format_exc()):
-    logging.error(messaeg)
+    logging.error(message)
 
     if "slack" not in config:
         return
