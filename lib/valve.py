@@ -171,6 +171,7 @@ def get_flow(force_power_on=True):
 
 
 def stop_sensing():
+    logging.info("Stop flow sensing")
     fd_q10c.stop()
 
 

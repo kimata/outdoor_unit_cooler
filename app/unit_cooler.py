@@ -88,7 +88,6 @@ def check_valve_status(config, valve_status):
     else:
         if valve_status["duration"] > (60 * 60):
             # バルブが開いてから時間が経っている場合
-            logging.info("Power off the flow sensor")
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
