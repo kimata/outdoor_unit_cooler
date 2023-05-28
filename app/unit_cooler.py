@@ -215,7 +215,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         )
         hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
     except:
-        notify_error("Failed to initialize monitor worker")
+        notify_error(config, "Failed to initialize monitor worker")
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
     try:
