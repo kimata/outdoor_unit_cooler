@@ -154,6 +154,7 @@ def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
         )
         return 0
     except:
+        logging.error("Stop receive worker")
         notify_error(config)
         return -1
 
@@ -197,6 +198,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
+        logging.error("Stop control worker")
         notify_error(config)
         return -1
 
@@ -225,6 +227,7 @@ def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
+        logging.error("Stop monitor worker")
         notify_error(config)
         return -1
 
