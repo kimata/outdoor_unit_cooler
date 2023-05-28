@@ -59,16 +59,27 @@ def notify_error(config, message=traceback.format_exc()):
     )
 
 
-def hazard_detected(config, message):
+def notify_hazard(config, message):
+    logging.eorr(messaeg)
     notify_error(config, message)
 
     STAT_PATH_HAZARD.touch()
     valve.set_state(valve.VALVE_STATE.CLOSE)
 
 
+def check_hazard(config):
+    if STAT_PATH_HAZARD.exists():
+        message = "過去に故障が発生しているので制御を停止しています．"
+        logging.eorr(message)
+        notify_error(config, message)
+        return True
+    else:
+        return False
+
+
 def set_cooling_state(cooling_mode):
     if STAT_PATH_HAZARD.exists():
-        hazard_detected(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
+        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
 
     return valve.set_cooling_state(cooling_mode)
 
@@ -84,7 +95,7 @@ def check_valve_status(config, valve_status):
             if flow < 0.02:
                 notify_error(config, "元栓が閉じています．")
             elif flow > 2:
-                hazard_detected(config, "水漏れしています．")
+                notify_hazard(config, "水漏れしています．")
     else:
         logging.info(valve_status)
         if valve_status["duration"] > (60 * 60):
@@ -93,7 +104,7 @@ def check_valve_status(config, valve_status):
         else:
             flow = valve.get_flow()
             if (valve_status["duration"] > 120) and (flow > 0.01):
-                hazard_detected(config, "電磁弁が壊れていますので制御を停止します．")
+                notify_hazard(config, "電磁弁が壊れていますので制御を停止します．")
 
     if flow == -1:
         flow = valve.get_flow(False)
@@ -172,6 +183,9 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
                 logging.info(
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
+            if check_hazard(config):
+                cooling_mode = {"state": COOLING_STATE.IDLE}
+
             set_cooling_state(cooling_mode)
 
             pathlib.Path(config["liveness"]["file"]).touch()
