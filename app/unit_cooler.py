@@ -280,7 +280,9 @@ result_list.append(
     )
 )
 result_list.append(
-    pool.apply_async(valve_ctrl_worker, (config, cmd_queue, dummy_mode, is_one_time))
+    pool.apply_async(
+        valve_ctrl_worker, (config, cmd_queue, dummy_mode, speedup, is_one_time)
+    )
 )
 result_list.append(
     pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
