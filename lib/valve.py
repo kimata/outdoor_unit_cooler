@@ -160,7 +160,11 @@ def get_status():
 
 
 def get_flow(force_power_on=True):
-    flow = fd_q10c.sense(force_power_on)
+    try:
+        flow = fd_q10c.sense(force_power_on)
+    except RuntimeError as e:
+        logging.error(e.name)
+        flow = None
 
     if flow is not None:
         logging.debug("Valve flow = {flow:.2f}".format(flow=flow))
