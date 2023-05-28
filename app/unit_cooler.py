@@ -237,7 +237,7 @@ server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
 is_one_time = args["-O"]
-debug_mode = args["-d"]
+debug_mode = args["-d"] or True
 
 if debug_mode:
     log_level = logging.DEBUG
