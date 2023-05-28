@@ -274,17 +274,19 @@ cmd_queue = queue.Queue()
 pool = ThreadPool(processes=3)
 
 result_list = []
-result_list.append(
-    pool.apply_async(
-        cmd_receive_worker, (server_host, server_port, cmd_queue, is_one_time)
-    )
-)
+# result_list.append(
+#     pool.apply_async(
+#         cmd_receive_worker, (server_host, server_port, cmd_queue, is_one_time)
+#     )
+# )
 result_list.append(
     pool.apply_async(valve_ctrl_worker, (config, cmd_queue, dummy_mode, is_one_time))
 )
 result_list.append(
     pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
 )
+
+cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time)
 
 for result in result_list:
     if result.get() != 0:
