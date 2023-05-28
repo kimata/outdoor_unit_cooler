@@ -47,7 +47,7 @@ except:
             return
 
     class fd_q10c:
-        def sense():
+        def sense(force_power_on=True):
             if GPIO.state == VALVE_STATE.OPEN.value:
                 return 1.23
             else:
