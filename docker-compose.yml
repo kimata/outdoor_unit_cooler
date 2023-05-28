@@ -9,3 +9,4 @@ services:
     devices:
     - /dev/gpiomem
     - /dev/spidev0.0
+    - /dev/ttyAMA0
