@@ -331,7 +331,7 @@ logging.info("Using config config: {config_file}".format(config_file=config_file
 config = load_config(config_file)
 
 if dummy_mode:
-    logging.warn("DUMMY mode")
+    logging.warning("DUMMY mode")
 
 try:
     control_pubsub.start_server(
