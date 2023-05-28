@@ -4,7 +4,7 @@
 エアコン室外機の冷却を行うと共に流量を Fluentd に送信します
 
 Usage:
-  unit_cooler.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-d]
+  unit_cooler.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-t SPEEDUP] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
@@ -12,6 +12,7 @@ Options:
   -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
   -D                : ダミーモードで実行します．
+  -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
 """
 
@@ -160,7 +161,9 @@ def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
 
 
 # NOTE: バルブを制御するワーカ
-def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
+def valve_ctrl_worker(
+    config, cmd_queue, dummy_mode=False, speedup=1, is_one_time=False
+):
     logging.info("Start control worker")
 
     logging.info("Initialize valve")
@@ -168,10 +171,8 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
 
     if dummy_mode:
         logging.warning("DUMMY mode")
-        interval_sec = config["actuator"]["interval_sec"] / DUMMY_MODE_SPEEDUP
-    else:
-        interval_sec = config["actuator"]["interval_sec"]
 
+    interval_sec = config["actuator"]["interval_sec"] / speedup
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
     is_receive = False
     try:
@@ -204,7 +205,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, is_one_time=False):
 
 
 # NOTE: バルブの状態をモニタするワーカ
-def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
+def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False):
     logging.info("Start monitor worker")
 
     sender = None
@@ -216,6 +217,7 @@ def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
     except:
         notify_error("Failed to initialize monitor worker")
 
+    interval_sec = config["monitor"]["interval_sec"] / speedup
     try:
         while True:
             start_time = time.time()
@@ -228,7 +230,7 @@ def valve_monitor_worker(config, dummy_mode=False, is_one_time=False):
             if is_one_time:
                 return 0
 
-            sleep_sec = config["monitor"]["interval_sec"] - (time.time() - start_time)
+            sleep_sec = interval_sec - (time.time() - start_time)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
@@ -244,6 +246,7 @@ config_file = args["-c"]
 server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 dummy_mode = args["-D"]
+speedup = int(args["-t"])
 is_one_time = args["-O"]
 debug_mode = args["-d"]
 
@@ -280,7 +283,7 @@ result_list.append(
     pool.apply_async(valve_ctrl_worker, (config, cmd_queue, dummy_mode, is_one_time))
 )
 result_list.append(
-    pool.apply_async(valve_monitor_worker, (config, dummy_mode, is_one_time))
+    pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
 )
 
 for result in result_list:
