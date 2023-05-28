@@ -47,7 +47,7 @@ STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "hazard"
 DUMMY_MODE_SPEEDUP = 12.0
 
 
-def notify_error(config, message=traceback.format_exc()):
+def notify_error(config, message):
     logging.error(message)
 
     if "slack" not in config:
@@ -156,7 +156,7 @@ def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
         return 0
     except:
         logging.error("Stop receive worker")
-        notify_error(config)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
@@ -200,7 +200,7 @@ def valve_ctrl_worker(
             time.sleep(sleep_sec)
     except:
         logging.error("Stop control worker")
-        notify_error(config)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
@@ -235,7 +235,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             time.sleep(sleep_sec)
     except:
         logging.error("Stop monitor worker")
-        notify_error(config)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
