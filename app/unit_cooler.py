@@ -25,6 +25,7 @@ from multiprocessing.pool import ThreadPool
 
 import socket
 import time
+import math
 
 import pathlib
 import queue
@@ -119,12 +120,6 @@ def check_valve_status(config, valve_status):
 
 
 def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
-    logging.info(
-        "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
-            state=valve_condition["state"].name, flow=valve_condition["flow"]
-        )
-    )
-
     valve_condition.update({"state": valve_condition["state"].value})
     valve_condition.update({"hostname": hostname})
 
@@ -218,12 +213,27 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         notify_error(config, "Failed to initialize monitor worker")
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
+    if interval_sec < 60:
+        log_period = math.ceil(60 / interval_sec)
+    else:
+        log_period = 1
+
+    i = 0
     try:
         while True:
             start_time = time.time()
 
             valve_status = valve.get_status()
             valve_condition = check_valve_status(config, valve_status)
+
+            if (i % log_period) == 0:
+                logging.info(
+                    "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
+                        state=valve_condition["state"].name,
+                        flow=valve_condition["flow"],
+                    )
+                )
+            i += 1
 
             send_valve_condition(sender, hostname, valve_condition, dummy_mode)
 
