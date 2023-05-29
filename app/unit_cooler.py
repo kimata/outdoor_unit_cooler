@@ -25,6 +25,7 @@ from multiprocessing.pool import ThreadPool
 
 import socket
 import time
+import datetime
 import math
 
 import pathlib
@@ -169,6 +170,7 @@ def valve_ctrl_worker(
 
     interval_sec = config["actuator"]["interval_sec"] / speedup
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+    receive_time = datetime.datetime.now()
     is_receive = False
     try:
         while True:
@@ -176,6 +178,7 @@ def valve_ctrl_worker(
 
             if not cmd_queue.empty():
                 cooling_mode = cmd_queue.get()
+                receive_time = datetime.datetime.now()
                 is_receive = True
                 logging.info(
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
@@ -189,6 +192,11 @@ def valve_ctrl_worker(
 
             if is_one_time and is_receive:
                 return 0
+
+            if (datetime.datetime.now() - receive_time).total_seconds() > config[
+                "controller"
+            ]["interval_sec"] * 10:
+                notify_error(config, "Unable to receive command.")
 
             sleep_sec = interval_sec - (time.time() - start_time)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
