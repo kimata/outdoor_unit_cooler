@@ -7,9 +7,22 @@
 
 ## システム構成
 
+### 全体構成
+
 ![システム構成](./img/システム構成.png)
 
-このプログラムは上図の「コントローラ」になります．
+このプログラムは上図の「コントローラ」に対応します．
+
+### ソフト構成
+
+![ソフトアーキ図](./img/ソフトアーキ図.png)
+
+このプログラムは，上記の中で赤字で記載した 4 つのスレッドに対応します．
+
+- Cooler controller
+- Command receive worker
+- Valve control worker
+- Valve monitor worker
 
 ## 詳細
 
