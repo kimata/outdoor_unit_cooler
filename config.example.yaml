@@ -63,3 +63,14 @@ monitor:
   
 liveness:
   file: /dev/shm/healthz
+
+slack:
+  bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
+
+  from: Outdoor Unit Cooler
+
+  error:
+    channel:
+      name: "#error"
+      id: C04Q1CEGW9K
+    interval_min: 180
