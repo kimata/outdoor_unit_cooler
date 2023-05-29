@@ -201,6 +201,8 @@ def set_cooling_working(duty_info):
         return set_state(VALVE_STATE.OPEN)
 
     on_duration_sec = time.time() - STAT_PATH_VALVE_STATE_WORKING.stat().st_mtime
+    # NOTE: Duty 設定が変更された場合に対応するため，今までも現在の周期で
+    # 制御されていたものとみなして，今回の制御内容を決める．
     on_duration_sec = on_duration_sec % (
         (duty_info["on_sec"] + duty_info["off_sec"]) * 2
     )
@@ -231,6 +233,7 @@ def set_cooling_working(duty_info):
         # NOTE: Duty 設定が変更された場合，ここにくる可能性がある
         left = 2 * (duty_info["on_sec"] + duty_info["off_sec"]) - on_duration_sec
 
+        # NOTE: 切り替わり時，OFF Duty が長くなりすぎないようにする
         mtime = time.time() - (duty_info["off_sec"] - left)
         os.utime(str(STAT_PATH_VALVE_STATE_WORKING), (mtime, mtime))
 
