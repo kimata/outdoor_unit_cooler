@@ -43,7 +43,7 @@ import notify_slack
 import logger
 
 # 電磁弁の故障を検出したときに作成するファイル
-STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "hazard"
+STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "unit_cooler.hazard"
 
 DUMMY_MODE_SPEEDUP = 12.0
 
