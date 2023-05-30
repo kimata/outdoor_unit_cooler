@@ -100,7 +100,7 @@ def check_valve_status(config, valve_status):
                 notify_hazard(config, "水漏れしています．")
     else:
         logging.debug(
-            "Valve is close for {duration} sec".format(
+            "Valve is close for {duration:.1f} sec".format(
                 duration=valve_status["duration"]
             )
         )
