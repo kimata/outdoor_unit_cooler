@@ -27,7 +27,7 @@ import socket
 import time
 import datetime
 import math
-
+import signal
 import pathlib
 import queue
 import logging
@@ -47,6 +47,18 @@ import logger
 STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "unit_cooler.hazard"
 
 DUMMY_MODE_SPEEDUP = 12.0
+
+
+should_terminate = False
+
+
+def sig_handler(num, frame):
+    global should_terminate
+
+    logging.warning("receive signal {num}".format(num=num))
+
+    if num == signal.SIGTERM:
+        should_terminate = True
 
 
 def notify_error(config, message):
@@ -200,6 +212,10 @@ def valve_ctrl_worker(
             ]["interval_sec"] * 10:
                 notify_error(config, "Unable to receive command.")
 
+            if should_terminate:
+                logging.info("Terminate control worker")
+                break
+
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
@@ -260,6 +276,10 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                 notify_hazard(config, "流量計が使えません．")
                 break
 
+            if should_terminate:
+                logging.info("Terminate monitor worker")
+                break
+
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
@@ -298,6 +318,7 @@ config = load_config(config_file)
 # ロガーを初期化した後に import する
 import valve
 
+signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = queue.Queue()
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
