@@ -67,7 +67,7 @@ monitor:
     host: proxy.green-rabbit.net
 
   interval_sec: 4
-
+  
   liveness:
     file: /dev/shm/healthz.monitor
 
