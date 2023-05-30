@@ -34,6 +34,14 @@
 
 Ubuntu の場合，`install.sh` を実行すると apt を使って必要なライブラリがインストールされます．
 
+`app/unit_cooler.py` を配置する Raspberry Pi では，`/boot/firmware/config.txt` に下記の
+設定を記載しておきます．
+
+```text
+dtparam=spi=on
+dtoverlay=disable-bt
+```
+
 ## 設定
 
 `src/config.example.yml` を `src/config.yml` に名前変更し，
