@@ -107,7 +107,7 @@ def get_cooler_status(sense_data):
         logging.info("2 台以上のエアコンがフル稼働しています．(cooler_status: 6)")
         return 6
     elif (mode_map[aircon.MODE.FULL] >= 1) and (mode_map[aircon.MODE.NORMAL] >= 1):
-        logging.info("1 台以上のエアコンがフル稼働しています．(cooler_status: 5)")
+        logging.info("複数台ののエアコンがフル稼働もしくは平常運転しています．(cooler_status: 5)")
         return 5
     elif mode_map[aircon.MODE.FULL] >= 1:
         logging.info("1 台以上のエアコンが平常運転しています．(cooler_status: 4)")
