@@ -203,7 +203,7 @@ def valve_ctrl_worker(
             ]["interval_sec"] * 10:
                 notify_error(config, "Unable to receive command.")
 
-            sleep_sec = interval_sec - (time.time() - start_time)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
@@ -255,7 +255,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             if is_one_time:
                 return 0
 
-            sleep_sec = interval_sec - (time.time() - start_time)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
