@@ -93,6 +93,6 @@ def _release():
 if __name__ == "__main__":
     import logger
 
-    logger.init("test")
+    logger.init("test", level=logging.DEBUG)
 
     sense()
