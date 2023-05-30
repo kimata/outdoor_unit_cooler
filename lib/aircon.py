@@ -26,15 +26,14 @@ def get_cooler_state(aircon_power, temp):
     if temp is None:
         logging.error("外気温が不明のため，エアコン動作モードを判断できません．")
         assert temp is not None
-    elif temp < TEMP_THRESHOLD:
-        return mode
 
-    if aircon_power["value"] > POWER_THRESHOLD_FULL:
-        mode = MODE.FULL
-    elif aircon_power["value"] > POWER_THRESHOLD_NORMAL:
-        mode = MODE.NORMAL
-    elif aircon_power["value"] > POWER_THRESHOLD_WORK:
-        mode = MODE.IDLE
+    if temp >= TEMP_THRESHOLD:
+        if aircon_power["value"] > POWER_THRESHOLD_FULL:
+            mode = MODE.FULL
+        elif aircon_power["value"] > POWER_THRESHOLD_NORMAL:
+            mode = MODE.NORMAL
+        elif aircon_power["value"] > POWER_THRESHOLD_WORK:
+            mode = MODE.IDLE
 
     logging.info(
         "{name}: {power:,.0f} W, 外気温: {temp:.1f} ℃  (mode: {mode})".format(
