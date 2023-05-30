@@ -6,6 +6,7 @@
 Usage:
   cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D] [-t SPEEDUP] [-d]
   cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
+  cooler_controller.py -V
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
@@ -14,6 +15,7 @@ Options:
   -D                : 冷却モードをランダムに生成するモードで動作すします．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
+  -V                : 制御メッセージの一覧を表示します．
   -C                : クライアントモード(ダミー)で動作します．CI でのテスト用．
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
 """
@@ -50,10 +52,50 @@ HUMI_THRESHOLD = 98
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
 TEMP_THRESHOLD = 33
 
+CONTROL_MSG_LIST = [
+    {
+        "state": COOLING_STATE.IDLE,
+        "duty": {"enable": False, "on_sec": 0 * 60, "off_sec": 0 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.2 * 60, "off_sec": 30 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.2 * 60, "off_sec": 20 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 30 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 20 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 10 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 10 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 6 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.5 * 60, "off_sec": 6 * 60},
+    },
+]
+
+
 def notify_error(config):
     if "slack" not in config:
         return
-    
+
     notify_slack.error(
         config["slack"]["bot_token"],
         config["slack"]["error"]["channel"]["name"],
@@ -208,7 +250,9 @@ def dummy_control_mode():
     if dice < 2:
         control_mode = max(min(int(random.random() * 15) - 4, 8), 0)
     elif dice < 8:
-        control_mode = max(min(int(dummy_control_mode.prev_mode + (random.random()-0.5)*4), 8), 0)
+        control_mode = max(
+            min(int(dummy_control_mode.prev_mode + (random.random() - 0.5) * 4), 8), 0
+        )
     else:
         control_mode = dummy_control_mode.prev_mode
 
@@ -217,6 +261,7 @@ def dummy_control_mode():
     dummy_control_mode.prev_mode = control_mode
 
     return control_mode
+
 
 dummy_control_mode.prev_mode = 0
 
@@ -227,53 +272,8 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     else:
         control_mode = judge_control_mode(config)
 
-    match control_mode:
-        case 0:
-            control_msg = {
-                "state": COOLING_STATE.IDLE,
-                "duty": {"enable": False, "on_sec": 0*60, "off_sec": 0*60},
-            }
-        case 1:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 30*60},
-            }
-        case 2:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 20*60},
-            }
-        case 3:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.3*60, "off_sec": 30*60},
-            }
-        case 4:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.3*60, "off_sec": 20*60},
-            }
-        case 5:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.3*60, "off_sec": 10*60},
-            }
-        case 6:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.4*60, "off_sec": 10*60},
-            }
-        case 7:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.4*60, "off_sec": 5*60},
-            }
-        case 8:
-            control_msg = {
-                "state": COOLING_STATE.WORKING,
-                "duty": {"enable": True, "on_sec": 0.5*60, "off_sec": 5*60},
-            }
-    
+    control_msg = CONTROL_MSG_LIST[min(control_mode, len(CONTROL_MSG_LIST) - 1)]
+
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
@@ -283,9 +283,9 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
                 "enable": control_msg["duty"]["enable"],
                 "on_sec": int(control_msg["duty"]["on_sec"] / speedup),
                 "off_sec": int(control_msg["duty"]["off_sec"] / speedup),
-            }
+            },
         }
-    
+
     return control_msg
 
 
@@ -305,6 +305,28 @@ def test_client(server_host, server_port):
     )
 
 
+def print_control_msg():
+    for control_msg in CONTROL_MSG_LIST:
+        if control_msg["duty"]["enable"]:
+            logging.info(
+                (
+                    "state: {state}, on_se_sec: {on_sec:4,} sec, "
+                    + "off_sec: {off_sec:5,} sec, on_ratio: {on_ratio:4.1f}%"
+                ).format(
+                    state=control_msg["state"].name,
+                    on_sec=control_msg["duty"]["on_sec"],
+                    off_sec=int(control_msg["duty"]["off_sec"]),
+                    on_ratio=100.0
+                    * control_msg["duty"]["on_sec"]
+                    / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"]),
+                )
+            )
+        else:
+            logging.info("state: {state}".format(state=control_msg["state"].name))
+
+    sys.exit(0)
+
+
 ######################################################################
 args = docopt(__doc__)
 
@@ -316,6 +338,7 @@ debug_mode = args["-d"]
 client_mode = args["-C"]
 server_host = args["-s"]
 is_one_time = args["-O"]
+view_msg_mode = args["-V"]
 
 if debug_mode:
     log_level = logging.DEBUG
@@ -327,6 +350,8 @@ logger.init("hems.unit_cooler", level=log_level)
 if client_mode:
     test_client(server_host, server_port)
     sys.exit(0)
+elif view_msg_mode:
+    print_control_msg()
 
 logging.info("Start controller (port: {port})".format(port=server_port))
 
