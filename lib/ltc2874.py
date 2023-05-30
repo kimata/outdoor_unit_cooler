@@ -104,6 +104,8 @@ def com_start(spi):
         debug("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
         time.sleep(5)
+    else:
+        debug("IO-Link is already Powered-ON")
 
     # Wakeup
     ltc2874_reg_write(spi, 0x0D, 0x10)
