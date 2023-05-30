@@ -188,7 +188,7 @@ def valve_ctrl_worker(
 
             set_cooling_state(cooling_mode)
 
-            pathlib.Path(config["liveness"]["file"]).touch()
+            pathlib.Path(config["actuator"]["liveness"]["file"]).touch()
 
             if is_one_time and is_receive:
                 return 0
@@ -244,6 +244,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             i += 1
 
             send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+
+            pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
             if is_one_time:
                 return 0

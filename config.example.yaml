@@ -35,6 +35,9 @@ controller:
 
   interval_sec: 60
 
+  liveness:
+    file: /dev/shm/healthz.controller
+ 
 actuator:
   valve:
     pin_no: 17 # BCM で指定
@@ -55,14 +58,18 @@ actuator:
 
   interval_sec: 20
 
+  liveness:
+    file: /dev/shm/healthz.actuator
+
+  
 monitor:
   fluent:
     host: proxy.green-rabbit.net
 
-  interval_sec: 10
-  
-liveness:
-  file: /dev/shm/healthz
+  interval_sec: 4
+
+  liveness:
+    file: /dev/shm/healthz.monitor
 
 slack:
   bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX

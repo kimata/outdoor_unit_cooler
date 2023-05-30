@@ -271,7 +271,7 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
                 "duty": {"enable": True, "on_sec": 0.2*60, "off_sec": 5*60},
             }
     
-    pathlib.Path(config["liveness"]["file"]).touch(exist_ok=True)
+    pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
         control_msg = {
