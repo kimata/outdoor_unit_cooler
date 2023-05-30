@@ -100,7 +100,7 @@ def check_valve_status(config, valve_status):
                 notify_hazard(config, "水漏れしています．")
     else:
         if valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]:
-            # バルブが開いてから時間が経っている場合
+            # バルブが閉じてから時間が経っている場合
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
