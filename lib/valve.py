@@ -5,6 +5,7 @@ import os
 import pathlib
 import time
 import logging
+import traceback
 
 
 class VALVE_STATE(IntEnum):
@@ -162,8 +163,8 @@ def get_status():
 def get_flow(force_power_on=True):
     try:
         flow = fd_q10c.sense(force_power_on)
-    except RuntimeError as e:
-        logging.error(e.name)
+    except:
+        logging.error(traceback.format_exc())
         flow = None
 
     if flow is not None:

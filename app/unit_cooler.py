@@ -92,7 +92,7 @@ def check_valve_status(config, valve_status):
     flow = -1
     if valve_status["state"] == valve.VALVE_STATE.OPEN:
         flow = valve.get_flow()
-        if valve_status["duration"] > 10:
+        if (flow is not None) and (valve_status["duration"] > 10):
             # バルブが開いてから時間が経っている場合
             if flow < config["actuator"]["valve"]["on"]["min"]:
                 notify_error(config, "元栓が閉じています．")
@@ -109,18 +109,15 @@ def check_valve_status(config, valve_status):
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
-            if (valve_status["duration"] > 120) and (
-                flow > config["actuator"]["valve"]["off"]["max"]
+            if (
+                (valve_status["duration"] > 120)
+                and (flow is not None)
+                and (flow > config["actuator"]["valve"]["off"]["max"])
             ):
                 notify_hazard(config, "電磁弁が壊れていますので制御を停止します．")
 
     if flow == -1:
         flow = valve.get_flow(False)
-
-    if flow is None:
-        if valve_status["state"] == valve.VALVE_STATE.OPEN:
-            logging.error("バグがあります，")
-        flow = 0.0
 
     return {"state": valve_status["state"], "flow": flow}
 
@@ -232,6 +229,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         log_period = 1
 
     i = 0
+    flow_unknown = 0
     try:
         while True:
             start_time = time.time()
@@ -248,12 +246,19 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                 )
             i += 1
 
-            send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+            if valve_condition["flow"] is None:
+                flow_unknown += 1
+            else:
+                send_valve_condition(sender, hostname, valve_condition, dummy_mode)
 
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
             if is_one_time:
                 return 0
+
+            if flow_unknown > config["monitor"]["sense"]["giveup"]:
+                notify_hazard(config, "流量計が使えません．")
+                break
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))

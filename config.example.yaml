@@ -66,6 +66,9 @@ monitor:
   fluent:
     host: proxy.green-rabbit.net
 
+  sense:
+    giveup: 10
+    
   interval_sec: 4
   
   liveness:
