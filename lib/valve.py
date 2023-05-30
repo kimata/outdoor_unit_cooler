@@ -164,6 +164,7 @@ def get_flow(force_power_on=True):
     try:
         flow = fd_q10c.sense(force_power_on)
     except:
+        logging.error("バグの可能性あり．")
         logging.error(traceback.format_exc())
         flow = None
 
