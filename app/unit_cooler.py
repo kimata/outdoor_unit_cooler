@@ -261,19 +261,19 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             valve_status = valve.get_status()
             valve_condition = check_valve_status(config, valve_status)
 
-            if (i % log_period) == 0:
-                logging.info(
-                    "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
-                        state=valve_condition["state"].name,
-                        flow=valve_condition["flow"],
-                    )
-                )
-            i += 1
-
             if valve_condition["flow"] is None:
                 flow_unknown += 1
             else:
                 send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+
+                if (i % log_period) == 0:
+                    logging.info(
+                        "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
+                            state=valve_condition["state"].name,
+                            flow=valve_condition["flow"],
+                        )
+                    )
+                i += 1
 
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
