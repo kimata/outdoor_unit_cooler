@@ -90,15 +90,15 @@ deploy-actuator:
   rules:
     - changes:
         - app/unit_cooler.py
-        - app/aircon.py
-        - app/config.py
-        - app/control_pubsub.py
-        - app/fd_q10c.py
-        - app/io_link.py
-        - app/logger.py
-        - app/ltc2874.py
-        - app/notify_slack.py
-        - app/sensor_data.py
-        - app/valve.py
+        - lib/aircon.py
+        - lib/config.py
+        - lib/control_pubsub.py
+        - lib/fd_q10c.py
+        - lib/io_link.py
+        - lib/logger.py
+        - lib/ltc2874.py
+        - lib/notify_slack.py
+        - lib/sensor_data.py
+        - lib/valve.py
         - src/healthz.py
     
