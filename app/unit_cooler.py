@@ -326,6 +326,17 @@ config = load_config(config_file)
 # ロガーを初期化した後に import する
 import valve
 
+if not dummy_mode:
+    # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
+    # なり，電磁弁の故障を誤判定する可能性がある．
+    for i in range(config["actuator"]["interval_sec"]):
+        logging.info(
+            "Wait for the old Pod to finish ({i}/{total}".format(
+                i=i + 1, total=config["actuator"]["interval_sec"]
+            )
+        )
+        time.sleep(1)
+
 signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = queue.Queue()
 
