@@ -286,19 +286,13 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     control_msg = CONTROL_MSG_LIST[mode_index]
 
     # NOTE: 参考として，どのモードかも通知する
-    control_msg["mode"] = mode_index
+    control_msg["mode_index"] = mode_index
 
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
-        control_msg = {
-            "state": control_msg["state"],
-            "duty": {
-                "enable": control_msg["duty"]["enable"],
-                "on_sec": int(control_msg["duty"]["on_sec"] / speedup),
-                "off_sec": int(control_msg["duty"]["off_sec"] / speedup),
-            },
-        }
+        control_msg["duty"]["on_sec"] = int(control_msg["duty"]["on_sec"] / speedup)
+        control_msg["duty"]["off_sec"] = int(control_msg["duty"]["off_sec"] / speedup)
 
     return control_msg
 
