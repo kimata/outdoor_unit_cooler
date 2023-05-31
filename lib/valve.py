@@ -141,7 +141,7 @@ def get_state():
         return VALVE_STATE.CLOSE
 
 
-# NOTE: バルブの状態と，その状態になってからの経過時間を返します
+# NOTE: 実際のバルブの状態と，その状態になってからの経過時間を返します
 def get_status():
     valve_state = get_state()
 
@@ -202,47 +202,40 @@ def set_cooling_working(duty_info):
         logging.info("COOLING: WORKING")
         return set_state(VALVE_STATE.OPEN)
 
-    on_duration_sec = time.time() - STAT_PATH_VALVE_STATE_WORKING.stat().st_mtime
-    # NOTE: Duty 設定が変更された場合に対応するため，今までも現在の周期で
-    # 制御されていたものとみなして，今回の制御内容を決める．
-    on_duration_sec = on_duration_sec % (
-        (duty_info["on_sec"] + duty_info["off_sec"]) * 2
-    )
+    status = get_status()
 
-    if on_duration_sec < duty_info["on_sec"]:
-        logging.info(
-            "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                left=duty_info["on_sec"] - on_duration_sec
+    if status["state"] == VALVE_STATE.OPEN:
+        # NOTE: 現在バルブが開かれている
+        if status["duration"] >= duty_info["on_sec"]:
+            logging.info(
+                "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
+                    left=duty_info["off_sec"]
+                )
             )
-        )
-        return set_state(VALVE_STATE.OPEN)
-    elif on_duration_sec < (duty_info["on_sec"] + duty_info["off_sec"]):
-        logging.info(
-            "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
-                left=(duty_info["on_sec"] + duty_info["off_sec"]) - on_duration_sec
+            return set_state(VALVE_STATE.CLOSE)
+        else:
+            logging.info(
+                "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
+                    left=duty_info["on_sec"] - status["duration"]
+                )
             )
-        )
-        return set_state(VALVE_STATE.CLOSE)
-    elif on_duration_sec < (duty_info["on_sec"] * 2 + duty_info["off_sec"]):
-        STAT_PATH_VALVE_STATE_WORKING.touch()
-        logging.info(
-            "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                left=duty_info["on_sec"]
-            )
-        )
-        return set_state(VALVE_STATE.OPEN)
+            return set_state(VALVE_STATE.OPEN)
     else:
-        # NOTE: Duty 設定が変更された場合，ここにくる可能性がある
-        left = 2 * (duty_info["on_sec"] + duty_info["off_sec"]) - on_duration_sec
-
-        # NOTE: 切り替わり時，OFF Duty が長くなりすぎないようにする
-        mtime = time.time() - (duty_info["off_sec"] - left)
-        os.utime(str(STAT_PATH_VALVE_STATE_WORKING), (mtime, mtime))
-
-        logging.info(
-            "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(left=left)
-        )
-        return set_state(VALVE_STATE.CLOSE)
+        # NOTE: 現在バルブが閉じられている
+        if status["duration"] >= duty_info["off_sec"]:
+            logging.info(
+                "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
+                    left=duty_info["on_sec"]
+                )
+            )
+            return set_state(VALVE_STATE.OPEN)
+        else:
+            logging.info(
+                "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
+                    left=duty_info["off_sec"] - status["duration"]
+                )
+            )
+            return set_state(VALVE_STATE.CLOSE)
 
 
 def set_cooling_idle():
