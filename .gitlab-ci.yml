@@ -59,7 +59,7 @@ test-actuator-regular:
     - docker pull ${CI_REGISTRY_IMAGE}
     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/unit_cooler.py -s ${SERVER_HOST} -O -D
 
-deploy:
+deploy-controller:
   stage: deploy
   image:
     name: bitnami/kubectl:latest
@@ -68,4 +68,36 @@ deploy:
     - kubectl config get-contexts
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
+  rules:
+    - changes:
+        - app/cooler_controller.py
+        - lib/config.py
+        - lib/control_pubsub.py
+        - lib/logger.py
+        - lib/notify_slack.py
+        - lib/sensor_data.py
+
+deploy-actuator:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
+  rules:
+    - changes:
+        - app/unit_cooler.py
+        - app/aircon.py
+        - app/config.py
+        - app/control_pubsub.py
+        - app/fd_q10c.py
+        - app/io_link.py
+        - app/logger.py
+        - app/ltc2874.py
+        - app/notify_slack.py
+        - app/sensor_data.py
+        - app/valve.py
+
+    
