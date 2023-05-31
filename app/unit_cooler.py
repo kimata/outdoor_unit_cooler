@@ -48,7 +48,7 @@ STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "unit_cooler.hazard"
 
 DUMMY_MODE_SPEEDUP = 12.0
 
-
+recv_cooling_mode = None
 should_terminate = False
 
 
@@ -135,6 +135,11 @@ def check_valve_status(config, valve_status):
 
 
 def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
+    global recv_cooling_mode
+
+    if recv_cooling_mode is not None:
+        valve_condition.update({"cooling_mode": recv_cooling_mode["mode_index"]})
+
     valve_condition.update({"state": valve_condition["state"].value})
     valve_condition.update({"hostname": hostname})
 
@@ -174,6 +179,8 @@ def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
 def valve_ctrl_worker(
     config, cmd_queue, dummy_mode=False, speedup=1, is_one_time=False
 ):
+    global recv_cooling_mode
+
     logging.info("Start control worker")
 
     logging.info("Initialize valve")
@@ -182,8 +189,8 @@ def valve_ctrl_worker(
     if dummy_mode:
         logging.warning("DUMMY mode")
 
-    interval_sec = config["actuator"]["interval_sec"] / speedup
     cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+    interval_sec = config["actuator"]["interval_sec"] / speedup
     receive_time = datetime.datetime.now()
     is_receive = False
     try:
@@ -192,6 +199,7 @@ def valve_ctrl_worker(
 
             if not cmd_queue.empty():
                 cooling_mode = cmd_queue.get()
+                recv_cooling_mode = cooling_mode
                 receive_time = datetime.datetime.now()
                 is_receive = True
                 logging.info(
