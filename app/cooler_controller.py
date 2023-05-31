@@ -282,7 +282,11 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     else:
         control_mode = judge_control_mode(config)
 
-    control_msg = CONTROL_MSG_LIST[min(control_mode, len(CONTROL_MSG_LIST) - 1)]
+    mode_index = min(control_mode, len(CONTROL_MSG_LIST) - 1)
+    control_msg = CONTROL_MSG_LIST[mode_index]
+
+    # NOTE: 参考として，どのモードかも通知する
+    control_msg["mode"] = mode_index
 
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
