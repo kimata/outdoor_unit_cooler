@@ -331,7 +331,7 @@ if not dummy_mode:
     # なり，電磁弁の故障を誤判定する可能性がある．
     for i in range(config["actuator"]["interval_sec"]):
         logging.info(
-            "Wait for the old Pod to finish ({i}/{total}".format(
+            "Wait for the old Pod to finish ({i:3} / {total:3})".format(
                 i=i + 1, total=config["actuator"]["interval_sec"]
             )
         )
