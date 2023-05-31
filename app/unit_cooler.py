@@ -137,18 +137,21 @@ def check_valve_status(config, valve_status):
 def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
     global recv_cooling_mode
 
+    # NOTE: 少し加工して送りたいので，まずコピーする
+    send_data = {"state": valve_condition["state"], "flow": valve_condition["flow"]}
+
     if recv_cooling_mode is not None:
-        valve_condition.update({"cooling_mode": recv_cooling_mode["mode_index"]})
+        send_data["cooling_mode"] = recv_cooling_mode["mode_index"]
 
-    valve_condition.update({"state": valve_condition["state"].value})
-    valve_condition.update({"hostname": hostname})
+    send_data["state"] = valve_condition["state"].value
+    send_data["hostname"] = hostname
 
-    logging.debug("Send: {valve_condition}".format(valve_condition=valve_condition))
+    logging.debug("Send: {valve_condition}".format(valve_condition=send_data))
 
     if dummy_mode:
         return
 
-    if sender.emit("rasp", valve_condition):
+    if sender.emit("rasp", send_data):
         logging.debug("Send OK")
     else:
         logging.error(sender.last_error)
@@ -264,7 +267,10 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             if valve_condition["flow"] is None:
                 flow_unknown += 1
             else:
+                send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+
                 flow_unknown = 0
+
                 if (i % log_period) == 0:
                     logging.info(
                         "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
@@ -273,7 +279,6 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                         )
                     )
                 i += 1
-                send_valve_condition(sender, hostname, valve_condition, dummy_mode)
 
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
