@@ -69,7 +69,7 @@ monitor:
   sense:
     giveup: 10
     
-  interval_sec: 4
+  interval_sec: 2
   
   liveness:
     file: /dev/shm/healthz.monitor
