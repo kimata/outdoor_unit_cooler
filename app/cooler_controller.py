@@ -92,7 +92,7 @@ CONTROL_MSG_LIST = [
 ]
 
 
-def notify_error(config):
+def notify_error(config, message):
     if "slack" not in config:
         return
 
@@ -100,7 +100,7 @@ def notify_error(config):
         config["slack"]["bot_token"],
         config["slack"]["error"]["channel"]["name"],
         config["slack"]["from"],
-        traceback.format_exc(),
+        message,
         config["slack"]["error"]["interval_min"],
     )
 
@@ -354,17 +354,16 @@ else:
     log_level = logging.INFO
 
 logger.init("hems.unit_cooler", level=log_level)
+logging.info("Start controller (port: {port})".format(port=server_port))
+
+logging.info("Using config config: {config_file}".format(config_file=config_file))
+config = load_config(config_file)
 
 if client_mode:
     test_client(server_host, server_port)
     sys.exit(0)
 elif view_msg_mode:
     print_control_msg()
-
-logging.info("Start controller (port: {port})".format(port=server_port))
-
-logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
 
 if dummy_mode:
     logging.warning("DUMMY mode")
@@ -378,5 +377,5 @@ try:
     )
 
 except:
-    notify_error(config)
+    notify_error(config, traceback.format_exc())
     raise
