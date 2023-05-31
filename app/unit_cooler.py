@@ -264,6 +264,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             if valve_condition["flow"] is None:
                 flow_unknown += 1
             else:
+                flow_unknown = 0
                 if (i % log_period) == 0:
                     logging.info(
                         "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
