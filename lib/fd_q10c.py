@@ -39,7 +39,7 @@ def sense(force_power_on=True):
         _release()
 
         return flow
-    except RuntimeError:
+    except:
         driver.com_stop(spi, ser, True)
 
         _release()
@@ -55,7 +55,7 @@ def stop():
 
         driver.com_stop(spi, is_power_off=True)
         _release()
-    except RuntimeError:
+    except:
         _release()
         raise
 
