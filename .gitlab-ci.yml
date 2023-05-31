@@ -76,6 +76,7 @@ deploy-controller:
         - lib/logger.py
         - lib/notify_slack.py
         - lib/sensor_data.py
+        - src/healthz.py
 
 deploy-actuator:
   stage: deploy
@@ -99,5 +100,5 @@ deploy-actuator:
         - app/notify_slack.py
         - app/sensor_data.py
         - app/valve.py
-
+        - src/healthz.py
     
