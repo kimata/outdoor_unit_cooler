@@ -174,38 +174,48 @@ def get_cooler_status(sense_data):
 # NOTE: 外部環境の状況を 5 段階で評価する．
 # (-2 が冷却停止, 0 が中立, 2 が強める)
 def get_outdoor_status(sense_data):
+    logging.info(
+        "気温: {temp:.1f} ℃, 湿度: {humi:.1f} %, 日射量: {solar_rad:,.0f} W/m^2, 照度: {lux:,.0f} LUX".format(
+            temp=sense_data["temp"][0]["value"],
+            humi=sense_data["humi"][0]["value"],
+            solar_rad=sense_data["solar_rad"][0]["value"],
+            lux=sense_data["lux"][0]["value"],
+        )
+    )
     if sense_data["temp"][0]["value"] > TEMP_THRESHOLD:
         logging.info(
-            "外気温 ({temp:.1f} ℃) が高いので冷却を強化します．(outdoor_status: 2)".format(
-                temp=sense_data["temp"][0]["value"]
+            "外気温 ({temp:.1f} ℃) が {threshold:.1f} ℃ より高いので冷却を強化します．(outdoor_status: 2)".format(
+                temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD
             )
         )
         return 2
     elif sense_data["humi"][0]["value"] > HUMI_THRESHOLD:
         logging.info(
-            "湿度 ({humi:.1f} %) が高いので冷却を停止します．(outdoor_status: -2)".format(
-                humi=sense_data["humi"][0]["value"]
+            "湿度 ({humi:.1f} %) が {threshold:.1f} % より高いので冷却を停止します．(outdoor_status: -2)".format(
+                humi=sense_data["humi"][0]["value"], threshold=HUMI_THRESHOLD
             )
         )
         return -2
     elif sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_HIGH:
         logging.info(
-            "日射量 ({solar_rad:.0f} W/m^2) が大きいので冷却を少し強化します．(outdoor_status: 1)".format(
-                solar_rad=sense_data["solar_rad"][0]["value"]
+            "日射量 ({solar_rad:,.0f} W/m^2) が {threshold:,.0f} W/m^2 より大きいので冷却を少し強化します．(outdoor_status: 1)".format(
+                solar_rad=sense_data["solar_rad"][0]["value"],
+                threshold=SOLAR_RAD_THRESHOLD_HIGH,
             )
         )
         return 1
     elif sense_data["solar_rad"][0]["value"] < SOLAR_RAD_THRESHOLD_LOW:
         logging.info(
-            "日射量 ({solar_rad:.0f} W/m^2) が小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
-                solar_rad=sense_data["solar_rad"][0]["value"]
+            "日射量 ({solar_rad:,.0f} W/m^2) が {threshold:,.0f} W/m^2 より小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
+                solar_rad=sense_data["solar_rad"][0]["value"],
+                threshold=SOLAR_RAD_THRESHOLD_LOW,
             )
         )
         return -1
     elif sense_data["lux"][0]["value"] < LUX_THRESHOLD:
         logging.info(
-            "照度 ({lux:,.0f} LUX) が小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
-                lux=sense_data["lux"][0]["value"]
+            "照度 ({lux:,.0f} LUX) が {threshold:,.0f} LUX より小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
+                lux=sense_data["lux"][0]["value"], threshold=LUX_THRESHOLD
             )
         )
         return -1
