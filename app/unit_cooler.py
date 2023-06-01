@@ -118,6 +118,7 @@ def check_valve_status(config, valve_status):
         )
         if valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]:
             # バルブが閉じてから時間が経っている場合
+            flow = 0.0
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
@@ -128,9 +129,6 @@ def check_valve_status(config, valve_status):
             ):
                 notify_hazard(config, "電磁弁が壊れていますので制御を停止します．")
 
-    if flow == -1:
-        flow = valve.get_flow(False)
-
     return {"state": valve_status["state"], "flow": flow}
 
 
@@ -138,7 +136,10 @@ def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
     global recv_cooling_mode
 
     # NOTE: 少し加工して送りたいので，まずコピーする
-    send_data = {"state": valve_condition["state"], "flow": valve_condition["flow"]}
+    send_data = {"state": valve_condition["state"]}
+
+    if valve_condition["flow"] is not None:
+        send_data["valve"] = valve_condition["flow"]
 
     if recv_cooling_mode is not None:
         send_data["cooling_mode"] = recv_cooling_mode["mode_index"]
@@ -264,21 +265,24 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             valve_status = valve.get_status()
             valve_condition = check_valve_status(config, valve_status)
 
-            if valve_condition["flow"] is None:
-                flow_unknown += 1
-            else:
-                send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+            send_valve_condition(sender, hostname, valve_condition, dummy_mode)
 
-                flow_unknown = 0
-
-                if (i % log_period) == 0:
-                    logging.info(
-                        "Valve Condition: {state} (flow = {flow:.2f} L/min)".format(
-                            state=valve_condition["state"].name,
-                            flow=valve_condition["flow"],
-                        )
+            if (i % log_period) == 0:
+                logging.info(
+                    "Valve Condition: {state} (flow = {flow_str} L/min)".format(
+                        state=valve_condition["state"].name,
+                        flow_str="?"
+                        if valve_condition["flow"] is None
+                        else "{flow:.2f}".format(flow=valve_condition["flow"]),
                     )
+                )
                 i += 1
+
+            if valve_status["state"] == valve.VALVE_STATE.OPEN:
+                if valve_condition["flow"] is None:
+                    flow_unknown += 1
+                else:
+                    flow_unknown = 0
 
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
