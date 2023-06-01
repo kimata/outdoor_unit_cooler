@@ -33,6 +33,7 @@ def sense(force_power_on=True):
             logging.info("flow: {flow:.2f} L/min".format(flow=flow))
 
             driver.com_stop(spi, ser)
+            driver.com_close(spi)
         else:
             flow = None
 
@@ -40,7 +41,7 @@ def sense(force_power_on=True):
 
         return flow
     except:
-        driver.com_stop(spi, ser, True)
+        driver.com_close(spi)
 
         _release()
         raise
@@ -52,10 +53,11 @@ def stop():
 
     try:
         spi = driver.com_open()
-
         driver.com_stop(spi, is_power_off=True)
+        driver.com_close(spi)
         _release()
     except:
+        driver.com_close(spi)
         _release()
         raise
 
