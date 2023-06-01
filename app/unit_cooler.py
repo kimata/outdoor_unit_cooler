@@ -71,7 +71,7 @@ def notify_error(config, message):
         config["slack"]["bot_token"],
         config["slack"]["error"]["channel"]["name"],
         config["slack"]["from"],
-        traceback.format_exc(),
+        message,
         config["slack"]["error"]["interval_min"],
     )
 
