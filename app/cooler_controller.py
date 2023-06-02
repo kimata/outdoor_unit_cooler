@@ -42,7 +42,7 @@ import logger
 # 制御モードを決めるにあたって，参照する外部環境の閾値
 #
 # 屋外の照度がこの値未満の場合，冷却の強度を弱める
-LUX_THRESHOLD = 500
+LUX_THRESHOLD = 300
 # 太陽の日射量がこの値未満の場合，冷却の強度を弱める
 SOLAR_RAD_THRESHOLD_LOW = 200
 # 太陽の日射量がこの値未満の場合，冷却の強度を強める
@@ -195,7 +195,7 @@ def get_outdoor_status(sense_data):
                 humi=sense_data["humi"][0]["value"], threshold=HUMI_THRESHOLD
             )
         )
-        return -2
+        return -4
     elif sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_HIGH:
         logging.info(
             "日射量 ({solar_rad:,.0f} W/m^2) が {threshold:,.0f} W/m^2 より大きいので冷却を少し強化します．(outdoor_status: 1)".format(
@@ -218,7 +218,7 @@ def get_outdoor_status(sense_data):
                 lux=sense_data["lux"][0]["value"], threshold=LUX_THRESHOLD
             )
         )
-        return -1
+        return -2
     else:
         return 0
 
