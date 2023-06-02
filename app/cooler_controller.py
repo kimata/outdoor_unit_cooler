@@ -48,7 +48,7 @@ SOLAR_RAD_THRESHOLD_LOW = 200
 # 太陽の日射量がこの値未満の場合，冷却の強度を強める
 SOLAR_RAD_THRESHOLD_HIGH = 700
 # 屋外の湿度がこの値を超えていたら，冷却を停止する
-HUMI_THRESHOLD = 98
+HUMI_THRESHOLD = 96
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
 TEMP_THRESHOLD = 33
 
