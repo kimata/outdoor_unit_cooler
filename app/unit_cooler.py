@@ -22,6 +22,7 @@ import os
 import sys
 
 from multiprocessing.pool import ThreadPool
+from multiprocessing import Queue
 
 import socket
 import time
@@ -29,7 +30,6 @@ import datetime
 import math
 import signal
 import pathlib
-import queue
 import logging
 
 import fluent.sender
@@ -347,7 +347,7 @@ if not dummy_mode:
         time.sleep(1)
 
 signal.signal(signal.SIGTERM, sig_handler)
-cmd_queue = queue.Queue()
+cmd_queue = Queue()
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
 pool = ThreadPool(processes=3)
