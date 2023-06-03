@@ -1,18 +1,22 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "hostRules": [
-    {
-      "matchHost": "https://registry.green-rabbit.net:5000",
-      "token": "glpat-P_fBKpzEUzJ2RsYwwU3Z",
-      "hostType": "gitlab"
-    }
+        {
+            "matchHost": "https://registry.green-rabbit.net:5000",
+            "token": "glpat-P_fBKpzEUzJ2RsYwwU3Z",
+            "hostType": "gitlab"
+        }
     ],
-  "extends": [
-    "config:base",
-    ":timezone(Asia/Tokyo)",
-    "group:allNonMajor"
-  ],
-  "automerge": true,
-  "labels": ["renovate"],
-  "schedule": ["every weekend"]
+    "extends": [
+        "config:base",
+        ":timezone(Asia/Tokyo)",
+        "group:allNonMajor"
+    ],
+    "automerge": true,
+    "labels": [
+        "renovate"
+    ],
+    "schedule": [
+        "every weekend"
+    ]
 }
