@@ -6,6 +6,7 @@
       "token": "glpat-P_fBKpzEUzJ2RsYwwU3Z",
       "hostType": "gitlab"
     },
+    ],
   "extends": [
     "config:base",
     ":timezone(Asia/Tokyo)",
