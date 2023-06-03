@@ -4,7 +4,7 @@ controller:
     token: strBCB9segqccgxsR5Xe_9RnCqkBFYX9aOKvxVR4lr3iLEb7HXuGqsN40YU6DIb6TZm9bvKLW5OWQS7sB8AQbQ==
     org: home
     bucket: sensor
-  
+
   sensor:
     temp:
       - name: 屋外の気温
@@ -37,7 +37,7 @@ controller:
 
   liveness:
     file: /dev/shm/healthz.controller
- 
+
 actuator:
   valve:
     pin_no: 17 # BCM で指定
@@ -61,16 +61,16 @@ actuator:
   liveness:
     file: /dev/shm/healthz.actuator
 
-  
+
 monitor:
   fluent:
     host: proxy.green-rabbit.net
 
   sense:
     giveup: 10
-    
+
   interval_sec: 2
-  
+
   liveness:
     file: /dev/shm/healthz.monitor
 
@@ -79,7 +79,7 @@ receiver:
   liveness:
     file: /dev/shm/healthz.receiver
 
-    
+
 slack:
   bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
 

@@ -9,4 +9,3 @@ sudo apt install -y python3-pip
 sudo apt install -y daemontools
 
 pip3 install -r requirements.txt
-

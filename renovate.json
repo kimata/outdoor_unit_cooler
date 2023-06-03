@@ -5,7 +5,7 @@
       "matchHost": "https://registry.green-rabbit.net:5000",
       "token": "glpat-P_fBKpzEUzJ2RsYwwU3Z",
       "hostType": "gitlab"
-    },
+    }
     ],
   "extends": [
     "config:base",

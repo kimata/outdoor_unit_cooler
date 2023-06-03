@@ -13,4 +13,3 @@ docker buildx build --platform linux/amd64,linux/arm64/v8 \
        --cache-from type=registry,ref=${REGISTRY}/${NAME}:cache \
        --cache-to type=registry,ref=${REGISTRY}/${NAME}:cache \
        --push --tag ${REGISTRY}/${NAME} .
-

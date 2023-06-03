@@ -12,7 +12,7 @@ build-image:
 
   variables:
     BUILDER: arm_builder
-  
+
   script:
     # - docker rm $(docker ps -a --filter "status=exited" -q) || true
     - export GIT_SSL_NO_VERIFY=1
@@ -22,9 +22,9 @@ build-image:
     # - docker build . -t ${CI_REGISTRY_IMAGE}
     - docker buildx create --name ${BUILDER} --config script/buildkitd.toml --use
     - docker buildx use ${BUILDER}
-    - docker buildx build --platform linux/amd64,linux/arm64/v8 
-          --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache 
-          --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache 
+    - docker buildx build --platform linux/amd64,linux/arm64/v8
+          --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
+          --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --push --tag ${CI_REGISTRY_IMAGE} .
 
 test-controller-sample:
@@ -43,14 +43,14 @@ test-controller-regular:
 
 test-actuator-sample:
   stage: test
-  
+
   variables:
     SERVER_HOST: 192.168.0.20
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
     - docker run -t --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
-    
+
 test-actuator-regular:
   stage: test
   variables:
@@ -113,4 +113,3 @@ renovate:
     - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
-
