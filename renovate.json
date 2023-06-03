@@ -9,7 +9,8 @@
     {
       "matchHost": "registry.green-rabbit.net:5000",
       "insecureRegistry": true
-    },
+    }
+    ],
     "automerge": true,
     "labels": [
         "renovate"
