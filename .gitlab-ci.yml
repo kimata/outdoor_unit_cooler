@@ -26,6 +26,8 @@ build-image:
           --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --push --tag ${CI_REGISTRY_IMAGE} .
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 test-controller-sample:
   stage: test
@@ -70,6 +72,7 @@ deploy-controller:
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
   rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
     - changes:
         - app/cooler_controller.py
         - lib/config.py
@@ -89,6 +92,7 @@ deploy-actuator:
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
   rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
     - changes:
         - app/unit_cooler.py
         - lib/aircon.py
