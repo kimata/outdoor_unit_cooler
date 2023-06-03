@@ -14,7 +14,7 @@ build-image:
     BUILDER: arm_builder
   
   script:
-    # - docker rm $(docker ps -a --filter 'status=exited' -q) || true
+    # - docker rm $(docker ps -a --filter "status=exited" -q) || true
     - export GIT_SSL_NO_VERIFY=1
     - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
     - mv hems_config/unit_cooler.yaml config.yaml
@@ -64,7 +64,7 @@ deploy-controller:
   stage: deploy
   image:
     name: bitnami/kubectl:latest
-    entrypoint: ['']
+    entrypoint: [""]
   script:
     - kubectl config get-contexts
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
@@ -102,7 +102,7 @@ deploy-actuator:
         - lib/sensor_data.py
         - lib/valve.py
         - src/healthz.py
-    
+
 renovate:
   stage: renovate
   image:
