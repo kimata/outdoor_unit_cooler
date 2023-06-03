@@ -74,6 +74,12 @@ monitor:
   liveness:
     file: /dev/shm/healthz.monitor
 
+
+receiver:
+  liveness:
+    file: /dev/shm/healthz.receiver
+
+    
 slack:
   bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
 
