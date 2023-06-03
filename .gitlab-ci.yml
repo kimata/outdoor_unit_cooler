@@ -117,3 +117,5 @@ renovate:
     - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - changes:
+        - renovate.json
