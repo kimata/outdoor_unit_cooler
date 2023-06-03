@@ -80,7 +80,7 @@ config = load_config(config_file)
 if controller_mode:
     name_list = ["controller"]
 else:
-    name_list = ["actuator", "monitor"]
+    name_list = ["actuator", "monitor", "receiver"]
 
 target_list = []
 for name in name_list:
@@ -88,7 +88,9 @@ for name in name_list:
         {
             "name": name,
             "liveness_file": pathlib.Path(config[name]["liveness"]["file"]),
-            "interval": config[name]["interval_sec"],
+            "interval": config["controller"]["interval_sec"]
+            if name == "receiver"
+            else config[name]["interval_sec"],
         }
     )
 

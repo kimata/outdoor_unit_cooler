@@ -158,6 +158,11 @@ def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
         logging.error(sender.last_error)
 
 
+def queue_put(config, cmd_queue, message):
+    cmd_queue.put(message)
+    pathlib.Path(config["receiver"]["liveness"]["file"]).touch()
+
+
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
 def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
     logging.info(
@@ -169,7 +174,7 @@ def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
         control_pubsub.start_client(
             server_host,
             server_port,
-            lambda message: cmd_queue.put(message),
+            lambda message: queue_put(config, cmd_queue, message),
             is_one_time,
         )
         return 0
