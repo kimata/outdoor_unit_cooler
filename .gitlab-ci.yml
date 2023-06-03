@@ -4,6 +4,7 @@ stages:
   - build
   - test
   - deploy
+  - renovate
 
 build-image:
   stage: build
@@ -102,3 +103,12 @@ deploy-actuator:
         - lib/valve.py
         - src/healthz.py
     
+renovate:
+  stage: renovate
+  image:
+    name: renovate/renovate:35
+    entrypoint: [""]
+  script:
+    - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
+  rules:
+    - if: ${CI_PIPELINE_SOURCE} == "schedule"
