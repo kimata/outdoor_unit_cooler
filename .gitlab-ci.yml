@@ -78,6 +78,8 @@ deploy-controller:
         - lib/notify_slack.py
         - lib/sensor_data.py
         - src/healthz.py
+    # NOTE: 自動実行ではデプロイしない
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 deploy-actuator:
   stage: deploy
@@ -102,6 +104,8 @@ deploy-actuator:
         - lib/sensor_data.py
         - lib/valve.py
         - src/healthz.py
+    # NOTE: 自動実行ではデプロイしない
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 renovate:
   stage: renovate
