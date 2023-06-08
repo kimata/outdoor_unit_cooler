@@ -90,6 +90,7 @@ deploy-actuator:
     - kubectl config get-contexts
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
+    - echo $CI_PIPELINE_SOURCE
   rules:
     - changes:
         - app/unit_cooler.py
