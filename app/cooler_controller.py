@@ -93,6 +93,8 @@ CONTROL_MSG_LIST = [
 
 
 def notify_error(config, message):
+    logging.error(message)
+
     if "slack" not in config:
         return
 
@@ -122,7 +124,9 @@ def get_sense_data(config):
             if data["valid"]:
                 kind_data.append({"name": sensor["name"], "value": data["value"][0]})
             else:
-                logging.warning("{name} のデータを取得できませんでした．".format(name=sensor["name"]))
+                notify_error(
+                    config, "{name} のデータを取得できませんでした．".format(name=sensor["name"])
+                )
                 kind_data.append({"name": sensor["name"], "value": None})
 
         sense_data[kind] = kind_data
