@@ -79,7 +79,8 @@ deploy-controller:
         - lib/sensor_data.py
         - src/healthz.py
     # NOTE: 自動実行ではデプロイしない
-    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
 
 deploy-actuator:
   stage: deploy
@@ -90,8 +91,10 @@ deploy-actuator:
     - kubectl config get-contexts
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
-    - echo $CI_PIPELINE_SOURCE
   rules:
+    # NOTE: 自動実行ではデプロイしない
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - changes:
         - app/unit_cooler.py
         - lib/aircon.py
@@ -105,8 +108,7 @@ deploy-actuator:
         - lib/sensor_data.py
         - lib/valve.py
         - src/healthz.py
-    # NOTE: 自動実行ではデプロイしない
-    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
 
 renovate:
   stage: renovate
