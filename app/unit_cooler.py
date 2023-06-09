@@ -139,7 +139,7 @@ def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
     send_data = {"state": valve_condition["state"]}
 
     if valve_condition["flow"] is not None:
-        send_data["valve"] = valve_condition["flow"]
+        send_data["flow"] = valve_condition["flow"]
 
     if recv_cooling_mode is not None:
         send_data["cooling_mode"] = recv_cooling_mode["mode_index"]
