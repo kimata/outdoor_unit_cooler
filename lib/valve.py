@@ -94,6 +94,7 @@ def init(pin=GPIO_PIN_DEFAULT):
     pin_no = pin
 
     STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
+    STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
     STAT_PATH_VALVE_STATE_IDLE.touch()
 
     set_state(VALVE_STATE.CLOSE)
