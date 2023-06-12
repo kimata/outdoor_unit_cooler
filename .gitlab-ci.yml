@@ -70,6 +70,9 @@ deploy-controller:
     - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
     - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
   rules:
+    # NOTE: 自動実行ではデプロイしない
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - changes:
         - app/cooler_controller.py
         - lib/config.py
@@ -78,9 +81,7 @@ deploy-controller:
         - lib/notify_slack.py
         - lib/sensor_data.py
         - src/healthz.py
-    # NOTE: 自動実行ではデプロイしない
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: never
+
 
 deploy-actuator:
   stage: deploy
@@ -119,6 +120,7 @@ renovate:
   script:
     - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
     - changes:
         - renovate.json

@@ -34,7 +34,7 @@ import logging
 
 import fluent.sender
 
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "lib"))
+sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import control_pubsub
 
@@ -371,8 +371,10 @@ result_list.append(
 result_list.append(
     pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
 )
+pool.close()
 
 for result in result_list:
     if result.get() != 0:
         sys.exit(-1)
+
 sys.exit(0)

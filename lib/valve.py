@@ -64,20 +64,23 @@ STAT_DIR_PATH = pathlib.Path("/dev/shm")
 # OFF Duty から ON Duty に遷移する度に変更日時が更新される．
 # STATE が IDLE になった際に削除される．
 # (OFF Duty になって実際にバルブを閉じただけでは削除されない)
-STAT_PATH_VALVE_STATE_WORKING = STAT_DIR_PATH / "unit_cooler.valve_state_working"
+STAT_PATH_VALVE_STATE_WORKING = (
+    STAT_DIR_PATH / "unit_cooler" / "valve" / "state" / "working"
+)
 
 # STATE が IDLE になった際に作られるファイル．
 # (OFF Duty になって実際にバルブを閉じただけでは作られない)
 # STATE が WORKING になった際に削除される．
-STAT_PATH_VALVE_STATE_IDLE = STAT_DIR_PATH / "unit_cooler.valve_state_idle"
+STAT_PATH_VALVE_STATE_IDLE = STAT_DIR_PATH / "unit_cooler" / "valve" / "state" / "idle"
 
 # 実際にバルブを開いた際に作られるファイル．
 # 実際にバルブを閉じた際に削除される．
-STAT_PATH_VALVE_OPEN = STAT_DIR_PATH / "unit_cooler.valve_open"
+STAT_PATH_VALVE_OPEN = STAT_DIR_PATH / "unit_cooler" / "valve" / "open"
 
 # 実際にバルブを閉じた際に作られるファイル．
 # 実際にバルブを開いた際に削除される．
-STAT_PATH_VALVE_CLOSE = STAT_DIR_PATH / "unit_cooler.valve_close"
+STAT_PATH_VALVE_CLOSE = STAT_DIR_PATH / "unit_cooler" / "valve" / "close"
+
 
 # 電磁弁制御用の GPIO 端子番号．
 # この端子が H になった場合に，水が出るように回路を組んでおく．
@@ -86,7 +89,7 @@ GPIO_PIN_DEFAULT = 17
 pin_no = GPIO_PIN_DEFAULT
 
 
-def init(pin):
+def init(pin=GPIO_PIN_DEFAULT):
     global pin_no
     pin_no = pin
 
@@ -118,10 +121,12 @@ def set_state(valve_state):
     if valve_state == VALVE_STATE.OPEN:
         STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
         if not STAT_PATH_VALVE_OPEN.exists():
+            STAT_PATH_VALVE_OPEN.parent.mkdir(parents=True, exist_ok=True)
             STAT_PATH_VALVE_OPEN.touch()
     else:
         STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
         if not STAT_PATH_VALVE_CLOSE.exists():
+            STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
             STAT_PATH_VALVE_CLOSE.touch()
 
     return get_status()
@@ -193,6 +198,7 @@ def set_cooling_working(duty_info):
     STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
 
     if not STAT_PATH_VALVE_STATE_WORKING.exists():
+        STAT_PATH_VALVE_STATE_WORKING.parent.mkdir(parents=True, exist_ok=True)
         STAT_PATH_VALVE_STATE_WORKING.touch()
         logging.info("COOLING: IDLE -> WORKING")
         return set_state(VALVE_STATE.OPEN)
@@ -242,6 +248,7 @@ def set_cooling_idle():
     STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
 
     if not STAT_PATH_VALVE_STATE_IDLE.exists():
+        STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
         STAT_PATH_VALVE_STATE_IDLE.touch()
         logging.info("COOLING: WORKING -> IDLE")
         return set_state(VALVE_STATE.CLOSE)
@@ -262,8 +269,7 @@ if __name__ == "__main__":
 
     logger.init("test", level=logging.INFO)
 
-    GPIO_PIN = 17
-    init(GPIO_PIN)
+    init()
 
     while True:
         set_cooling_state(

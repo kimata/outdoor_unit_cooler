@@ -28,7 +28,7 @@ import logging
 import pathlib
 import traceback
 
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "lib"))
+sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 from valve import COOLING_STATE
 import control_pubsub

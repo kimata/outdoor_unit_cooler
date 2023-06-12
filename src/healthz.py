@@ -21,7 +21,7 @@ import os
 import sys
 
 
-sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, "lib"))
+sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import logger
 from config import load_config
