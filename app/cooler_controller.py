@@ -36,60 +36,8 @@ from sensor_data import fetch_data
 import aircon
 import notify_slack
 from config import load_config
+from control_config import MESSAGE_LIST, CORRECTION_CONDITION
 import logger
-
-############################################################
-# 制御モードを決めるにあたって，参照する外部環境の閾値
-#
-# 屋外の照度がこの値未満の場合，冷却の強度を弱める
-LUX_THRESHOLD = 300
-# 太陽の日射量がこの値未満の場合，冷却の強度を弱める
-SOLAR_RAD_THRESHOLD_LOW = 200
-# 太陽の日射量がこの値未満の場合，冷却の強度を強める
-SOLAR_RAD_THRESHOLD_HIGH = 700
-# 屋外の湿度がこの値を超えていたら，冷却を停止する
-HUMI_THRESHOLD = 96
-# 屋外の温度がこの値を超えていたら，冷却の強度を強める
-TEMP_THRESHOLD = 32
-
-CONTROL_MSG_LIST = [
-    {
-        "state": COOLING_STATE.IDLE,
-        "duty": {"enable": False, "on_sec": 0 * 60, "off_sec": 0 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.2 * 60, "off_sec": 30 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.2 * 60, "off_sec": 20 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 30 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 20 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 10 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 10 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 6 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.5 * 60, "off_sec": 6 * 60},
-    },
-]
 
 
 def notify_error(config, message):
@@ -186,45 +134,12 @@ def get_outdoor_status(sense_data):
             lux=sense_data["lux"][0]["value"],
         )
     )
-    if sense_data["temp"][0]["value"] > TEMP_THRESHOLD:
-        logging.info(
-            "外気温 ({temp:.1f} ℃) が {threshold:.1f} ℃ より高いので冷却を強化します．(outdoor_status: 2)".format(
-                temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD
-            )
-        )
-        return 2
-    elif sense_data["humi"][0]["value"] > HUMI_THRESHOLD:
-        logging.info(
-            "湿度 ({humi:.1f} %) が {threshold:.1f} % より高いので冷却を停止します．(outdoor_status: -2)".format(
-                humi=sense_data["humi"][0]["value"], threshold=HUMI_THRESHOLD
-            )
-        )
-        return -4
-    elif sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_HIGH:
-        logging.info(
-            "日射量 ({solar_rad:,.0f} W/m^2) が {threshold:,.0f} W/m^2 より大きいので冷却を少し強化します．(outdoor_status: 1)".format(
-                solar_rad=sense_data["solar_rad"][0]["value"],
-                threshold=SOLAR_RAD_THRESHOLD_HIGH,
-            )
-        )
-        return 1
-    elif sense_data["solar_rad"][0]["value"] < SOLAR_RAD_THRESHOLD_LOW:
-        logging.info(
-            "日射量 ({solar_rad:,.0f} W/m^2) が {threshold:,.0f} W/m^2 より小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
-                solar_rad=sense_data["solar_rad"][0]["value"],
-                threshold=SOLAR_RAD_THRESHOLD_LOW,
-            )
-        )
-        return -1
-    elif sense_data["lux"][0]["value"] < LUX_THRESHOLD:
-        logging.info(
-            "照度 ({lux:,.0f} LUX) が {threshold:,.0f} LUX より小さいので冷却を少し弱めます．(outdoor_status: -1)".format(
-                lux=sense_data["lux"][0]["value"], threshold=LUX_THRESHOLD
-            )
-        )
-        return -2
-    else:
-        return 0
+    for condition in CORRECTION_CONDITION:
+        if condition["judge"](sense_data):
+            condition["message"](sense_data)
+            return condition["correction"]
+
+    return 0
 
 
 def judge_control_mode(config):
@@ -286,8 +201,8 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     else:
         control_mode = judge_control_mode(config)
 
-    mode_index = min(control_mode, len(CONTROL_MSG_LIST) - 1)
-    control_msg = CONTROL_MSG_LIST[mode_index]
+    mode_index = min(control_mode, len(MESSAGE_LIST) - 1)
+    control_msg = MESSAGE_LIST[mode_index]
 
     # NOTE: 参考として，どのモードかも通知する
     control_msg["mode_index"] = mode_index

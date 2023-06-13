@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import pathlib
 
-APP_URL_PREFIX = "/rasp-water"
-STATIC_FILE_PATH = "../../dist/rasp-water"
+APP_URL_PREFIX = "/unit_cooler"
+STATIC_FILE_PATH = "../react/build/"
 
 SCHEDULE_DATA_PATH = pathlib.Path(__file__).parent.parent / "data" / "schedule.dat"
 LOG_DB_PATH = pathlib.Path(__file__).parent.parent / "data" / "log.db"
