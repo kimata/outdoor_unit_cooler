@@ -10,8 +10,8 @@ from webapp_config import APP_URL_PREFIX
 # from webapp_log import app_log
 from flask_util import support_jsonp
 
-
 from sensor_data import fetch_data, get_today_sum
+from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
 
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 
@@ -58,10 +58,14 @@ def watering_amount(config):
 
 
 def get_stats(config):
+    sense_data = get_sense_data(config)
+
     return {
         "watering": watering_amount(config),
-        "sensor": get_sense_data(config),
+        "sensor": sense_data,
         "mode": control_pubsub.get_last_message("127.0.0.1", 2222),
+        "cooler_status": get_cooler_status(sense_data),
+        "outdoor_status": get_outdoor_status(sense_data),
     }
 
 
