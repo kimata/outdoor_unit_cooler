@@ -50,7 +50,7 @@ SOLAR_RAD_THRESHOLD_HIGH = 700
 # 屋外の湿度がこの値を超えていたら，冷却を停止する
 HUMI_THRESHOLD = 96
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
-TEMP_THRESHOLD = 33
+TEMP_THRESHOLD = 32
 
 CONTROL_MSG_LIST = [
     {
