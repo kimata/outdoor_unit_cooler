@@ -170,7 +170,7 @@ def get_cooler_status(sense_data):
         if condition["judge"](mode_map):
             return {
                 "status": condition["status"],
-                "message": condition["message"](mode_map),
+                "message": condition["message"],
             }
 
 
