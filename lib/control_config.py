@@ -111,43 +111,43 @@ COOLER_CONDITION = [
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.FULL] >= 2,
         "message": "2 台以上のエアコンがフル稼働しています．(cooler_status: 6)",
-        "statue": 6,
+        "status": 6,
     },
     {
         "judge": lambda mode_map: (mode_map[aircon.MODE.FULL] >= 1)
         and (mode_map[aircon.MODE.NORMAL] >= 1),
         "message": "複数台ののエアコンがフル稼働もしくは平常運転しています．(cooler_status: 5)",
-        "statue": 5,
+        "status": 5,
     },
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.FULL] >= 1,
         "message": "1 台以上のエアコンがフル稼働しています．(cooler_status: 4)",
-        "statue": 4,
+        "status": 4,
     },
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.NORMAL] >= 2,
         "message": "2 台以上のエアコンが平常運転しています．(cooler_status: 4)",
-        "statue": 4,
+        "status": 4,
     },
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.NORMAL] >= 1,
         "message": "1 台以上のエアコンが平常運転しています．(cooler_status: 3)",
-        "statue": 3,
+        "status": 3,
     },
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.IDLE] >= 2,
         "message": "2 台以上のエアコンがアイドル運転しています．(cooler_status: 2)",
-        "statue": 2,
+        "status": 2,
     },
     {
         "judge": lambda mode_map: mode_map[aircon.MODE.IDLE] >= 1,
         "message": "1 台以上のエアコンがアイドル運転しています．(cooler_status: 1)",
-        "statue": 1,
+        "status": 1,
     },
     {
         "judge": lambda mode_map: True,
         "message": "エアコンは稼働していません．(cooler_status: 0)",
-        "statue": 0,
+        "status": 0,
     },
 ]
 
