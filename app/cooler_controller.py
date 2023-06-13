@@ -4,13 +4,14 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-O] [-D] [-t SPEEDUP] [-d]
-  cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-r REAL_PORT] [-O] [-D] [-t SPEEDUP] [-d]
+  cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-P PROXY_PORT] [-d]
   cooler_controller.py -V
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
-  -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
+  -r REAL_PORT      : ZeroMQ の 本当のサーバーを動作させるポートを指定します． [default: 2200]
   -O                : 1回のみ実行
   -D                : 冷却モードをランダムに生成するモードで動作すします．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
@@ -27,6 +28,7 @@ import sys
 import logging
 import pathlib
 import traceback
+import threading
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
@@ -233,7 +235,7 @@ def test_client(server_host, server_port):
 
 
 def print_control_msg():
-    for control_msg in CONTROL_MSG_LIST:
+    for control_msg in MESSAGE_LIST:
         if control_msg["duty"]["enable"]:
             logging.info(
                 (
@@ -259,6 +261,7 @@ args = docopt(__doc__)
 
 config_file = args["-c"]
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+real_port = args["-r"]
 dummy_mode = args["-D"]
 speedup = int(args["-t"])
 debug_mode = args["-d"]
@@ -288,13 +291,18 @@ if dummy_mode:
     logging.warning("DUMMY mode")
 
 try:
+    # NOTE:
+    threading.Thread(
+        target=control_pubsub.start_proxy,
+        args=(server_host, real_port, server_port, is_one_time),
+    ).start()
+
     control_pubsub.start_server(
-        server_port,
+        real_port,
         lambda: gen_control_msg(config, dummy_mode, speedup),
         config["controller"]["interval_sec"] / speedup,
         is_one_time,
     )
-
 except:
     notify_error(config, traceback.format_exc())
     raise

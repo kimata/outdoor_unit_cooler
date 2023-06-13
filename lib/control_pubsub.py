@@ -32,6 +32,46 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
         time.sleep(sleep_sec)
 
 
+# NOTE: Last Value Caching Proxy
+# see https://zguide.zeromq.org/docs/chapter5/
+def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
+    logging.info("Start proxy server...")
+
+    context = zmq.Context.instance()
+
+    frontend = context.socket(zmq.SUB)
+    frontend.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    frontend.setsockopt_string(zmq.SUBSCRIBE, CH)
+
+    backend = context.socket(zmq.XPUB)
+    backend.bind("tcp://*:{port}".format(port=proxy_port))
+
+    cache = {}
+
+    poller = zmq.Poller()
+    poller.register(frontend, zmq.POLLIN)
+    poller.register(backend, zmq.POLLIN)
+
+    while True:
+        events = dict(poller.poll(1000))
+
+        if frontend in events:
+            recv_data = frontend.recv_string()
+            ch, json_str = recv_data.split(" ", 1)
+            cache[ch] = json_str
+            logging.info("RECEIVE PROXY")
+            backend.send_string(recv_data)
+
+        if backend in events:
+            event = backend.recv()
+            if event[0] == 1:
+                ch = event[1:].decode("utf-8")
+                if ch in cache:
+                    backend.send_string(
+                        "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
+                    )
+
+
 def start_client(server_host, server_port, func, is_one_time=False):
     logging.info("Start control client...")
 
