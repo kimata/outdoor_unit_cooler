@@ -89,3 +89,13 @@ def start_client(server_host, server_port, func, is_one_time=False):
 
         if is_one_time:
             break
+
+
+def get_last_message(server_host, server_port):
+    socket = zmq.Context().socket(zmq.SUB)
+    socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    socket.setsockopt_string(zmq.SUBSCRIBE, CH)
+
+    ch, json_str = socket.recv_string().split(" ", 1)
+
+    return json.loads(json_str)

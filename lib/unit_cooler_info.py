@@ -3,6 +3,7 @@
 from flask import jsonify, Blueprint, current_app
 import logging
 
+import control_pubsub
 from webapp_config import APP_URL_PREFIX
 
 # from webapp_event import notify_event, EVENT_TYPE
@@ -56,13 +57,19 @@ def watering_amount(config):
     )
 
 
+def get_stats(config):
+    return {
+        "watering": watering_amount(config),
+        "sensor": get_sense_data(config),
+        "mode": control_pubsub.get_last_message("127.0.0.1", 2222),
+    }
+
+
 @blueprint.route("/api/stat", methods=["GET"])
 @support_jsonp
-def get_stats():
+def api_get_stats():
     config = current_app.config["CONFIG"]
-    return jsonify(
-        {"watering": watering_amount(config), "sensor": get_sense_data(config)}
-    )
+    return jsonify(get_stats(config))
 
 
 if __name__ == "__main__":
@@ -73,4 +80,4 @@ if __name__ == "__main__":
 
     config = load_config()
 
-    logging.info(get_stats())
+    logging.info(get_stats(config))

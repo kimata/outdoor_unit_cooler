@@ -38,7 +38,7 @@ from sensor_data import fetch_data
 import aircon
 import notify_slack
 from config import load_config
-from control_config import MESSAGE_LIST, CORRECTION_CONDITION
+from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
 import logger
 
 
@@ -84,66 +84,6 @@ def get_sense_data(config):
     return sense_data
 
 
-# NOTE: クーラーの稼働状況を 5 段階で評価する．
-# (5 がフル稼働，0 が非稼働)
-def get_cooler_status(sense_data):
-    mode_map = {}
-
-    for mode in aircon.MODE:
-        mode_map[mode] = 0
-
-    temp = sense_data["temp"][0]["value"]
-    for aircon_power in sense_data["power"]:
-        mode = aircon.get_cooler_state(aircon_power, temp)
-        mode_map[mode] += 1
-
-    logging.info(mode_map)
-
-    if mode_map[aircon.MODE.FULL] >= 2:
-        logging.info("2 台以上のエアコンがフル稼働しています．(cooler_status: 6)")
-        return 6
-    elif (mode_map[aircon.MODE.FULL] >= 1) and (mode_map[aircon.MODE.NORMAL] >= 1):
-        logging.info("複数台ののエアコンがフル稼働もしくは平常運転しています．(cooler_status: 5)")
-        return 5
-    elif mode_map[aircon.MODE.FULL] >= 1:
-        logging.info("1 台以上のエアコンがフル稼働しています．(cooler_status: 4)")
-        return 4
-    elif mode_map[aircon.MODE.NORMAL] >= 2:
-        logging.info("2 台以上のエアコンが平常運転しています．(cooler_status: 4)")
-        return 4
-    elif mode_map[aircon.MODE.NORMAL] >= 1:
-        logging.info("1 台以上のエアコンが平常運転しています．(cooler_status: 3)")
-        return 3
-    elif mode_map[aircon.MODE.IDLE] >= 2:
-        logging.info("2 台以上のエアコンがアイドル運転しています．(cooler_status: 2)")
-        return 2
-    elif mode_map[aircon.MODE.IDLE] >= 1:
-        logging.info("1 台以上のエアコンがアイドル運転しています．(cooler_status: 1)")
-        return 1
-    else:
-        logging.info("エアコンは稼働していません．(cooler_status: 0)")
-        return 0
-
-
-# NOTE: 外部環境の状況を 5 段階で評価する．
-# (-2 が冷却停止, 0 が中立, 2 が強める)
-def get_outdoor_status(sense_data):
-    logging.info(
-        "気温: {temp:.1f} ℃, 湿度: {humi:.1f} %, 日射量: {solar_rad:,.0f} W/m^2, 照度: {lux:,.0f} LUX".format(
-            temp=sense_data["temp"][0]["value"],
-            humi=sense_data["humi"][0]["value"],
-            solar_rad=sense_data["solar_rad"][0]["value"],
-            lux=sense_data["lux"][0]["value"],
-        )
-    )
-    for condition in CORRECTION_CONDITION:
-        if condition["judge"](sense_data):
-            condition["message"](sense_data)
-            return condition["correction"]
-
-    return 0
-
-
 def judge_control_mode(config):
     logging.info("Judge control mode")
 
@@ -151,12 +91,17 @@ def judge_control_mode(config):
 
     cooler_status = get_cooler_status(sense_data)
 
-    if cooler_status == 0:
-        outdoor_status = None
-        control_mode = cooler_status
+    if cooler_status["status"] == 0:
+        outdoor_status = {"status": None, "message": None}
+        control_mode = cooler_status["status"]
     else:
         outdoor_status = get_outdoor_status(sense_data)
-        control_mode = max(cooler_status + outdoor_status, 0)
+        control_mode = max(cooler_status["status"] + outdoor_status["status"], 0)
+
+    if cooler_status["message"] is not None:
+        logging.info(cooler_status["message"])
+    if outdoor_status["message"] is not None:
+        logging.info(outdoor_status["message"])
 
     logging.info(
         (
@@ -165,8 +110,8 @@ def judge_control_mode(config):
             + "outdoor_status: {outdoor_status})"
         ).format(
             control_mode=control_mode,
-            cooler_status=cooler_status,
-            outdoor_status=outdoor_status,
+            cooler_status=cooler_status["status"],
+            outdoor_status=outdoor_status["status"],
         )
     )
 
