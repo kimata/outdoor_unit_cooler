@@ -221,10 +221,6 @@ else:
     log_level = logging.INFO
 
 logger.init("hems.unit_cooler", level=log_level)
-logging.info("Start controller (port: {port})".format(port=server_port))
-
-logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
 
 if client_mode:
     test_client(server_host, server_port)
@@ -232,11 +228,16 @@ if client_mode:
 elif view_msg_mode:
     print_control_msg()
 
+logging.info("Start controller (port: {port})".format(port=server_port))
+
+logging.info("Using config config: {config_file}".format(config_file=config_file))
+config = load_config(config_file)
+
 if dummy_mode:
     logging.warning("DUMMY mode")
 
 try:
-    # NOTE:
+    # NOTE: Last Value Caching Proxy
     threading.Thread(
         target=control_pubsub.start_proxy,
         args=(server_host, real_port, server_port, is_one_time),

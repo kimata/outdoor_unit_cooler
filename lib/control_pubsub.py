@@ -11,7 +11,7 @@ SER_TIMEOUT = 10
 
 
 def start_server(server_port, func, interval_sec, is_one_time=False):
-    logging.info("Start control server...")
+    logging.info("Start control server (port: {port})...".format(port=server_port))
 
     context = zmq.Context()
 
@@ -35,7 +35,11 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
 # NOTE: Last Value Caching Proxy
 # see https://zguide.zeromq.org/docs/chapter5/
 def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
-    logging.info("Start proxy server...")
+    logging.info(
+        "Start proxy server (front: {server_host}:{server_port}, port: {port})...".format(
+            server_host=server_host, server_port=server_port, port=proxy_port
+        )
+    )
 
     context = zmq.Context.instance()
 
@@ -58,8 +62,8 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
         if frontend in events:
             recv_data = frontend.recv_string()
             ch, json_str = recv_data.split(" ", 1)
+            logging.debug("store cache")
             cache[ch] = json_str
-            logging.info("RECEIVE PROXY")
             backend.send_string(recv_data)
             if is_one_time:
                 break
@@ -69,6 +73,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
             if event[0] == 1:
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
+                    logging.debug("send cache")
                     backend.send_string(
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )

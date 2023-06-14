@@ -13,7 +13,7 @@ from webapp_config import APP_URL_PREFIX
 from flask_util import support_jsonp, set_acao
 
 from sensor_data import fetch_data, get_today_sum
-from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
+from control_config import get_cooler_status, get_outdoor_status
 
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 
