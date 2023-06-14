@@ -57,6 +57,12 @@ if __name__ == "__main__":
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
+    logging.info(
+        "Using ZMQ server of {server_host}:{server_port}".format(
+            server_host=server_host, server_port=server_port
+        )
+    )
+
     # NOTE: アクセスログは無効にする
     # logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
