@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify, Blueprint, current_app
 import logging
+import pytz
+import datetime
 
 import control_pubsub
 from webapp_config import APP_URL_PREFIX
@@ -18,6 +20,7 @@ blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 
 def get_sense_data(config):
     sense_data = {}
+    timezone = pytz.timezone("Asia/Tokyo")
 
     for kind in config["controller"]["sensor"]:
         kind_data = []
@@ -36,7 +39,11 @@ def get_sense_data(config):
                 kind_data.append(
                     {
                         "name": sensor["name"],
-                        "time": data["time"][0],
+                        # NOTE: 特に設定しないと InfluxDB は UTC 表記で
+                        # JST+9:00 の時刻を返す形になるので，ここで補正しておく．
+                        "time": timezone.localize(
+                            (data["time"][0].utcnow() + datetime.timedelta(hours=9))
+                        ),
                         "value": data["value"][0],
                     }
                 )

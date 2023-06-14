@@ -1,57 +1,49 @@
 import './App.css';
-import watering_icon from './img/watering.png'
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-function App() {
+import { useEffect, useState } from "react";
+import Watering from "./components/Watering/Watering";
+import CoolingMode from "./components/CoolingMode/CoolingMode";
+import Sensor from "./components/Sensor/Sensor";
+import AirConditioner from "./components/AirConditioner/AirConditioner";
+
+const App = () => {
+    const API_ENDPOINT = "http://192.168.0.10:5000/unit_cooler/api/stat";
+    const [isReady, setReady] = useState(false);
+    const [ctrlStat, setCtrlStat] = useState([]);
+    
+    useEffect(() => {
+        const loadCtrlStat = async () => {
+            let res = await fetchCtrlStat(API_ENDPOINT);
+            setCtrlStat(res);
+            setReady(true);
+        };
+        loadCtrlStat();
+    }, []);
+
+
+    const fetchCtrlStat = (url) => {
+        return new Promise((resolve, reject) => {
+            fetch(url)
+                .then((res) => res.json())
+                .then((resJson) => resolve(resJson))
+             .catch(error => {
+                 console.error('通信に失敗しました', error);
+             });
+        });
+    };
+    
     return (
-<div className="App">
-  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-    <h5 class="display-6 my-0 mr-md-auto font-weight-normal">エアコン室外機冷却システム</h5>
-  </div>
-
-  <div class="container mt-4">
-    <div class="card-deck mb-3 text-center">
-      <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-          <h4 class="my-0 font-weight-normal">本日の散水量</h4>
+        <div className="App">
+            <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+                <h5 className="display-6 my-0 mr-md-auto font-weight-normal">エアコン室外機冷却システム</h5>
+            </div>
+            <Watering isReady={isReady} ctrlStat={ctrlStat} />
+            <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
+            <Sensor isReady={isReady} ctrlStat={ctrlStat} />
+            <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
         </div>
-            <div class="card-body">
-           <img src={watering_icon} alt="🚰" width="120px" />
-            <span class="display-1 align-middle ms-4"><span class="fw-bold">10.1</span> <span class="display-5">L</span></span>
-        </div>
-      </div >      
-    </div>
-  </div>
-       
-  <div class="container mt-4">
-    <div class="card-deck mb-3 text-center">
-      <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-          <h4 class="my-0 font-weight-normal">センサー値</h4>
-        </div>
-        <div class="card-body">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>氏名</th>
-                <th>得意言語</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>エンジニア1</td>
-                <td>PHP</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div >      
-    </div>
-  </div>
-</div>
-
   );
 }
 
