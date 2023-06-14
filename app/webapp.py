@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     logging.info(
         "Using ZMQ server of {server_host}:{server_port} (hostname: {server_hostname})".format(
-            server_host=server_hostname,
+            server_hostname=server_hostname,
             server_host=server_host,
             server_port=server_port,
         )
