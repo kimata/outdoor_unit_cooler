@@ -74,7 +74,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
 
         if backend in events:
             event = backend.recv()
-            if int.from_bytes(event[0]) == 1:
+            if int.from_bytes(event[0], "big") == 1:
                 logging.debug("subscribed")
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
