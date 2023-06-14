@@ -10,7 +10,7 @@ import Sensor from "./components/Sensor/Sensor";
 import AirConditioner from "./components/AirConditioner/AirConditioner";
 
 const App = () => {
-    const API_ENDPOINT = "http://192.168.0.10:5000/unit_cooler/api/stat";
+    const API_ENDPOINT = "/unit_cooler/api/stat";
     const [isReady, setReady] = useState(false);
     const [ctrlStat, setCtrlStat] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
