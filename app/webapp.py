@@ -20,6 +20,8 @@ import sys
 import pathlib
 import time
 import logging
+from socket import getaddrinfo
+from socket import AF_INET, SOCK_STREAM
 import atexit
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
@@ -33,6 +35,23 @@ import webapp_log
 import webapp_event
 
 import valve
+
+
+def nslookup(hostname):
+    try:
+        addrinfolist = getaddrinfo(hostname, None, 0, 0, 0, 0)
+    except:
+        return None
+
+    for family, kind, proto, canonical, sockaddr in addrinfolist:
+        if family != AF_INET:
+            continue
+
+        if kind != SOCK_STREAM:
+            continue
+
+        return sockaddr[0]
+    return None
 
 
 def notify_terminate():
@@ -52,14 +71,17 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     config_file = args["-c"]
-    server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
+    server_hostname = os.environ.get("HEMS_SERVER_HOST", args["-s"])
+    server_host = nslookup(server_hostname)
     server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
     logging.info(
-        "Using ZMQ server of {server_host}:{server_port}".format(
-            server_host=server_host, server_port=server_port
+        "Using ZMQ server of {server_host}:{server_port} (hostname: {server_hostname})".format(
+            server_host=server_hostname,
+            server_host=server_host,
+            server_port=server_port,
         )
     )
 
