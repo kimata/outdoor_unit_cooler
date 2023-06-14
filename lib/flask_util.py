@@ -39,6 +39,7 @@ def gzipped(f):
             response.headers["Content-Encoding"] = "gzip"
             response.headers["Vary"] = "Accept-Encoding"
             response.headers["Content-Length"] = len(response.data)
+            response.headers["Access-Control-Allow-Origin"] = "*"
 
             if g.pop("disable_cache", False):
                 response.headers["Cache-Control"] = "no-store, must-revalidate"

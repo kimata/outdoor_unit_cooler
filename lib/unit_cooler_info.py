@@ -73,6 +73,7 @@ def get_stats(config):
 @support_jsonp
 def api_get_stats():
     config = current_app.config["CONFIG"]
+
     return jsonify(get_stats(config))
 
 
