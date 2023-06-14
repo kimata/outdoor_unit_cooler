@@ -85,7 +85,7 @@ def app_log(message, level=APP_LOG_LEVEL.INFO):
 
     # NOTE: ブラウザからアクセスされる前に再起動される場合．
     if thread_pool is None:
-        app_log_impl(message)
+        app_log_impl(message, level)
 
     # NOTE: 実際のログ記録は別スレッドに任せて，すぐにリターンする
     thread_pool.apply_async(app_log_impl, (message, level))
