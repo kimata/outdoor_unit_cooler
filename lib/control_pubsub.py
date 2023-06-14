@@ -61,7 +61,6 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
             cache[ch] = json_str
             logging.info("RECEIVE PROXY")
             backend.send_string(recv_data)
-
             if is_one_time:
                 break
 
@@ -73,8 +72,8 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
                     backend.send_string(
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )
-                if is_one_time:
-                    break
+                    if is_one_time:
+                        break
 
 
 def start_client(server_host, server_port, func, is_one_time=False):
