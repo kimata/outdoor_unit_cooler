@@ -1,13 +1,29 @@
 image: docker:24.0
 
 stages:
-  - build
+  - build-webapp
+  - build-image
   - test
   - deploy
   - renovate
 
+build-react:
+    stage: build-webapp
+    image: node:20.3
+    script:
+        - cd react
+        - npm ci --cache .npm --prefer-offline
+        - npm run build
+    artifacts:
+        paths:
+            - react/build
+    cache:
+        key: npm
+        paths:
+            - .npm/
+
 build-image:
-  stage: build
+  stage: build-image
   image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d386d462
 
   variables:
@@ -26,7 +42,10 @@ build-image:
           --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --push --tag ${CI_REGISTRY_IMAGE} .
+    dependencies:
+        - build-react
 
+          
 test-controller-sample:
   stage: test
 
