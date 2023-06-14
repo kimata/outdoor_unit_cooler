@@ -64,13 +64,13 @@ def watering_amount(config):
     )
 
 
-def get_stats(config):
+def get_stats(config, server_host, server_port):
     sense_data = get_sense_data(config)
 
     return {
         "watering": watering_amount(config),
         "sensor": sense_data,
-        "mode": control_pubsub.get_last_message("127.0.0.1", 2222),
+        "mode": control_pubsub.get_last_message(server_host, server_port),
         "cooler_status": get_cooler_status(sense_data),
         "outdoor_status": get_outdoor_status(sense_data),
     }
@@ -81,8 +81,10 @@ def get_stats(config):
 @set_acao
 def api_get_stats():
     config = current_app.config["CONFIG"]
+    server_host = current_app.config["SERVER_HOST"]
+    server_port = current_app.config["SERVER_PORT"]
 
-    return jsonify(get_stats(config))
+    return jsonify(get_stats(config, server_host, server_port))
 
 
 if __name__ == "__main__":

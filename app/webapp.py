@@ -20,10 +20,7 @@ import sys
 import pathlib
 import time
 import logging
-import traceback
 import atexit
-import threading
-
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
@@ -50,12 +47,13 @@ atexit.register(notify_terminate)
 if __name__ == "__main__":
     import logger
     from config import load_config
+    import os
 
     args = docopt(__doc__)
 
     config_file = args["-c"]
-    server_host = args["-s"]
-    server_port = args["-p"]
+    server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
+    server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
@@ -65,6 +63,8 @@ if __name__ == "__main__":
     app = Flask(__name__)
 
     app.config["CONFIG"] = load_config(config_file)
+    app.config["SERVER_HOST"] = server_host
+    app.config["SERVER_PORT"] = server_port
 
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 
