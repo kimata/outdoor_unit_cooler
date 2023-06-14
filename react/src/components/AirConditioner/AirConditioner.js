@@ -11,6 +11,14 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
         )
     }
 
+    const valueInt = (value) => {
+        if (value == null) {
+            return 0
+        } else {
+            return parseInt(value)
+        }
+    }
+    
     type AirconRowProps = { airconData: any };
     const AirconRow: React.FC<AirconRowProps> = (props) => {
         let date = moment(props.airconData.time);
@@ -23,7 +31,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                         <div className="progress" style={{height: '2em'}}>
                             <div className="progress-bar bg-secondary"
                                  role="progressbar"
-                                 aria-valuenow="{props.airconData.value}"
+                                 aria-valuenow={valueInt(props.airconData.value)}
                                  aria-valuemin="0"
                                  aria-valuemax="1200"
                                  style={{width: (100.0*props.airconData.value/1500)+ '%'}}>
