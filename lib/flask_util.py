@@ -39,7 +39,6 @@ def gzipped(f):
             response.headers["Content-Encoding"] = "gzip"
             response.headers["Vary"] = "Accept-Encoding"
             response.headers["Content-Length"] = len(response.data)
-            response.headers["Access-Control-Allow-Origin"] = "*"
 
             if g.pop("disable_cache", False):
                 response.headers["Cache-Control"] = "no-store, must-revalidate"
@@ -47,6 +46,19 @@ def gzipped(f):
             else:
                 response.headers["Cache-Control"] = "max-age=31536000"
 
+            return response
+
+        return f(*args, **kwargs)
+
+    return view_func
+
+
+def set_acao(f):
+    @functools.wraps(f)
+    def view_func(*args, **kwargs):
+        @after_this_request
+        def set_acao_header(response):
+            response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
         return f(*args, **kwargs)

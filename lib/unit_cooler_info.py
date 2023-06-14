@@ -8,7 +8,7 @@ from webapp_config import APP_URL_PREFIX
 
 # from webapp_event import notify_event, EVENT_TYPE
 # from webapp_log import app_log
-from flask_util import support_jsonp
+from flask_util import support_jsonp, set_acao
 
 from sensor_data import fetch_data, get_today_sum
 from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
@@ -71,6 +71,7 @@ def get_stats(config):
 
 @blueprint.route("/api/stat", methods=["GET"])
 @support_jsonp
+@set_acao
 def api_get_stats():
     config = current_app.config["CONFIG"]
 
