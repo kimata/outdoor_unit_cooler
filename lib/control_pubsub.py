@@ -45,7 +45,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
         )
     )
 
-    context = zmq.Context.instance()
+    context = zmq.Context()
 
     frontend = context.socket(zmq.SUB)
     frontend.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
