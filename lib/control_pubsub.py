@@ -61,7 +61,10 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
     poller.register(backend, zmq.POLLIN)
 
     while True:
-        events = dict(poller.poll(1000))
+        try:
+            events = dict(poller.poll(1000))
+        except KeyboardInterrupt:
+            break
 
         if frontend in events:
             recv_data = frontend.recv_string()
