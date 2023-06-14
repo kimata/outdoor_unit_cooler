@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     python3-fluent-logger \
     python3-spidev python3-serial \
     python3-flask \
+    python3-psutil \
     python3-zmq \
  && apt-get clean \
  && rm -rf /va/rlib/apt/lists/*
