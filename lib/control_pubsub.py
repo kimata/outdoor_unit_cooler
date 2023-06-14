@@ -97,7 +97,8 @@ def start_client(server_host, server_port, func, is_one_time=False):
 
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    target = "tcp://{host}:{port}".format(host=server_host, port=server_port)
+    socket.connect(target)
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
     logging.info("Client initialize done.")
@@ -109,9 +110,7 @@ def start_client(server_host, server_port, func, is_one_time=False):
         func(json_data)
 
         if is_one_time:
-            socket.disconnect(
-                "tcp://{host}:{port}".format(host=server_host, port=server_port)
-            )
+            socket.disconnect(target)
             socket.close()
             context.destroy()
             break
@@ -120,13 +119,30 @@ def start_client(server_host, server_port, func, is_one_time=False):
 def get_last_message(server_host, server_port):
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    target = "tcp://{host}:{port}".format(host=server_host, port=server_port)
+    socket.connect(target)
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
-    ch, json_str = socket.recv_string().split(" ", 1)
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
 
-    socket.disconnect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    events = dict(poller.poll(500))
+    if socket in events:
+        ch, json_str = socket.recv_string().split(" ", 1)
+        message = json.loads(json_str)
+        get_last_message.message_last[target] = message
+
+    else:
+        if target in get_last_message.message_last:
+            message = get_last_message.message_last[target]
+        else:
+            message = None
+
+    socket.disconnect(target)
     socket.close()
     context.destroy()
 
-    return json.loads(json_str)
+    return message
+
+
+get_last_message.message_last = {}
