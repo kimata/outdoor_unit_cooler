@@ -108,13 +108,45 @@ def dummy_control_mode():
 dummy_control_mode.prev_mode = 0
 
 
-def gen_control_msg(config, dummy_mode=False, speedup=1):
+def judge_control_mode(config):
+    logging.info("Judge control mode")
+
     sense_data = get_sense_data(config)
 
+    cooler_status = get_cooler_status(sense_data)
+
+    if cooler_status["status"] == 0:
+        outdoor_status = {"status": None, "message": None}
+        control_mode = cooler_status["status"]
+    else:
+        outdoor_status = get_outdoor_status(sense_data)
+        control_mode = max(cooler_status["status"] + outdoor_status["status"], 0)
+
+    if cooler_status["message"] is not None:
+        logging.info(cooler_status["message"])
+    if outdoor_status["message"] is not None:
+        logging.info(outdoor_status["message"])
+
+    logging.info(
+        (
+            "control_mode: {control_mode} "
+            + "(cooler_status: {cooler_status}, "
+            + "outdoor_status: {outdoor_status})"
+        ).format(
+            control_mode=control_mode,
+            cooler_status=cooler_status["status"],
+            outdoor_status=outdoor_status["status"],
+        )
+    )
+
+    return control_mode
+
+
+def gen_control_msg(config, dummy_mode=False, speedup=1):
     if dummy_mode:
         control_mode = dummy_control_mode()
     else:
-        control_mode = judge_control_mode(config, sense_data)
+        control_mode = judge_control_mode(config)
 
     mode_index = min(control_mode, len(MESSAGE_LIST) - 1)
     control_msg = MESSAGE_LIST[mode_index]
