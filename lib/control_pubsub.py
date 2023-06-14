@@ -95,7 +95,8 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
 def start_client(server_host, server_port, func, is_one_time=False):
     logging.info("Start control client...")
 
-    socket = zmq.Context().socket(zmq.SUB)
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
     socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
