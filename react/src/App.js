@@ -39,7 +39,7 @@ const App = () => {
         if (error) {
             return (
             <div className="row justify-content-center">
-                <div className="col-10 text-end">
+                <div className="col-11 text-end">
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <div>
                             データの読み込みに失敗しました．
@@ -73,8 +73,8 @@ const App = () => {
             <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
             <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
             <Sensor isReady={isReady} ctrlStat={ctrlStat} />
-            <div className="row justify-content-center">
-                <div className="col-9 text-end">Last modified: {updateTime}</div>
+            <div className="row justify-content-end">
+                <div className="col-2 mt-4 text-end">Last modified: {updateTime}</div>
             </div>
         </div>
   );
