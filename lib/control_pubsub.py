@@ -51,7 +51,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
     frontend.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
     frontend.setsockopt_string(zmq.SUBSCRIBE, CH)
 
-    backend = context.socket(zmq.PUB)
+    backend = context.socket(zmq.XPUB)
     backend.bind("tcp://*:{port}".format(port=proxy_port))
 
     cache = {}
