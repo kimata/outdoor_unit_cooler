@@ -10,17 +10,32 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
             </span>
         )
     }
-   
-    const airconRow = (airconData) => {
-        let date = moment(airconData.time);
+
+    type AirconRowProps = { airconData: any };
+    const AirconRow: React.FC<AirconRowProps> = (props) => {
+        let date = moment(props.airconData.time);
         
         return (
-            <tr>
-                <td className="text-start">{airconData.name}</td>
-                <td className="text-end">{valueText(airconData.value)}</td>
-                <td className="text-start">W</td>
-                <td className="text-center">{dateText(date)}</td>
-                <td className="text-center">{date.fromNow()}</td>
+            <tr key="{index}" className="row">
+                <td className="text-start col-2">{props.airconData.name}</td>
+                <td className="text-end col-5">
+                    <div className="progress-label-container">
+                        <div className="progress" style={{height: '2em'}}>
+                            <div className="progress-bar bg-secondary"
+                                 role="progressbar"
+                                 aria-valuenow="{props.airconData.value}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="1200"
+                                 style={{width: (100.0*props.airconData.value/1500)+ '%'}}>
+                            </div>
+                        </div>
+                        <div className="progress-label">
+                            <b>{valueText(props.airconData.value)}</b><small className="ms-2">W</small>
+                        </div>
+                    </div>
+                </td>
+                <td className="text-end col-3">{dateText(date)}</td>
+                <td className="text-start col-2">{date.fromNow()}</td>
             </tr>
         )
     }
@@ -39,19 +54,23 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
             <div>
                 <table className="table">
                     <thead>
-                        <tr>
-                            <th>エアコン</th>
-                            <th colspan="2">値</th>
-                            <th colspan="2">最新更新日時</th>
+                        <tr className="row">
+                            <th className="col-2">エアコン</th>
+                            <th className="col-5">値</th>
+                            <th colSpan="2" className="col-5">最新更新日時</th>
                         </tr>
                     </thead>
                     <tbody>
-                {
-                    ctrlStat.sensor.power.map(airconRow)
-                }
+                        {
+                            ctrlStat.sensor.power.map(
+                                (airconData, index) => (
+                                    <AirconRow airconData={airconData} key={index} />
+                                )
+                            )
+                        }
                     </tbody>
                 </table>
-                <div>{ coolerStatus(ctrlStat) }</div>
+                <div className="text-start">{ coolerStatus(ctrlStat) }</div>
             </div>
         )
     };

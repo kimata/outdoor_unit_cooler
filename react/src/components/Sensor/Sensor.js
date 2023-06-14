@@ -16,12 +16,12 @@ const Sensor = ({ isReady, ctrlStat }) => {
         let date = moment(sensorData.time);
         
         return (
-            <tr>
-                <td className="text-start">{sensorData.name}</td>
-                <td className="text-end">{valueText(sensorData.value)}</td>
-                <td className="text-start">{unit}</td>
-                <td className="text-center">{dateText(date)}</td>
-                <td className="text-center">{date.fromNow()}</td>
+            <tr className="row">
+                <td className="text-start col-2">{sensorData.name}</td>
+                <td className="text-end col-3"><b>{valueText(sensorData.value)}</b></td>
+                <td className="text-start col-2"><small>{unit}</small></td>
+                <td className="text-end col-3">{dateText(date)}</td>
+                <td className="text-start col-2">{date.fromNow()}</td>
             </tr>
         )
     }
@@ -41,10 +41,10 @@ const Sensor = ({ isReady, ctrlStat }) => {
             <div>
                 <table className="table">
                     <thead>
-                        <tr>
-                            <th>センサー</th>
-                            <th colspan="2">値</th>
-                            <th colspan="2">最新更新日時</th>
+                        <tr className="row">
+                            <th className="col-2">センサー</th>
+                            <th colSpan="2" className="col-5">値</th>
+                            <th colSpan="2" className="col-5">最新更新日時</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,7 +54,7 @@ const Sensor = ({ isReady, ctrlStat }) => {
                         { sensorRow(ctrlStat.sensor.solar_rad[0], "W/m^2") }
                     </tbody>
                 </table>
-                <div>{ outdoorStatus(ctrlStat) }</div>
+                <div className="text-start">{ outdoorStatus(ctrlStat) }</div>
             </div>
         )
     };

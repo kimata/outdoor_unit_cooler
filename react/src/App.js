@@ -1,6 +1,7 @@
 import './App.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+import moment from 'moment-timezone';
 
 import { useEffect, useState } from "react";
 import Watering from "./components/Watering/Watering";
@@ -12,14 +13,24 @@ const App = () => {
     const API_ENDPOINT = "http://192.168.0.10:5000/unit_cooler/api/stat";
     const [isReady, setReady] = useState(false);
     const [ctrlStat, setCtrlStat] = useState([]);
+    const [updateTime, setUpdateTime] = useState("Unknown");
     
     useEffect(() => {
         const loadCtrlStat = async () => {
             let res = await fetchCtrlStat(API_ENDPOINT);
             setCtrlStat(res);
             setReady(true);
+            setUpdateTime(moment().format('YYYY-MM-DD HH:mm:ss'));
         };
         loadCtrlStat();
+
+        const intervalId = setInterval(() => {
+            console.log("Load");
+            loadCtrlStat();
+        }, 10000);
+        return () => {
+            clearInterval(intervalId);
+        };
     }, []);
 
 
@@ -28,9 +39,9 @@ const App = () => {
             fetch(url)
                 .then((res) => res.json())
                 .then((resJson) => resolve(resJson))
-             .catch(error => {
-                 console.error('通信に失敗しました', error);
-             });
+                .catch(error => {
+                    console.error('通信に失敗しました', error);
+                });
         });
     };
     
@@ -41,8 +52,11 @@ const App = () => {
             </div>
             <Watering isReady={isReady} ctrlStat={ctrlStat} />
             <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
-            <Sensor isReady={isReady} ctrlStat={ctrlStat} />
             <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
+            <Sensor isReady={isReady} ctrlStat={ctrlStat} />
+            <div className="row justify-content-center">
+                <div className="col-9 text-end">Last modified: {updateTime}</div>
+            </div>
         </div>
   );
 }
