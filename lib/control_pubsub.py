@@ -76,6 +76,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
                 break
 
         if backend in events:
+            logging.info("Backend event")
             event = backend.recv()
             if event[0] == 1:
                 logging.info("Subscribed")
