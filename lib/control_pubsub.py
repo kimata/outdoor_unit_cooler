@@ -66,7 +66,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
         if frontend in events:
             recv_data = frontend.recv_string()
             ch, json_str = recv_data.split(" ", 1)
-            logging.info("store cache")
+            logging.debug("store cache")
             cache[ch] = json_str
             backend.send_string(recv_data)
             if is_one_time:
@@ -74,12 +74,11 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
 
         if backend in events:
             event = backend.recv()
-            logging.info("backend recv")
-            if event[0] == 1:
-                logging.info("subscribed")
+            if int.from_bytes(event[0]) == 1:
+                logging.debug("subscribed")
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
-                    logging.info("send cache")
+                    logging.debug("send cache")
                     backend.send_string(
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )
