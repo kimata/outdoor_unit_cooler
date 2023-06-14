@@ -20,12 +20,16 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
 
     logging.info("Server initialize done.")
 
+    i = 0
     while True:
         start_time = time.time()
         socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
 
         if is_one_time:
-            break
+            # NOTE: Proxy がいるので，2回回す
+            if i == 1:
+                break
+            i += 1
 
         sleep_sec = interval_sec - (time.time() - start_time)
         logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
@@ -77,8 +81,6 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
                     backend.send_string(
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )
-                    if is_one_time:
-                        break
 
 
 def start_client(server_host, server_port, func, is_one_time=False):
