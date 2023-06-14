@@ -78,7 +78,9 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
         if backend in events:
             logging.info("Backend event")
             event = backend.recv()
-            if event[0] == 1:
+            if event[0] == 0:
+                logging.info("Unsubscribed")
+            elif event[0] == 1:
                 logging.info("Subscribed")
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
@@ -109,16 +111,21 @@ def start_client(server_host, server_port, func, is_one_time=False):
             socket.disconnect(
                 "tcp://{host}:{port}".format(host=server_host, port=server_port)
             )
+            socket.close()
+            context.destroy()
             break
 
 
 def get_last_message(server_host, server_port):
-    socket = zmq.Context().socket(zmq.SUB)
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
     socket.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
     ch, json_str = socket.recv_string().split(" ", 1)
 
     socket.disconnect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    socket.close()
+    context.destroy()
 
     return json.loads(json_str)
