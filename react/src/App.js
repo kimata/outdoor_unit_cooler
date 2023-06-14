@@ -14,10 +14,12 @@ const App = () => {
     const [isReady, setReady] = useState(false);
     const [ctrlStat, setCtrlStat] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
+    const [error, setError] = useState(false);
     
     useEffect(() => {
         const loadCtrlStat = async () => {
             let res = await fetchCtrlStat(API_ENDPOINT);
+            setError(false);
             setCtrlStat(res);
             setReady(true);
             setUpdateTime(moment().format('YYYY-MM-DD HH:mm:ss'));
@@ -25,7 +27,6 @@ const App = () => {
         loadCtrlStat();
 
         const intervalId = setInterval(() => {
-            console.log("Load");
             loadCtrlStat();
         }, 10000);
         return () => {
@@ -34,12 +35,29 @@ const App = () => {
     }, []);
 
 
+    const errorMessage = (error) => {
+        if (error) {
+            return (
+            <div className="row justify-content-center">
+                <div className="col-10 text-end">
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <div>
+                            データの読み込みに失敗しました．
+                        </div>
+                    </div>
+                </div>
+            </div>
+            )
+        }
+    }
+    
     const fetchCtrlStat = (url) => {
         return new Promise((resolve, reject) => {
             fetch(url)
                 .then((res) => res.json())
                 .then((resJson) => resolve(resJson))
                 .catch(error => {
+                    setError(true);
                     console.error('通信に失敗しました', error);
                 });
         });
@@ -50,6 +68,7 @@ const App = () => {
             <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                 <h5 className="display-6 my-0 mr-md-auto font-weight-normal">エアコン室外機冷却システム</h5>
             </div>
+            { errorMessage(error) }
             <Watering isReady={isReady} ctrlStat={ctrlStat} />
             <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
             <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
