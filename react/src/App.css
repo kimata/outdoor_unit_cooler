@@ -11,3 +11,9 @@
     height: 100% !important;
 }
 
+.outdoor_unit {
+    background-image: url(../public/wall.png);
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-size:200px;
+}

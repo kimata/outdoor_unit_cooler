@@ -24,7 +24,7 @@ const Watering = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">本日の散水量</h4>
                     </div>
-                    <div className="card-body">
+                    <div className="card-body outdoor_unit">
                         <img src={watering_icon} alt="🚰" width="120px" />
                         { isReady ? amount(ctrlStat.watering) : loading() }
                     </div>
