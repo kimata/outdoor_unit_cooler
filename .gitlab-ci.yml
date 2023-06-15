@@ -142,6 +142,8 @@ deploy-webapp:
     # NOTE: 自動実行ではデプロイしない
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
+    - changes:
+        - react/
 
 renovate:
   stage: renovate
