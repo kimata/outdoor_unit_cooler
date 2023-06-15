@@ -70,12 +70,14 @@ const App = () => {
             </div>
             { errorMessage(error) }
             <div>
-            <div class="row row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
-                <Watering isReady={isReady} ctrlStat={ctrlStat} />
-                <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
-                <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
-                <Sensor isReady={isReady} ctrlStat={ctrlStat} />
-            </div>
+                <div className="container">
+                    <div className="row row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
+                        <Watering isReady={isReady} ctrlStat={ctrlStat} />
+                        <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
+                        <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
+                        <Sensor isReady={isReady} ctrlStat={ctrlStat} />
+                    </div>
+                </div>
             </div>
                <div className="float-end text-end m-2">
                 Last modified: {updateTime}
