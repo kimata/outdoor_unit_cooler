@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     app.register_blueprint(unit_cooler_info.blueprint)
 
-    app.register_blueprint(webapp_util.blueprint_default)
+    app.register_blueprint(webapp_base.blueprint_default)
     app.register_blueprint(webapp_base.blueprint)
     app.register_blueprint(webapp_event.blueprint)
     app.register_blueprint(webapp_log.blueprint)

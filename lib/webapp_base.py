@@ -20,9 +20,9 @@ def webapp(filename):
     return send_from_directory(STATIC_FILE_PATH, filename)
 
 
-blueprint_deault = Blueprint("webapp-default", __name__)
+blueprint_default = Blueprint("webapp-default", __name__)
 
 
-@blueprint_deault.route("/")
+@blueprint_default.route("/")
 def root():
     return redirect("{webapp_prefix}/".format(webapp_prefix=APP_URL_PREFIX))
