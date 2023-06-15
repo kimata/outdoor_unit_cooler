@@ -18,7 +18,7 @@ const Watering = ({ isReady, ctrlStat }) => {
     }
     
     return (
-        <div className="container mt-4">
+        <div class="col">
             <div className="card-deck mb-3 text-center">
                 <div className="card mb-4 shadow-sm">
                     <div className="card-header">
@@ -28,7 +28,7 @@ const Watering = ({ isReady, ctrlStat }) => {
                         <img src={watering_icon} alt="🚰" width="120px" />
                         { isReady ? amount(ctrlStat.watering) : loading() }
                     </div>
-                </div >      
+                </div >
             </div>
         </div>
   );

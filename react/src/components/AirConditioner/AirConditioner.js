@@ -84,7 +84,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
     };
     
     return (
-        <div className="container mt-4">
+        <div className="col">
             <div className="card-deck mb-3 text-center">
                 <div className="card mb-4 shadow-sm">
                     <div className="card-header">
