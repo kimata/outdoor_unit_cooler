@@ -129,6 +129,19 @@ deploy-actuator:
         - lib/valve.py
         - src/healthz.py
 
+deploy-webapp:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+    - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
+  rules:
+    # NOTE: 自動実行ではデプロイしない
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
 
 renovate:
   stage: renovate
