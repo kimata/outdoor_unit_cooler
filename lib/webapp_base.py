@@ -3,6 +3,7 @@
 
 from flask import (
     send_from_directory,
+    redirect,
     Blueprint,
 )
 
@@ -15,5 +16,13 @@ blueprint = Blueprint("webapp-base", __name__, url_prefix=APP_URL_PREFIX)
 @blueprint.route("/", defaults={"filename": "index.html"})
 @blueprint.route("/<path:filename>")
 @gzipped
-def angular(filename):
+def webapp(filename):
     return send_from_directory(STATIC_FILE_PATH, filename)
+
+
+blueprint_deault = Blueprint("webapp-default", __name__)
+
+
+@blueprint_deault.route("/")
+def root():
+    return redirect("{webapp_prefix}/".format(webapp_prefix=APP_URL_PREFIX))
