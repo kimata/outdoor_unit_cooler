@@ -17,8 +17,8 @@ const Sensor = ({ isReady, ctrlStat }) => {
         
         return (
             <tr className="row">
-                <td className="text-start col-2">{sensorData.name}</td>
-                <td className="text-end col-3"><b>{valueText(sensorData.value)}</b></td>
+                <td className="text-start col-3">{sensorData.name}</td>
+                <td className="text-end col-2"><b>{valueText(sensorData.value)}</b></td>
                 <td className="text-start col-2"><small>{unit}</small></td>
                 <td className="text-end col-3">{dateText(date)}</td>
                 <td className="text-start col-2">{date.fromNow()}</td>
@@ -42,8 +42,8 @@ const Sensor = ({ isReady, ctrlStat }) => {
                 <table className="table">
                     <thead>
                         <tr className="row">
-                            <th className="col-2">センサー</th>
-                            <th colSpan="2" className="col-5">値</th>
+                            <th className="col-3">センサー</th>
+                            <th colSpan="2" className="col-4">値</th>
                             <th colSpan="2" className="col-5">最新更新日時</th>
                         </tr>
                     </thead>

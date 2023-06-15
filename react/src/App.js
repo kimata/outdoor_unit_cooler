@@ -71,7 +71,7 @@ const App = () => {
             { errorMessage(error) }
             <div>
                 <div className="container">
-                    <div className="row row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
+                    <div className="row display-flex row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
                         <Watering isReady={isReady} ctrlStat={ctrlStat} />
                         <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
                         <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />

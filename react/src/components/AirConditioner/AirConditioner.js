@@ -25,8 +25,8 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
         
         return (
             <tr key="{index}" className="row">
-                <td className="text-start col-2">{props.airconData.name}</td>
-                <td className="text-end col-5">
+                <td className="text-start col-3">{props.airconData.name}</td>
+                <td className="text-end col-4">
                     <div className="progress-label-container">
                         <div className="progress" style={{height: '2em'}}>
                             <div className="progress-bar bg-secondary"
@@ -63,8 +63,8 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                 <table className="table">
                     <thead>
                         <tr className="row">
-                            <th className="col-2">エアコン</th>
-                            <th className="col-5">値</th>
+                            <th className="col-3">エアコン</th>
+                            <th className="col-4">値</th>
                             <th colSpan="2" className="col-5">最新更新日時</th>
                         </tr>
                     </thead>
