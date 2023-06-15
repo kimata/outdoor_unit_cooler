@@ -63,9 +63,36 @@ def notify_terminate():
 atexit.register(notify_terminate)
 
 
+def queuing_message(message_queue, message):
+    if message_queue.full():
+        message_queue.get()
+
+    logging.info("receive control message")
+    message_queue.put(message)
+
+
+def watch_client(
+    server_host,
+    server_port,
+    message_queue,
+):
+    logging.info(
+        "Start watch client (host: {host}:{port})".format(
+            host=server_host, port=server_port
+        )
+    )
+    control_pubsub.start_client(
+        server_host,
+        server_port,
+        lambda message: queuing_message(message_queue, message),
+    )
+
+
 if __name__ == "__main__":
     import logger
     from config import load_config
+    from multiprocessing import Queue
+    import threading
     import os
 
     args = docopt(__doc__)
@@ -85,6 +112,12 @@ if __name__ == "__main__":
         )
     )
 
+    message_queue = Queue()
+    threading.Thread(
+        target=watch_client,
+        args=(server_host, server_port, message_queue),
+    ).start()
+
     # NOTE: アクセスログは無効にする
     # logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
@@ -93,6 +126,7 @@ if __name__ == "__main__":
     app.config["CONFIG"] = load_config(config_file)
     app.config["SERVER_HOST"] = server_host
     app.config["SERVER_PORT"] = server_port
+    app.config["MESSAGE_QUEUE"] = message_queue
 
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 

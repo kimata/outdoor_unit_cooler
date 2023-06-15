@@ -19,6 +19,10 @@ const CoolingMode = ({ isReady, ctrlStat }) => {
     }
     
     const modeInfo = (mode) => {
+        if (mode == null) {
+            return loading()
+        }
+        
         return (
             <div>
                 <div className="display-1 align-middle ms-1">

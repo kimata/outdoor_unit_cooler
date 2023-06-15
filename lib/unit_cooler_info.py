@@ -64,13 +64,22 @@ def watering_amount(config):
     )
 
 
-def get_stats(config, server_host, server_port):
+def get_last_message(server_host, server_port, message_queue):
+    while not message_queue.empty():
+        get_last_message.last_message = message_queue.get()
+    return get_last_message.last_message
+
+
+get_last_message.last_message = None
+
+
+def get_stats(config, server_host, server_port, message_queue):
     sense_data = get_sense_data(config)
 
     return {
         "watering": watering_amount(config),
         "sensor": sense_data,
-        "mode": control_pubsub.get_last_message(server_host, server_port),
+        "mode": get_last_message(server_host, server_port, message_queue),
         "cooler_status": get_cooler_status(sense_data),
         "outdoor_status": get_outdoor_status(sense_data),
     }
@@ -83,8 +92,9 @@ def api_get_stats():
     config = current_app.config["CONFIG"]
     server_host = current_app.config["SERVER_HOST"]
     server_port = current_app.config["SERVER_PORT"]
+    message_queue = current_app.config["MESSAGE_QUEUE"]
 
-    return jsonify(get_stats(config, server_host, server_port))
+    return jsonify(get_stats(config, server_host, server_port, message_queue))
 
 
 if __name__ == "__main__":

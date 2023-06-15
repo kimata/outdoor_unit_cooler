@@ -73,8 +73,8 @@ const App = () => {
             <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
             <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
             <Sensor isReady={isReady} ctrlStat={ctrlStat} />
-            <div className="row justify-content-end">
-                <div className="col-2 mt-4 text-end">Last modified: {updateTime}</div>
+            <div className="float-end text-end m-2">
+                Last modified: {updateTime}
             </div>
         </div>
   );
