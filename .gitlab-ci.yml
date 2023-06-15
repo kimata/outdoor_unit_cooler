@@ -143,7 +143,9 @@ deploy-webapp:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - changes:
-        - react/
+        - react/**/*
+        - app/webapp.py
+        - lib/*
 
 renovate:
   stage: renovate
