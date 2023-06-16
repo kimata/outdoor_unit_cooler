@@ -33,15 +33,14 @@ build-image:
     - export GIT_SSL_NO_VERIFY=1
     - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
     - mv hems_config/unit_cooler.yaml config.yaml
-    # - docker pull ${CI_REGISTRY_IMAGE} || true
-    # - docker build . -t ${CI_REGISTRY_IMAGE}
+   
     - docker buildx create --name ${BUILDER} --config script/buildkitd.toml --use
     - docker buildx use ${BUILDER}
     - docker buildx build --platform linux/amd64,linux/arm64/v8
           --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --push --tag ${CI_REGISTRY_IMAGE} .
-    - docker buildx stop ${BUILDER}
+    # - docker buildx stop ${BUILDER}
   dependencies:
     - build-react
 
