@@ -118,8 +118,8 @@ if __name__ == "__main__":
         args=(server_host, server_port, message_queue),
     ).start()
 
-    # NOTE: アクセスログは無効にする
-    # logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    NOTE: アクセスログは無効にする
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     app = Flask(__name__)
 
