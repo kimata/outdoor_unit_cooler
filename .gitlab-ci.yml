@@ -50,14 +50,14 @@ test-controller-sample:
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
-    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} app/cooler_controller.py -c config.example.yaml -O
+    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
 
 test-controller-regular:
   stage: test
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
-    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} app/cooler_controller.py -O
+    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
 
 test-actuator-sample:
   stage: test
@@ -67,7 +67,7 @@ test-actuator-sample:
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
-    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
+    - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
 
 test-actuator-regular:
   stage: test
@@ -76,7 +76,24 @@ test-actuator-regular:
 
   script:
     - docker pull ${CI_REGISTRY_IMAGE}
-    - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} app/unit_cooler.py -s ${SERVER_HOST} -O -D
+    - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -s ${SERVER_HOST} -O -D
+
+test-webapp-docker:
+    stage: test
+    image: registry.green-rabbit.net:5000/kimata/local_playwright:230616A
+
+    script:
+        # # NOTE: お掃除する
+        # - docker rm $(docker ps -a --filter "status=exited" -q) || true
+        - docker stop ${CI_JOB_NAME} || true
+        - docker pull ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME} --label job=${CI_JOB_ID} --publish 2222:2222 ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
+        - python3 -m pytest test/test_basic.py --server $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test-webapp-docker)
+        - docker logs test-webapp-docker > flask_log.txt
+        - docker stop ${CI_JOB_NAME}
+    artifacts:
+        paths:
+            - flask_log.txt
 
 deploy-controller:
   stage: deploy
