@@ -24,7 +24,7 @@ const CoolingMode = ({ isReady, ctrlStat }) => {
         }
         
         return (
-            <div>
+            <div data-testid="cooling-info">
                 <div className="display-1 align-middle ms-1">
                     <span className="fw-bold">{mode.mode_index}</span>
                 </div>

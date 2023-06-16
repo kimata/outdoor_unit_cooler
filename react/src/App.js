@@ -38,7 +38,7 @@ const App = () => {
     const errorMessage = (error) => {
         if (error) {
             return (
-            <div className="row justify-content-center">
+            <div className="row justify-content-center" data-testid="error">
                 <div className="col-11 text-end">
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <div>
@@ -80,7 +80,7 @@ const App = () => {
                 </div>
             </div>
                <div className="float-end text-end m-2">
-                Last modified: {updateTime}
+                Last update: {updateTime}
                </div>
         </div>
   );

@@ -3,7 +3,7 @@ import watering_icon from '../../img/watering.png'
 const Watering = ({ isReady, ctrlStat }) => {
     const amount = (watering) => {
         return (
-            <span className="display-1 align-middle ms-4">
+            <span className="display-1 align-middle ms-4" data-testid="watering-info">
                 <span className="fw-bold">{watering.toFixed(1)}</span>
                 <span className="display-5 ms-2">L</span>
             </span>

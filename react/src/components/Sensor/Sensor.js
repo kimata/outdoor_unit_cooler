@@ -38,7 +38,7 @@ const Sensor = ({ isReady, ctrlStat }) => {
     
     const sensorInfo = (ctrlStat) => {
         return (
-            <div>
+            <div data-testid="sensor-info">
                 <table className="table">
                     <thead>
                         <tr className="row">
