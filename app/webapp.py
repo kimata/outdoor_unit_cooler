@@ -67,7 +67,7 @@ def queuing_message(message_queue, message):
     if message_queue.full():
         message_queue.get()
 
-    logging.info("receive control message")
+    logging.debug("receive control message")
     message_queue.put(message)
 
 

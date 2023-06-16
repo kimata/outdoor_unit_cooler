@@ -5,7 +5,6 @@ import logging
 import pytz
 import datetime
 
-import control_pubsub
 from webapp_config import APP_URL_PREFIX
 
 # from webapp_event import notify_event, EVENT_TYPE
