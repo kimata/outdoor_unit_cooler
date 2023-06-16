@@ -90,6 +90,7 @@ test-webapp-docker:
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-1 --label job=${CI_JOB_ID} --publish 2222:2222 ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-2 --label job=${CI_JOB_ID} --publish 5000:5000 ${CI_REGISTRY_IMAGE}
           ./app/webapp.py -s $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-1)
+        - sleep 10000000
         - python3 -m pytest test/test_basic.py --server $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-2)
         - docker logs ${CI_JOB_NAME}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-2 > webapp_log.txt
