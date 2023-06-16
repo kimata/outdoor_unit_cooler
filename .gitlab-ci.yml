@@ -1,4 +1,4 @@
-image: docker:24.0
+image: docker:24.0-dind
 
 stages:
   - build-webapp
@@ -41,6 +41,7 @@ build-image:
           --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
           --push --tag ${CI_REGISTRY_IMAGE} .
+    - docker buildx stop ${BUILDER}
   dependencies:
     - build-react
 
