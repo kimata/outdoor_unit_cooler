@@ -67,6 +67,10 @@ def queuing_message(config, message_queue, message):
     if message_queue.full():
         message_queue.get()
 
+    # NOTE: 初回，強制的に関数を呼んで，キャッシュさせる
+    if unit_cooler_info.get_last_message.last_message is None:
+        unit_cooler_info.get_last_message(message_queue)
+
     logging.debug("receive control message")
     message_queue.put(message)
     pathlib.Path(config["web"]["liveness"]["file"]).touch()

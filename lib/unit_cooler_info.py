@@ -63,7 +63,7 @@ def watering_amount(config):
     )
 
 
-def get_last_message(server_host, server_port, message_queue):
+def get_last_message(message_queue):
     while not message_queue.empty():
         get_last_message.last_message = message_queue.get()
     return get_last_message.last_message
@@ -78,7 +78,7 @@ def get_stats(config, server_host, server_port, message_queue):
     return {
         "watering": watering_amount(config),
         "sensor": sense_data,
-        "mode": get_last_message(server_host, server_port, message_queue),
+        "mode": get_last_message(message_queue),
         "cooler_status": get_cooler_status(sense_data),
         "outdoor_status": get_outdoor_status(sense_data),
     }
