@@ -4,11 +4,11 @@
 Liveness のチェックを行います
 
 Usage:
-  healthz.py [-c CONFIG] [-C] [-d]
+  healthz.py [-c CONFIG] [-m MODE] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
-  -C                : コントローラモード
+  -m (CRTL|ACT|WEB) : 動作モード [default: CTRL]
   -d                : デバッグモードで動作します．
 """
 
@@ -61,7 +61,7 @@ def check_liveness(target_list):
 args = docopt(__doc__)
 
 config_file = args["-c"]
-controller_mode = args["-C"]
+watch_mode = args["-m"]
 debug_mode = args["-d"]
 
 if debug_mode:
@@ -77,8 +77,11 @@ logger.init(
 logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
 
-if controller_mode:
+logging.info("Mode: {watch_mode}".format(watch_mode=watch_mode))
+if watch_mode == "CTRL":
     name_list = ["controller"]
+elif watch_mode == "WEB":
+    name_list = ["web"]
 else:
     name_list = ["actuator", "monitor", "receiver"]
 

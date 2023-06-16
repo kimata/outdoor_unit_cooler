@@ -164,7 +164,7 @@ def queue_put(config, cmd_queue, message):
 
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
-def cmd_receive_worker(server_host, server_port, cmd_queue, is_one_time=False):
+def cmd_receive_worker(config, server_host, server_port, cmd_queue, is_one_time=False):
     logging.info(
         "Start command receive worker ({host}:{port})".format(
             host=server_host, port=server_port
@@ -360,7 +360,7 @@ pool = ThreadPool(processes=3)
 result_list = []
 result_list.append(
     pool.apply_async(
-        cmd_receive_worker, (server_host, server_port, cmd_queue, is_one_time)
+        cmd_receive_worker, (config, server_host, server_port, cmd_queue, is_one_time)
     )
 )
 result_list.append(

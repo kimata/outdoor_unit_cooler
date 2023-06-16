@@ -63,15 +63,17 @@ def notify_terminate():
 atexit.register(notify_terminate)
 
 
-def queuing_message(message_queue, message):
+def queuing_message(config, message_queue, message):
     if message_queue.full():
         message_queue.get()
 
     logging.debug("receive control message")
     message_queue.put(message)
+    pathlib.Path(config["web"]["liveness"]["file"]).touch()
 
 
 def watch_client(
+    config,
     server_host,
     server_port,
     message_queue,
@@ -84,7 +86,7 @@ def watch_client(
     control_pubsub.start_client(
         server_host,
         server_port,
-        lambda message: queuing_message(message_queue, message),
+        lambda message: queuing_message(config, message_queue, message),
     )
 
 
@@ -111,19 +113,20 @@ if __name__ == "__main__":
             server_port=server_port,
         )
     )
+    config = load_config(config_file)
 
     message_queue = Queue()
     threading.Thread(
         target=watch_client,
-        args=(server_host, server_port, message_queue),
+        args=(config, server_host, server_port, message_queue),
     ).start()
 
-    NOTE: アクセスログは無効にする
+    # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     app = Flask(__name__)
 
-    app.config["CONFIG"] = load_config(config_file)
+    app.config["CONFIG"] = config
     app.config["SERVER_HOST"] = server_host
     app.config["SERVER_PORT"] = server_port
     app.config["MESSAGE_QUEUE"] = message_queue
