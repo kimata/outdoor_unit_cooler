@@ -33,6 +33,10 @@ controller:
         measure: hems.sharp
         hostname: 和室エアコン
 
+  watering:
+    measure: sensor.rasp
+    hostname: rasp-cooler-1
+        
   interval_sec: 60
 
   liveness:
@@ -47,14 +51,14 @@ actuator:
       min: 0.02
       # ON にした時の最大流量．実際の流量がこれより大きくになっている場合，
       # 水漏れしている可能性あり．
-      max: 2
+      max: 3
     'off':
       # OFF にした時の最大流量．実際の流量がこれより大きくなっている場合，
       # 水漏れしている可能性あり．
       max: 0.01
 
     # 元栓を閉じてからこの時間経過したら，流量センサの電源を落とす
-    power_off_sec: 4000
+    power_off_sec: 7200
 
   interval_sec: 20
 
@@ -79,7 +83,10 @@ receiver:
   liveness:
     file: /dev/shm/healthz.receiver
 
-
+web:
+  liveness:
+    file: /dev/shm/healthz.web
+    
 slack:
   bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
 
