@@ -1,4 +1,4 @@
-version: '2.4'
+version: "2.4"
 services:
   unit_cooler:
     image: registry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
@@ -7,6 +7,6 @@ services:
     volumes:
       - ${PWD}/../hems_config/unit_cooler.yaml:/opt/unit_cooler/config.yaml
     devices:
-    - /dev/gpiomem
-    - /dev/spidev0.0
-    - /dev/ttyAMA0
+      - /dev/gpiomem
+      - /dev/spidev0.0
+      - /dev/ttyAMA0

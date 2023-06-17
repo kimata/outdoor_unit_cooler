@@ -36,7 +36,7 @@ controller:
   watering:
     measure: sensor.rasp
     hostname: rasp-cooler-1
-        
+
   interval_sec: 60
 
   liveness:
@@ -45,14 +45,14 @@ controller:
 actuator:
   valve:
     pin_no: 17 # BCM で指定
-    'on':
+    "on":
       # ON にしたときの最低流量．実際の流量がこれ未満になっている場合，
       # 元栓が閉じている可能性あり．
       min: 0.02
       # ON にした時の最大流量．実際の流量がこれより大きくになっている場合，
       # 水漏れしている可能性あり．
       max: 3
-    'off':
+    "off":
       # OFF にした時の最大流量．実際の流量がこれより大きくなっている場合，
       # 水漏れしている可能性あり．
       max: 0.01
@@ -64,10 +64,9 @@ actuator:
 
   hazard:
     file: /dev/shm/unit_cooler.hazard
-  
+
   liveness:
     file: /dev/shm/healthz.actuator
-
 
 monitor:
   fluent:
@@ -81,7 +80,6 @@ monitor:
   liveness:
     file: /dev/shm/healthz.monitor
 
-
 receiver:
   liveness:
     file: /dev/shm/healthz.receiver
@@ -89,7 +87,7 @@ receiver:
 web:
   liveness:
     file: /dev/shm/healthz.web
-    
+
 slack:
   bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
 
