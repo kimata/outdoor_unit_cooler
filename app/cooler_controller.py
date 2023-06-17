@@ -32,7 +32,6 @@ import threading
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
-from valve import COOLING_STATE
 import control_pubsub
 from sensor_data import fetch_data
 import aircon
