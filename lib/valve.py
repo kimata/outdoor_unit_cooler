@@ -6,16 +6,7 @@ import pathlib
 import time
 import logging
 import traceback
-
-
-class VALVE_STATE(IntEnum):
-    OPEN = 1
-    CLOSE = 0
-
-
-class COOLING_STATE(IntEnum):
-    WORKING = 1
-    IDLE = 0
+from valve_state import VALVE_STATE, COOLING_STATE
 
 
 if os.environ.get("DUMMY_MODE", None) is None:

@@ -8,7 +8,7 @@ import logging
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import aircon
-from valve import COOLING_STATE
+from valve_state import COOLING_STATE
 
 ############################################################
 # 制御モードを決めるにあたって，参照する外部環境の閾値
