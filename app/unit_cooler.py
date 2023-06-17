@@ -317,7 +317,7 @@ args = docopt(__doc__)
 config_file = args["-c"]
 server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
 server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
-dummy_mode = args["-D"]
+dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
 speedup = int(args["-t"])
 is_one_time = args["-O"]
 debug_mode = args["-d"]
@@ -332,6 +332,11 @@ logger.init(
     level=log_level,
     # dir_path=pathlib.Path(os.path.dirname(__file__)).parent / "log",
 )
+
+# NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
+if dummy_mode:
+    logging.warning("Set dummy mode")
+    os.environ["DUMMY_MODE"] = "true"
 
 logging.info("Using config config: {config_file}".format(config_file=config_file))
 config = load_config(config_file)
