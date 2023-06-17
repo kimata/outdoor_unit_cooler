@@ -4,6 +4,7 @@ from flask import jsonify, Blueprint, current_app
 import logging
 import pytz
 import datetime
+import pathlib
 
 from webapp_config import APP_URL_PREFIX
 
@@ -81,6 +82,7 @@ def get_stats(config, server_host, server_port, message_queue):
         "mode": get_last_message(message_queue),
         "cooler_status": get_cooler_status(sense_data),
         "outdoor_status": get_outdoor_status(sense_data),
+        "hazard": pathlib.Path(config["actuator"]["hazard"]["file"]).exists(),
     }
 
 

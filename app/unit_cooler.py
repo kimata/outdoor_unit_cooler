@@ -43,9 +43,6 @@ from config import load_config
 import notify_slack
 import logger
 
-# 電磁弁の故障を検出したときに作成するファイル
-STAT_PATH_HAZARD = pathlib.Path("/dev/shm") / "unit_cooler.hazard"
-
 DUMMY_MODE_SPEEDUP = 12.0
 
 recv_cooling_mode = None
@@ -79,12 +76,12 @@ def notify_error(config, message):
 def notify_hazard(config, message):
     notify_error(config, message)
 
-    STAT_PATH_HAZARD.touch()
+    pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
     valve.set_state(valve.VALVE_STATE.CLOSE)
 
 
 def check_hazard(config):
-    if STAT_PATH_HAZARD.exists():
+    if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
         notify_error(config, "過去に故障が発生しているので制御を停止しています．")
         return True
     else:
@@ -92,7 +89,7 @@ def check_hazard(config):
 
 
 def set_cooling_state(cooling_mode):
-    if STAT_PATH_HAZARD.exists():
+    if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
         notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
 
     return valve.set_cooling_state(cooling_mode)

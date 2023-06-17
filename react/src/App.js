@@ -35,19 +35,26 @@ const App = () => {
     }, []);
 
 
-    const errorMessage = (error) => {
-        if (error) {
-            return (
+    const errorMessage = (message) => {
+        return (
             <div className="row justify-content-center" data-testid="error">
                 <div className="col-11 text-end">
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <div>
-                            データの読み込みに失敗しました．
+                            { message }
                         </div>
                     </div>
                 </div>
             </div>
-            )
+        )
+    }
+
+    const showError = (ctrlStat, error) => {
+        if (error) {
+            return errorMessage("データの読み込みに失敗しました．")
+        }
+        if (ctrlStat.hazard) {
+            return errorMessage("電磁弁もしくは流量計に問題が発生しています．")
         }
     }
     
@@ -68,7 +75,7 @@ const App = () => {
             <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                 <h5 className="display-6 my-0 mr-md-auto font-weight-normal">エアコン室外機冷却システム</h5>
             </div>
-            { errorMessage(error) }
+            { showError(ctrlStat, error) }
             <div>
                 <div className="container">
                     <div className="row display-flex row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">

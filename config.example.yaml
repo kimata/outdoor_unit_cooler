@@ -62,6 +62,9 @@ actuator:
 
   interval_sec: 20
 
+  hazard:
+    file: /dev/shm/unit_cooler.hazard
+  
   liveness:
     file: /dev/shm/healthz.actuator
 
