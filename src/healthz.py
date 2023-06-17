@@ -17,7 +17,6 @@ from docopt import docopt
 import logging
 import pathlib
 import datetime
-import os
 import sys
 
 

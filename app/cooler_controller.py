@@ -34,7 +34,6 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import control_pubsub
 from sensor_data import fetch_data
-import aircon
 import notify_slack
 from config import load_config
 from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status

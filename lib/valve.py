@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from enum import IntEnum
 import os
 import pathlib
 import time
