@@ -34,8 +34,6 @@ import webapp_util
 import webapp_log
 import webapp_event
 
-import valve
-
 
 def nslookup(hostname):
     try:
