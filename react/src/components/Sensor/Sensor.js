@@ -24,8 +24,8 @@ const Sensor = ({ isReady, ctrlStat }) => {
         <td className="text-start col-2">
           <small>{unit}</small>
         </td>
-        <td className="text-end col-3">{dateText(date)}</td>
-        <td className="text-start col-2">{date.fromNow()}</td>
+          <td className="text-start col-2">{date.fromNow()}</td>
+          <td className="text-end col-3"><small>{dateText(date)}</small></td>
       </tr>
     );
   };
