@@ -166,6 +166,10 @@ def get_status():
                 return {"state": valve_state, "duration": 0}
 
 
+def stop_flow_monitor():
+    fd_q10c.stop()
+
+
 def get_flow(force_power_on=True):
     try:
         flow = fd_q10c.sense(force_power_on)

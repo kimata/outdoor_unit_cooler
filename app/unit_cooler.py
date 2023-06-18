@@ -294,6 +294,9 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             if flow_unknown > config["monitor"]["sense"]["giveup"]:
                 notify_hazard(config, "流量計が使えません．")
                 break
+            elif flow_unknown > (config["monitor"]["sense"]["giveup"] / 2):
+                logging.warn("流量計が応答しないので一旦，リセットします．")
+                valve.stop_flow_monitor()
 
             if should_terminate:
                 logging.info("Terminate monitor worker")
