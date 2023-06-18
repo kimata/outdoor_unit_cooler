@@ -4,7 +4,6 @@ from flask import jsonify, Blueprint, current_app
 import logging
 import pytz
 import datetime
-import pathlib
 
 from webapp_config import APP_URL_PREFIX
 

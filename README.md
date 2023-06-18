@@ -18,16 +18,16 @@
 
 このプログラムは，上記の中で赤字で記載した 4 つのスレッドに対応します．
 
-- Cooler controller
-- Command receive worker
-- Valve control worker
-- Valve monitor worker
+-   Cooler controller
+-   Command receive worker
+-   Valve control worker
+-   Valve monitor worker
 
 ## 詳細
 
-- F-PLUG やシャープの HEMS で計測した消費電力が infuxDB に記録されていることを前提にしています．
-- ミスト噴射は常時噴射ではなく，ON/OFF を繰り返して効果的に冷却します．
-- 流量計で流量をモニタし，元栓の開き忘れや水漏れを検知し，Slack で通知します．
+-   F-PLUG やシャープの HEMS で計測した消費電力が infuxDB に記録されていることを前提にしています．
+-   ミスト噴射は常時噴射ではなく，ON/OFF を繰り返して効果的に冷却します．
+-   流量計で流量をモニタし，元栓の開き忘れや水漏れを検知し，Slack で通知します．
 
 ## 準備
 
