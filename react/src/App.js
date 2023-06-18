@@ -53,9 +53,9 @@ const App = () => {
     if (error) {
       return errorMessage("データの読み込みに失敗しました．");
     }
-    if (ctrlStat.hazard) {
-      return errorMessage("電磁弁もしくは流量計に問題が発生しています．");
-    }
+    // if (ctrlStat.hazard) {
+    //   return errorMessage("電磁弁もしくは流量計に問題が発生しています．");
+    // }
   };
 
   const fetchCtrlStat = (url) => {
