@@ -4,6 +4,7 @@ import os
 import pathlib
 import time
 import logging
+import threading
 import traceback
 from valve_state import VALVE_STATE, COOLING_STATE
 
@@ -77,11 +78,15 @@ STAT_PATH_VALVE_CLOSE = STAT_DIR_PATH / "unit_cooler" / "valve" / "close"
 GPIO_PIN_DEFAULT = 17
 
 pin_no = GPIO_PIN_DEFAULT
+valve_lock = None
 
 
 def init(pin=GPIO_PIN_DEFAULT):
     global pin_no
+    global valve_lock
+
     pin_no = pin
+    valve_lock = threading.Lock()
 
     STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
     STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
@@ -94,33 +99,35 @@ def init(pin=GPIO_PIN_DEFAULT):
 # 現在のバルブの状態と，バルブが現在の状態になってからの経過時間を返します．
 def set_state(valve_state):
     global pin_no
+    global valve_lock
 
-    curr_state = get_state()
+    with valve_lock:
+        curr_state = get_state()
 
-    if valve_state != curr_state:
-        logging.info(
-            "VALVE: {curr_state} -> {valve_state}".format(
-                curr_state=curr_state.name, valve_state=valve_state.name
+        if valve_state != curr_state:
+            logging.info(
+                "VALVE: {curr_state} -> {valve_state}".format(
+                    curr_state=curr_state.name, valve_state=valve_state.name
+                )
             )
-        )
 
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(pin_no, GPIO.OUT)
-    GPIO.output(pin_no, valve_state.value)
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pin_no, GPIO.OUT)
+        GPIO.output(pin_no, valve_state.value)
 
-    if valve_state == VALVE_STATE.OPEN:
-        STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-        if not STAT_PATH_VALVE_OPEN.exists():
-            STAT_PATH_VALVE_OPEN.parent.mkdir(parents=True, exist_ok=True)
-            STAT_PATH_VALVE_OPEN.touch()
-    else:
-        STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
-        if not STAT_PATH_VALVE_CLOSE.exists():
-            STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
-            STAT_PATH_VALVE_CLOSE.touch()
+        if valve_state == VALVE_STATE.OPEN:
+            STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
+            if not STAT_PATH_VALVE_OPEN.exists():
+                STAT_PATH_VALVE_OPEN.parent.mkdir(parents=True, exist_ok=True)
+                STAT_PATH_VALVE_OPEN.touch()
+        else:
+            STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
+            if not STAT_PATH_VALVE_CLOSE.exists():
+                STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
+                STAT_PATH_VALVE_CLOSE.touch()
 
-    return get_status()
+        return get_status()
 
 
 # NOTE: 実際のバルブの状態を返します
@@ -139,21 +146,24 @@ def get_state():
 
 # NOTE: 実際のバルブの状態と，その状態になってからの経過時間を返します
 def get_status():
-    valve_state = get_state()
+    global valve_lock
 
-    if valve_state == VALVE_STATE.OPEN:
-        return {
-            "state": valve_state,
-            "duration": time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime,
-        }
-    else:
-        if STAT_PATH_VALVE_CLOSE.exists():
+    with valve_lock:
+        valve_state = get_state()
+
+        if valve_state == VALVE_STATE.OPEN:
             return {
                 "state": valve_state,
-                "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
+                "duration": time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime,
             }
         else:
-            return {"state": valve_state, "duration": 0}
+            if STAT_PATH_VALVE_CLOSE.exists():
+                return {
+                    "state": valve_state,
+                    "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
+                }
+            else:
+                return {"state": valve_state, "duration": 0}
 
 
 def get_flow(force_power_on=True):
