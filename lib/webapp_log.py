@@ -116,8 +116,13 @@ def api_log_view():
 if __name__ == "__main__":
     import logger
     import time
+    from config import load_config
 
     logger.init("test", level=logging.INFO)
+
+    # NOTE: テスト用に強制的に書き換える
+    class current_app:  # noqa: F811
+        config = {"CONFIG": load_config()}
 
     init()
 
