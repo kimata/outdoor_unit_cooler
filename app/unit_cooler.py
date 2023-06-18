@@ -189,9 +189,6 @@ def valve_ctrl_worker(
 
     logging.info("Start control worker")
 
-    logging.info("Initialize valve")
-    valve.init(config["actuator"]["valve"]["pin_no"])
-
     if dummy_mode:
         logging.warning("DUMMY mode")
 
@@ -358,6 +355,9 @@ if not dummy_mode:
 
 signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = Queue()
+
+logging.info("Initialize valve")
+valve.init(config["actuator"]["valve"]["pin_no"])
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
 pool = ThreadPool(processes=3)
