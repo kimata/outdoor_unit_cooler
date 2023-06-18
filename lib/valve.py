@@ -127,7 +127,7 @@ def set_state(valve_state):
                 STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
                 STAT_PATH_VALVE_CLOSE.touch()
 
-        return get_status()
+    return get_status()
 
 
 # NOTE: 実際のバルブの状態を返します
