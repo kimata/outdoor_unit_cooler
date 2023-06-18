@@ -196,10 +196,9 @@ def dir_param_write(spi, ser, addr, value):
         error("checksum unmatch")
 
 
-def isdu_req_build(index):
+def isdu_req_build(index, length):
     rw = io_link.MSQ_RW_WRITE
     isrv = io_link.ISDU_ISRV_READ_8BIT_IDX
-    length = 3
 
     return [
         msq_build(
@@ -236,8 +235,9 @@ def isdu_res_read(spi, ser, flow):
 
 def isdu_read(spi, ser, index, data_type):
     debug("***** CALL: isdu_read(index: 0x{:x}) ****".format(index))
+    length = 3
 
-    isdu_req = isdu_req_build(index)
+    isdu_req = isdu_req_build(index, length)
 
     for msq in isdu_req:
         com_write(spi, ser, msq)
