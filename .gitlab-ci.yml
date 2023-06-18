@@ -97,7 +97,8 @@ test-webapp-docker:
     - docker stop ${CI_JOB_NAME}-2
   artifacts:
     paths:
-      - flask_log.txt
+      - controller_log.txt
+      - webapp_log.txt
 
 deploy-controller:
   stage: deploy
