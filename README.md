@@ -4,6 +4,12 @@
 
 エアコンが動作を開始すると自動的に室外機へのミスト噴射を行います．
 
+## デモ
+
+エアコンの稼働状況に応じてミスト噴射モードが自動的に変化する様子を確認いただけます．
+
+https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
+
 ## システム構成
 
 ### 全体構成
