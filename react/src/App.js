@@ -70,7 +70,7 @@ const App = () => {
     return (
         <div className="App">
             <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-                <h5 className="display-6 my-0 mr-md-auto font-weight-normal">エアコン室外機自動冷却システム</h5>
+                <h5 className="display-6 my-0 mr-md-auto font-weight-normal">室外機自動冷却システム</h5>
             </div>
             {showError(ctrlStat, error)}
             <div>
