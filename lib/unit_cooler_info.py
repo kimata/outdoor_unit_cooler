@@ -79,6 +79,8 @@ def get_last_message(config, message_queue):
     if os.environ["DUMMY_MODE"] == "true":
         return gen_control_msg(config)
     else:
+        # NOTE: 現在の実際の制御モードを取得する．
+        # ダミーモードと同じ処理でも良い気がしないでもない．
         while not message_queue.empty():
             get_last_message.last_message = message_queue.get()
         return get_last_message.last_message
