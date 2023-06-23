@@ -25,7 +25,7 @@ import traceback
 # ずれるので，あらかじめ offset を使って前にずらしておく．
 FLUX_QUERY = """
 from(bucket: "{bucket}")
-|> range(start: -{period})
+|> range(start: {start}, stop: {stop})
     |> filter(fn:(r) => r._measurement == "{measure}")
     |> filter(fn: (r) => r.hostname == "{hostname}")
     |> filter(fn: (r) => r["_field"] == "{field}")
@@ -36,7 +36,7 @@ from(bucket: "{bucket}")
 
 FLUX_SUM_QUERY = """
 from(bucket: "{bucket}")
-    |> range(start: -{period})
+    |> range(start: {start}, stop: {stop})
     |> filter(fn:(r) => r._measurement == "{measure}")
     |> filter(fn: (r) => r.hostname == "{hostname}")
     |> filter(fn: (r) => r["_field"] == "{field}")
@@ -56,7 +56,8 @@ def fetch_data_impl(
     measure,
     hostname,
     field,
-    period,
+    start,
+    stop,
     every,
     window,
     create_empty,
@@ -70,7 +71,8 @@ def fetch_data_impl(
             measure=measure,
             hostname=hostname,
             field=field,
-            period=period,
+            start=start,
+            stop=stop,
             every=every,
             window=window,
             create_empty=str(create_empty).lower(),
@@ -96,7 +98,8 @@ def fetch_data(
     measure,
     hostname,
     field,
-    period="30h",
+    start="-30h",
+    stop="now()",
     every_min=1,
     window_min=3,
     create_empty=True,
@@ -105,13 +108,14 @@ def fetch_data(
     logging.debug(
         (
             "Fetch data (measure: {measure}, host: {host}, field: {field}, "
-            + "period: {period}, every: {every}min, window: {window}min, "
+            + "start: {start}, stop: {stop}, every: {every}min, window: {window}min, "
             + "create_empty: {create_empty}, last: {last})"
         ).format(
             measure=measure,
             host=hostname,
             field=field,
-            period=period,
+            start=start,
+            stop=stop,
             every=every_min,
             window=window_min,
             create_empty=create_empty,
@@ -126,7 +130,8 @@ def fetch_data(
             measure,
             hostname,
             field,
-            period,
+            start,
+            stop,
             every_min,
             window_min,
             create_empty,
@@ -175,7 +180,8 @@ def get_equip_on_minutes(
     hostname,
     field,
     threshold,
-    period="30h",
+    start="-30h",
+    stop="now()",
     every_min=1,
     window_min=5,
     create_empty=True,
@@ -183,14 +189,15 @@ def get_equip_on_minutes(
     logging.info(
         (
             "Get 'ON' minutes (type: {type}, host: {host}, field: {field}, "
-            + "threshold: {threshold}, period: {period}, every: {every}min, "
+            + "threshold: {threshold}, start: {start}, stop: {stop}, every: {every}min, "
             + "window: {window}min, create_empty: {create_empty})"
         ).format(
             type=measure,
             host=hostname,
             field=field,
             threshold=threshold,
-            period=period,
+            start=start,
+            stop=stop,
             every=every_min,
             window=window_min,
             create_empty=create_empty,
@@ -204,7 +211,8 @@ def get_equip_on_minutes(
             measure,
             hostname,
             field,
-            period,
+            start,
+            stop,
             every_min,
             window_min,
             create_empty,
@@ -244,7 +252,8 @@ def get_equip_mode_period(
     hostname,
     field,
     threshold_list,
-    period="30h",
+    start="-30h",
+    stop="now()",
     every_min=10,
     window_min=10,
     create_empty=True,
@@ -252,7 +261,7 @@ def get_equip_mode_period(
     logging.info(
         (
             "Get equipment mode period (type: {type}, host: {host}, field: {field}, "
-            + "threshold: {threshold}, period: {period}, every: {every}min, "
+            + "threshold: {threshold}, start: {start}, stop: {stop}, every: {every}min, "
             + "window: {window}min, create_empty: {create_empty})"
         ).format(
             type=measure,
@@ -261,7 +270,8 @@ def get_equip_mode_period(
             threshold="[{list_str}]".format(
                 list_str=",".join(map(lambda v: "{:.1f}".format(v), threshold_list))
             ),
-            period=period,
+            start=start,
+            stop=stop,
             every=every_min,
             window=window_min,
             create_empty=create_empty,
@@ -275,7 +285,8 @@ def get_equip_mode_period(
             measure,
             hostname,
             field,
-            period,
+            start,
+            stop,
             every_min,
             window_min,
             create_empty,
@@ -351,7 +362,7 @@ def get_today_sum(config, measure, hostname, field):
         window_min = 5
         now = datetime.datetime.now()
 
-        period = "{hour}h{minute}m".format(hour=now.hour, minute=now.minute)
+        start = "-{hour}h{minute}m".format(hour=now.hour, minute=now.minute)
 
         table_list = fetch_data_impl(
             config,
@@ -359,7 +370,8 @@ def get_today_sum(config, measure, hostname, field):
             measure,
             hostname,
             field,
-            period,
+            start,
+            "now()",
             every_min,
             window_min,
             True,
@@ -402,24 +414,27 @@ if __name__ == "__main__":
     hostname = config["USAGE"]["TARGET"]["HOST"]
     param = config["USAGE"]["TARGET"]["PARAM"]
     threshold = config["USAGE"]["TARGET"]["THRESHOLD"]["WORK"]
-    period = config["GRAPH"]["PARAM"]["PERIOD"]
+    start = "-" + config["GRAPH"]["PARAM"]["PERIOD"]
 
     db_config = get_db_config(config)
 
-    dump_data(fetch_data(db_config, measure, hostname, param, period, every, window))
+    dump_data(
+        fetch_data(db_config, measure, hostname, param, start, "now()", every, window)
+    )
 
-    period = "{hour}h{minute}m".format(hour=now.hour, minute=now.minute)
+    start = "-{hour}h{minute}m".format(hour=now.hour, minute=now.minute)
 
     logging.info(
-        "Today ON minutes ({period}) = {minutes} min".format(
-            period=period,
+        "Today ON minutes ({start}) = {minutes} min".format(
+            start=start,
             minutes=get_equip_on_minutes(
                 db_config,
                 measure,
                 hostname,
                 param,
                 threshold,
-                period,
+                start,
+                "now()",
                 every,
                 window,
             ),
@@ -434,13 +449,13 @@ if __name__ == "__main__":
         config["GRAPH"]["VALVE"]["THRESHOLD"]["FULL"],
         config["GRAPH"]["VALVE"]["THRESHOLD"]["INTERM"],
     ]
-    period = config["GRAPH"]["PARAM"]["PERIOD"]
+    start = "-" + config["GRAPH"]["PARAM"]["PERIOD"]
 
     logging.info(
         "Valve on period = {range_list}".format(
             range_list=json.dumps(
                 get_equip_mode_period(
-                    db_config, measure, hostname, param, threshold, period
+                    db_config, measure, hostname, param, threshold, start, "now()"
                 ),
                 indent=2,
                 default=str,

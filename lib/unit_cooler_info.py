@@ -29,7 +29,7 @@ def get_sense_data(config):
                 sensor["measure"],
                 sensor["hostname"],
                 kind,
-                period="24h",
+                start="-24h",
                 every_min=5,
                 window_min=30,
                 last=True,
