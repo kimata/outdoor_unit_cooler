@@ -5,12 +5,13 @@
 水やりを自動化するアプリのサーバーです
 
 Usage:
-  webapp.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT]
+  webapp.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-D]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
   -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
+  -D                : ダミーモードで実行します．
 """
 
 from docopt import docopt
@@ -105,6 +106,7 @@ if __name__ == "__main__":
     server_hostname = os.environ.get("HEMS_SERVER_HOST", args["-s"])
     server_host = nslookup(server_hostname)
     server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+    dummy_mode = args["-D"]
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
@@ -117,6 +119,12 @@ if __name__ == "__main__":
     )
     config = load_config(config_file)
 
+    # NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
+    if dummy_mode:
+        os.environ["DUMMY_MODE"] = "true"
+    else:
+        os.environ["DUMMY_MODE"] = "false"
+
     message_queue = Queue()
     threading.Thread(
         target=watch_client,
@@ -125,6 +133,10 @@ if __name__ == "__main__":
 
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        if dummy_mode:
+            logging.warning("Set dummy mode")
 
     app = Flask(__name__)
 

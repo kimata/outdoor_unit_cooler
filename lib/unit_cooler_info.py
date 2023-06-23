@@ -3,15 +3,14 @@
 from flask import jsonify, Blueprint, current_app
 import logging
 import pytz
-import datetime
+import os
 
 from webapp_config import APP_URL_PREFIX
 
-# from webapp_event import notify_event, EVENT_TYPE
-# from webapp_log import app_log
+from control import gen_control_msg
 from flask_util import support_jsonp, set_acao
 
-from sensor_data import fetch_data, get_today_sum
+from sensor_data import fetch_data, get_day_sum
 from control_config import get_cooler_status, get_outdoor_status
 
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
@@ -21,6 +20,13 @@ def get_sense_data(config):
     sense_data = {}
     timezone = pytz.timezone("Asia/Tokyo")
 
+    if os.environ["DUMMY_MODE"] == "true":
+        start = "-192h"
+        stop = "-168h"
+    else:
+        start = "-24h"
+        stop = "now()"
+
     for kind in config["controller"]["sensor"]:
         kind_data = []
         for sensor in config["controller"]["sensor"][kind]:
@@ -29,7 +35,8 @@ def get_sense_data(config):
                 sensor["measure"],
                 sensor["hostname"],
                 kind,
-                start="-24h",
+                start=start,
+                stop=stop,
                 every_min=5,
                 window_min=30,
                 last=True,
@@ -38,10 +45,9 @@ def get_sense_data(config):
                 kind_data.append(
                     {
                         "name": sensor["name"],
-                        # NOTE: 特に設定しないと InfluxDB は UTC 表記で
-                        # JST+9:00 の時刻を返す形になるので，ここで補正しておく．
+                        # NOTE: タイムゾーン情報を削除しておく．
                         "time": timezone.localize(
-                            (data["time"][0].utcnow() + datetime.timedelta(hours=9))
+                            (data["time"][0].replace(tzinfo=None))
                         ),
                         "value": data["value"][0],
                     }
@@ -55,18 +61,27 @@ def get_sense_data(config):
 
 
 def watering_amount(config):
-    return get_today_sum(
+    if os.environ["DUMMY_MODE"] == "true":
+        offset_day = 7
+    else:
+        offset_day = 0
+
+    return get_day_sum(
         config["controller"]["influxdb"],
         config["controller"]["watering"]["measure"],
         config["controller"]["watering"]["hostname"],
         "flow",
+        offset_day,
     )
 
 
-def get_last_message(message_queue):
-    while not message_queue.empty():
-        get_last_message.last_message = message_queue.get()
-    return get_last_message.last_message
+def get_last_message(config, message_queue):
+    if os.environ["DUMMY_MODE"] == "true":
+        return gen_control_msg(config)
+    else:
+        while not message_queue.empty():
+            get_last_message.last_message = message_queue.get()
+        return get_last_message.last_message
 
 
 get_last_message.last_message = None
@@ -78,7 +93,7 @@ def get_stats(config, server_host, server_port, message_queue):
     return {
         "watering": watering_amount(config),
         "sensor": sense_data,
-        "mode": get_last_message(message_queue),
+        "mode": get_last_message(config, message_queue),
         "cooler_status": get_cooler_status(sense_data),
         "outdoor_status": get_outdoor_status(sense_data),
     }

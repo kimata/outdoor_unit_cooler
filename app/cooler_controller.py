@@ -32,133 +32,10 @@ import threading
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
+from control import gen_control_msg, notify_error, print_control_msg
 import control_pubsub
-from sensor_data import fetch_data
-import notify_slack
 from config import load_config
-from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
 import logger
-
-
-def notify_error(config, message):
-    logging.error(message)
-
-    if "slack" not in config:
-        return
-
-    notify_slack.error(
-        config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"]["name"],
-        config["slack"]["from"],
-        message,
-        config["slack"]["error"]["interval_min"],
-    )
-
-
-def get_sense_data(config):
-    sense_data = {}
-
-    for kind in config["controller"]["sensor"]:
-        kind_data = []
-        for sensor in config["controller"]["sensor"][kind]:
-            data = fetch_data(
-                config["controller"]["influxdb"],
-                sensor["measure"],
-                sensor["hostname"],
-                kind,
-                "1h",
-                last=True,
-            )
-            if data["valid"]:
-                kind_data.append({"name": sensor["name"], "value": data["value"][0]})
-            else:
-                notify_error(
-                    config, "{name} のデータを取得できませんでした．".format(name=sensor["name"])
-                )
-                kind_data.append({"name": sensor["name"], "value": None})
-
-        sense_data[kind] = kind_data
-
-    return sense_data
-
-
-def dummy_control_mode():
-    import random
-
-    # NOTE: ある程度連続性を持ったランダムな制御量を生成する
-    dice = int(random.random() * 10)
-    if dice < 2:
-        control_mode = max(min(int(random.random() * 15) - 4, 8), 0)
-    elif dice < 8:
-        control_mode = max(
-            min(int(dummy_control_mode.prev_mode + (random.random() - 0.5) * 4), 8), 0
-        )
-    else:
-        control_mode = dummy_control_mode.prev_mode
-
-    logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
-
-    dummy_control_mode.prev_mode = control_mode
-
-    return control_mode
-
-
-dummy_control_mode.prev_mode = 0
-
-
-def judge_control_mode(config):
-    logging.info("Judge control mode")
-
-    sense_data = get_sense_data(config)
-
-    cooler_status = get_cooler_status(sense_data)
-
-    if cooler_status["status"] == 0:
-        outdoor_status = {"status": None, "message": None}
-        control_mode = cooler_status["status"]
-    else:
-        outdoor_status = get_outdoor_status(sense_data)
-        control_mode = max(cooler_status["status"] + outdoor_status["status"], 0)
-
-    if cooler_status["message"] is not None:
-        logging.info(cooler_status["message"])
-    if outdoor_status["message"] is not None:
-        logging.info(outdoor_status["message"])
-
-    logging.info(
-        (
-            "control_mode: {control_mode} "
-            + "(cooler_status: {cooler_status}, "
-            + "outdoor_status: {outdoor_status})"
-        ).format(
-            control_mode=control_mode,
-            cooler_status=cooler_status["status"],
-            outdoor_status=outdoor_status["status"],
-        )
-    )
-
-    return control_mode
-
-
-def gen_control_msg(config, dummy_mode=False, speedup=1):
-    if dummy_mode:
-        control_mode = dummy_control_mode()
-    else:
-        control_mode = judge_control_mode(config)
-
-    mode_index = min(control_mode, len(MESSAGE_LIST) - 1)
-    control_msg = MESSAGE_LIST[mode_index]
-
-    # NOTE: 参考として，どのモードかも通知する
-    control_msg["mode_index"] = mode_index
-
-    pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
-
-    if dummy_mode:
-        control_msg["duty"]["on_sec"] = int(control_msg["duty"]["on_sec"] / speedup)
-        control_msg["duty"]["off_sec"] = int(control_msg["duty"]["off_sec"] / speedup)
-
-    return control_msg
 
 
 def test_client(server_host, server_port):
@@ -175,28 +52,6 @@ def test_client(server_host, server_port):
             os._exit(0),
         ),
     )
-
-
-def print_control_msg():
-    for control_msg in MESSAGE_LIST:
-        if control_msg["duty"]["enable"]:
-            logging.info(
-                (
-                    "state: {state}, on_se_sec: {on_sec:4,} sec, "
-                    + "off_sec: {off_sec:5,} sec, on_ratio: {on_ratio:4.1f}%"
-                ).format(
-                    state=control_msg["state"].name,
-                    on_sec=control_msg["duty"]["on_sec"],
-                    off_sec=int(control_msg["duty"]["off_sec"]),
-                    on_ratio=100.0
-                    * control_msg["duty"]["on_sec"]
-                    / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"]),
-                )
-            )
-        else:
-            logging.info("state: {state}".format(state=control_msg["state"].name))
-
-    sys.exit(0)
 
 
 ######################################################################
