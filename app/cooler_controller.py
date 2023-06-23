@@ -88,6 +88,9 @@ config = load_config(config_file)
 
 if dummy_mode:
     logging.warning("DUMMY mode")
+    os.environ["DUMMY_MODE"] = "true"
+else:
+    os.environ["DUMMY_MODE"] = "false"
 
 try:
     # NOTE: Last Value Caching Proxy
