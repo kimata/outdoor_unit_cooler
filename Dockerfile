@@ -29,5 +29,6 @@ RUN pip3 install -r requirements.txt
 COPY . .
 
 EXPOSE 2222
+EXPOSE 5000
 
 CMD ["./app/unit_cooler.py"]
