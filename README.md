@@ -37,10 +37,8 @@ https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
 
 ## 準備
 
-Ubuntu の場合，`install.sh` を実行すると apt を使って必要なライブラリがインストールされます．
-
-`app/unit_cooler.py` を配置する Raspberry Pi では，`/boot/firmware/config.txt` に下記の
-設定を記載しておきます．
+`app/unit_cooler.py` を配置する Raspberry Pi で，`/boot/firmware/config.txt` に下記の
+設定を追加します．
 
 ```text
 dtparam=spi=on
@@ -49,12 +47,39 @@ dtoverlay=disable-bt
 
 ## 設定
 
-`src/config.example.yml` を `src/config.yml` に名前変更し，
-電磁弁制御用の GPIO 端子番号と Slack 通知に関する設定を行います．
+`src/config.example.yml` を `src/config.yml` に名前変更します．
+環境に合わせて適宜書き換えてください．
+
+Slack を使っていない場合は，Slack の設定をコメントアウトしてください．
 
 ## 実行
 
-`app/cooler_controller.py` と `app/unit_cooler.py` を実行します．
+`docker build` でイメージを構築し，`app/cooler_controller.py` と `app/unit_cooler.py` 
+を動かします．Web インターフェースが欲しい場合は，`app/webapp.py` も動かします．
 
-問題ないようでしたら，`cron/unit_cooler` を適宜編集した上で，
-`/etc/cron.d` に配置して一定間隔で自動実行されるようにします．
+Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に入っていますので，
+これを参考にしていただくと良いと思います．
+
+カスタマイズが必要になりそうなのは下記の項目になります．
+
+<dl>
+  <dt>namespace</dt>
+  <dd>`hems` というネームスペースを作っていますので，環境に合わせて変更します．</dd>
+
+  <dt>external-dns.alpha.kubernetes.io/hostname</dt>
+  <dd>ExternalDNS で設定するホスト名を指定します．環境に合わせて変更いただくか，不要であれば削除します．</dd>
+  
+  <dt>image</dt>
+  <dd>ビルドしたイメージを登録してあるコンテナリポジトリに書き換えます．</dd>
+  
+  <dt>nodeSelector</dt>
+  <dd>Pod を配置したいノード名に変更します．</dd>
+  
+  <dt>NODE_HOSTNAME</dt>
+  <dd>散布量を InfluxDB に登録する際のホスト名
+  を指定します．`config.yaml` の controller.watering.hostname の設定と合わせる必要があります．</dd>
+</dl>
+
+
+
+
