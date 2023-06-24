@@ -91,7 +91,7 @@ test-webapp-docker:
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
           -p $(docker inspect --format='{{(index (index .NetworkSettings.Ports "2222/tcp") 0).HostPort}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
         - python3 -m pytest test/test_basic.py
-          --server $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_NAME}-2)
+          --server $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
           --port $(docker inspect --format='{{(index (index .NetworkSettings.Ports "5000/tcp") 0).HostPort}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > webapp_log.txt
