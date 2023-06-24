@@ -15,7 +15,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
         if (value == null) {
             return 0;
         } else {
-            return parseInt(value);
+            return value.toFixed();
         }
     };
 
