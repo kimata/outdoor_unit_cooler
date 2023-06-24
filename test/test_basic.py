@@ -4,11 +4,11 @@
 from playwright.sync_api import expect
 
 
-APP_URL_TMPL = "http://{server_host}:5000/unit_cooler/"
+APP_URL_TMPL = "http://{host}:{port}/unit_cooler/"
 
 
-def app_url(server):
-    return APP_URL_TMPL.format(server_host=server)
+def app_url(host, port):
+    return APP_URL_TMPL.format(host=host, port=port)
 
 
 ######################################################################
