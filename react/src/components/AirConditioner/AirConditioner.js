@@ -39,7 +39,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                             ></div>
                         </div>
                         <div className="progress-label">
-                            <b>{valueText(props.airconData.value)}</b>
+                            <b>{valueText(props.airconData.value,0)}</b>
                             <small className="ms-2">W</small>
                         </div>
                     </div>

@@ -1,8 +1,8 @@
-export const valueText = (value) => {
+export const valueText = (value, digits=1) => {
     if (value == null) {
         return "?";
     } else {
-        return value.toFixed(1);
+        return value.toFixed(digits);
     }
 };
 
