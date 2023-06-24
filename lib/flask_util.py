@@ -53,19 +53,6 @@ def gzipped(f):
     return view_func
 
 
-def set_acao(f):
-    @functools.wraps(f)
-    def view_func(*args, **kwargs):
-        @after_this_request
-        def set_acao_header(response):
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            return response
-
-        return f(*args, **kwargs)
-
-    return view_func
-
-
 def support_jsonp(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):

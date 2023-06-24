@@ -17,6 +17,7 @@ Options:
 from docopt import docopt
 
 from flask import Flask
+from flask_cors import CORS
 import sys
 import pathlib
 import time
@@ -139,6 +140,8 @@ if __name__ == "__main__":
             logging.warning("Set dummy mode")
 
     app = Flask(__name__)
+
+    CORS(app)
 
     app.config["CONFIG"] = config
     app.config["SERVER_HOST"] = server_host

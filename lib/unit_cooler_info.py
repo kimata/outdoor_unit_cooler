@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from flask import jsonify, Blueprint, current_app
+from flask_cors import cross_origin
+
 import logging
 import pytz
 import os
@@ -8,7 +10,7 @@ import os
 from webapp_config import APP_URL_PREFIX
 
 from control import gen_control_msg
-from flask_util import support_jsonp, set_acao
+from flask_util import support_jsonp
 
 from sensor_data import fetch_data, get_day_sum
 from control_config import get_cooler_status, get_outdoor_status
@@ -103,7 +105,7 @@ def get_stats(config, server_host, server_port, message_queue):
 
 @blueprint.route("/api/stat", methods=["GET"])
 @support_jsonp
-@set_acao
+@cross_origin
 def api_get_stats():
     config = current_app.config["CONFIG"]
     server_host = current_app.config["SERVER_HOST"]
