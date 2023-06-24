@@ -116,7 +116,7 @@ for name in name_list:
             "name": name,
             "liveness_file": pathlib.Path(config[name]["liveness"]["file"]),
             "interval": config["controller"]["interval_sec"]
-            if name == "receiver"
+            if (name == "receiver") or (name == "web")
             else config[name]["interval_sec"],
         }
     )
