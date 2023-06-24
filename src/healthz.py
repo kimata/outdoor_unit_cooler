@@ -4,16 +4,18 @@
 Liveness のチェックを行います
 
 Usage:
-  healthz.py [-c CONFIG] [-m MODE] [-d]
+  healthz.py [-c CONFIG] [-m MODE] [-p PORT] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -m (CRTL|ACT|WEB) : 動作モード [default: CTRL]
+  -p PORT           : WEB サーバのポートを指定します．[default: 5000]
   -d                : デバッグモードで動作します．
 """
 
 from docopt import docopt
 
+import requests
 import logging
 import pathlib
 import datetime
@@ -46,12 +48,32 @@ def check_liveness_impl(name, liveness_file, interval):
     return True
 
 
-def check_liveness(target_list):
+def check_port(port):
+    try:
+        if (
+            requests.get(
+                "http://{address}:{port}/".format(address="127.0.0.1", port=port)
+            ).status_code
+            == 200
+        ):
+            return True
+    except:
+        pass
+
+    logging.warning("Failed to access Flask web server")
+
+    return False
+
+
+def check_liveness(target_list, port=None):
     for target in target_list:
         if not check_liveness_impl(
             target["name"], target["liveness_file"], target["interval"]
         ):
             return False
+
+    if (port is not None) and (not check_port(port)):
+        return False
 
     return True
 
@@ -61,6 +83,7 @@ args = docopt(__doc__)
 
 config_file = args["-c"]
 watch_mode = args["-m"]
+port = args["-p"]
 debug_mode = args["-d"]
 
 if debug_mode:
@@ -79,10 +102,12 @@ config = load_config(config_file)
 logging.info("Mode: {watch_mode}".format(watch_mode=watch_mode))
 if watch_mode == "CTRL":
     name_list = ["controller"]
+    port = None
 elif watch_mode == "WEB":
     name_list = ["web"]
 else:
     name_list = ["actuator", "monitor", "receiver"]
+    port = None
 
 target_list = []
 for name in name_list:
@@ -96,7 +121,7 @@ for name in name_list:
         }
     )
 
-if check_liveness(target_list):
+if check_liveness(target_list, port):
     logging.info("OK.")
     sys.exit(0)
 else:
