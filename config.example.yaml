@@ -23,13 +23,13 @@ controller:
               measure: sensor.rasp
               hostname: rasp-storeroom
         power:
-            - name: リビングエアコン
+            - name: リビング
               measure: hems.sharp
               hostname: リビングエアコン
-            - name: 書斎エアコン
+            - name: 書斎
               measure: hems.sharp
               hostname: 書斎エアコン
-            - name: 和室エアコン
+            - name: 和室
               measure: hems.sharp
               hostname: 和室エアコン
 
