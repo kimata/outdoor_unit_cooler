@@ -4,7 +4,7 @@ const Watering = ({ isReady, ctrlStat }) => {
     const amount = (watering) => {
         return (
             <span className="display-1 align-middle ms-4" data-testid="watering-info">
-                <span className="fw-bold watering-value">{watering.toFixed(1)}</span>
+                <span className="fw-bold digit">{watering.toFixed(1)}</span>
                 <span className="display-5 ms-2">L</span>
             </span>
         );

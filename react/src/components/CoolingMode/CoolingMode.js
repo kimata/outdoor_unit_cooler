@@ -5,12 +5,12 @@ const CoolingMode = ({ isReady, ctrlStat }) => {
                 <div className="row">
                     <div className="col-6">
                         <span className="me-1">On:</span>
-                        <span className="display-6">{mode.duty.on_sec}</span>
+                        <span className="display-6 digit">{mode.duty.on_sec}</span>
                         <span className="ms-1">sec</span>
                     </div>
                     <div className="col-6">
                         <span className="me-1">Off:</span>
-                        <span className="display-6">{Math.round(mode.duty.off_sec / 60)}</span>
+                        <span className="display-6 digit">{Math.round(mode.duty.off_sec / 60)}</span>
                         <span className="ms-1">min</span>
                     </div>
                 </div>
@@ -26,7 +26,7 @@ const CoolingMode = ({ isReady, ctrlStat }) => {
         return (
             <div data-testid="cooling-info">
                 <div className="display-1 align-middle ms-1">
-                    <span className="fw-bold">{mode.mode_index}</span>
+                    <span className="fw-bold digit">{mode.mode_index}</span>
                 </div>
                 {dutyInfo(mode)}
             </div>

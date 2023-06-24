@@ -38,7 +38,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                                 style={{ width: (100.0 * props.airconData.value) / 1500 + "%" }}
                             ></div>
                         </div>
-                        <div className="progress-label">
+                        <div className="progress-label digit">
                             <b>{valueText(props.airconData.value,0)}</b>
                             <small className="ms-2">W</small>
                         </div>

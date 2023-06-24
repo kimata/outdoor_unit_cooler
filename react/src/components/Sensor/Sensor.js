@@ -18,7 +18,7 @@ const Sensor = ({ isReady, ctrlStat }) => {
         return (
             <tr className="row">
                 <td className="text-start col-3">{sensorData.name}</td>
-                <td className="text-end col-2">
+                <td className="text-end col-2 digit">
                     <b>{valueText(sensorData.value)}</b>
                 </td>
                 <td className="text-start col-2">
