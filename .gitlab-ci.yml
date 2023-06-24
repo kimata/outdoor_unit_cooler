@@ -82,20 +82,19 @@ test-webapp-docker:
     image: registry.green-rabbit.net:5000/kimata/local_playwright:01323795
 
     script:
-        # # NOTE: お掃除する
-        # - docker rm $(docker ps -a --filter "status=exited" -q) || true
+        - docker container prune -a --filter "until=$(date +'%Y-%m-%dT%H:%M:%S' --date='-1 days')" --filter "label=job=${CI_JOB_NAME}"
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_ID} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py
-        - docker inspect --format='{{.PortBindings}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1
-        - docker inspect --format='{{.PortBindings.2222.HostPort}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1
+        - docker inspect --format='{{.HostConfig.PortBindings}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1
+        - docker inspect --format='{{.HostConfig.PortBindings.2222.HostPort}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1
         
 
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_ID} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
           ./app/webapp.py -s $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
         - ln -s $(docker inspect --format='{{.LogPath}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) controller_log.txt
         - ln -s $(docker inspect --format='{{.LogPath}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2) webapp_log.txt
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_ID} ${PLAYWRIGHT_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${PLAYWRIGHT_IMAGE}
         - docker cp test/test_basic.py ${CI_JOB_NAME}-${CI_JOB_ID}-3:test_basic.py
         - docker cp test/conftest.py ${CI_JOB_NAME}-${CI_JOB_ID}-3:conftest.py
         - docker exec --tty=true ${CI_JOB_NAME}-${CI_JOB_ID}-3 python3 -m pytest test_basic.py --server $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-2)
