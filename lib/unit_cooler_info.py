@@ -105,7 +105,7 @@ def get_stats(config, server_host, server_port, message_queue):
 
 @blueprint.route("/api/stat", methods=["GET"])
 @support_jsonp
-@cross_origin
+@cross_origin()
 def api_get_stats():
     config = current_app.config["CONFIG"]
     server_host = current_app.config["SERVER_HOST"]
