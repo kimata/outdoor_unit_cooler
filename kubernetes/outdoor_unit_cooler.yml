@@ -129,6 +129,8 @@ spec:
           exec:
             command:
               - /opt/unit_cooler/src/healthz.py
+              - '-m'
+              - ACT
           initialDelaySeconds: 120
           periodSeconds: 120
           timeoutSeconds: 30
