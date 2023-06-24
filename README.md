@@ -64,7 +64,7 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
 
 <dl>
   <dt>namespace</dt>
-  <dd>`hems` というネームスペースを作っていますので，環境に合わせて変更します．</dd>
+  <dd> `hems` というネームスペースを作っていますので，環境に合わせて変更します．</dd>
 
   <dt>external-dns.alpha.kubernetes.io/hostname</dt>
   <dd>ExternalDNS で設定するホスト名を指定します．環境に合わせて変更いただくか，不要であれば削除します．</dd>
