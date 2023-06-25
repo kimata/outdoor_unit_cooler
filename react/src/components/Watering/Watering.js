@@ -3,17 +3,38 @@ import watering_icon from "../../img/watering.png";
 const Watering = ({ isReady, ctrlStat }) => {
     const amount = (watering) => {
         return (
-            <span className="display-1 align-middle ms-4" data-testid="watering-info">
-                <span className="fw-bold digit">{watering.toFixed(1)}</span>
-                <span className="display-5 ms-2">L</span>
-            </span>
+            <div className="card-body position-relative outdoor_unit">
+                <div className="container">
+                    <div className="float-start">
+                        <img src={watering_icon} alt="🚰" width="120px" />
+                    </div>
+                </div>
+                <div className="container position-absolute top-0 start-0">
+                    <div className="row">
+                        <div className="col-12">
+                            <span className="text-start display-1 ms-4" data-testid="watering-amount-info">
+                                <span className="fw-bold digit">{watering.amount.toFixed(1)}</span>
+                                <span className="display-5 ms-2">L</span>
+                            </span>
+                        </div>
+                        <div className="col-12 mt-2">
+                            <span className="text-start ms-4 text-muted" data-testid="watering-price-info">
+                                <span className="fw-bold display-6 digit">{watering.price.toFixed(2)}</span>
+                                <span className="ms-2">円</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         );
     };
     const loading = () => {
         return (
-            <span className="display-1 align-middle ms-4">
-                <span className="display-5">Loading...</span>
-            </span>
+            <div className="card-body outdoor_unit">
+                <span className="display-1 align-middle ms-4">
+                    <span className="display-5">Loading...</span>
+                </span>
+            </div>
         );
     };
 
@@ -24,10 +45,7 @@ const Watering = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">本日の散水量</h4>
                     </div>
-                    <div className="card-body outdoor_unit">
-                        <img src={watering_icon} alt="🚰" width="120px" />
-                        {isReady ? amount(ctrlStat.watering) : loading()}
-                    </div>
+                    {isReady ? amount(ctrlStat.watering) : loading()}
                 </div>
             </div>
         </div>
