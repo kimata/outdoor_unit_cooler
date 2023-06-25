@@ -7,75 +7,75 @@ stages:
     - deploy
     - renovate
 
-# build-react:
-#     stage: build-webapp
-#     image: node:20.3
-#     script:
-#         - cd react
-#         - npm ci --cache .npm --prefer-offline
-#         - npm run build
-#     artifacts:
-#         paths:
-#             - react/build
-#     cache:
-#         key: npm
-#         paths:
-#             - .npm/
+build-react:
+    stage: build-webapp
+    image: node:20.3
+    script:
+        - cd react
+        - npm ci --cache .npm --prefer-offline
+        - npm run build
+    artifacts:
+        paths:
+            - react/build
+    cache:
+        key: npm
+        paths:
+            - .npm/
 
-# build-image:
-#     stage: build-image
-#     image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d386d462
+build-image:
+    stage: build-image
+    image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d386d462
 
-#     variables:
-#         BUILDER: arm_builder
+    variables:
+        BUILDER: arm_builder
 
-#     script:
-#         - export GIT_SSL_NO_VERIFY=1
-#         - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
-#         - mv hems_config/unit_cooler.yaml config.yaml
+    script:
+        - export GIT_SSL_NO_VERIFY=1
+        - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
+        - mv hems_config/unit_cooler.yaml config.yaml
 
-#         - docker buildx create --name ${BUILDER} --config script/buildkitd.toml --use
-#         - docker buildx use ${BUILDER}
-#         - docker buildx build --platform linux/amd64,linux/arm64/v8
-#           --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
-#           --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
-#           --push --tag ${CI_REGISTRY_IMAGE} .
-#         # - docker buildx stop ${BUILDER}
-#     dependencies:
-#         - build-react
+        - docker buildx create --name ${BUILDER} --config script/buildkitd.toml --use
+        - docker buildx use ${BUILDER}
+        - docker buildx build --platform linux/amd64,linux/arm64/v8
+          --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache
+          --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache
+          --push --tag ${CI_REGISTRY_IMAGE} .
+        # - docker buildx stop ${BUILDER}
+    dependencies:
+        - build-react
 
-# test-controller-sample:
-#     stage: test
+test-controller-sample:
+    stage: test
 
-#     script:
-#         - docker pull ${CI_REGISTRY_IMAGE}
-#         - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
+    script:
+        - docker pull ${CI_REGISTRY_IMAGE}
+        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
 
-# test-controller-regular:
-#     stage: test
+test-controller-regular:
+    stage: test
 
-#     script:
-#         - docker pull ${CI_REGISTRY_IMAGE}
-#         - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
+    script:
+        - docker pull ${CI_REGISTRY_IMAGE}
+        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
 
-# test-actuator-sample:
-#     stage: test
+test-actuator-sample:
+    stage: test
 
-#     variables:
-#         SERVER_HOST: 192.168.0.20
+    variables:
+        SERVER_HOST: 192.168.0.20
 
-#     script:
-#         - docker pull ${CI_REGISTRY_IMAGE}
-#         - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
+    script:
+        - docker pull ${CI_REGISTRY_IMAGE}
+        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
 
-# test-actuator-regular:
-#     stage: test
-#     variables:
-#         SERVER_HOST: 192.168.0.20
+test-actuator-regular:
+    stage: test
+    variables:
+        SERVER_HOST: 192.168.0.20
 
-#     script:
-#         - docker pull ${CI_REGISTRY_IMAGE}
-#         - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -s ${SERVER_HOST} -O -D
+    script:
+        - docker pull ${CI_REGISTRY_IMAGE}
+        - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -s ${SERVER_HOST} -O -D
        
 test-webapp-docker:
     stage: test
@@ -127,7 +127,7 @@ test-healthz-docker:
           ./app/webapp.py
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
-        - sleep 1200
+        - sleep 120
 
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-1 ./src/healthz.py -m CTRL
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-2 ./src/healthz.py -m ACT
@@ -147,85 +147,85 @@ test-healthz-docker:
             - actuator_log.txt
             - webapp_log.txt
             
-# deploy-controller:
-#     stage: deploy
-#     image:
-#         name: bitnami/kubectl:latest
-#         entrypoint: [""]
-#     script:
-#         - kubectl config get-contexts
-#         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-#         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
-#     rules:
-#         # NOTE: 自動実行ではデプロイしない
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: never
-#         - changes:
-#               - app/cooler_controller.py
-#               - lib/config.py
-#               - lib/control_pubsub.py
-#               - lib/logger.py
-#               - lib/notify_slack.py
-#               - lib/sensor_data.py
-#               - src/healthz.py
+deploy-controller:
+    stage: deploy
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - app/cooler_controller.py
+              - lib/config.py
+              - lib/control_pubsub.py
+              - lib/logger.py
+              - lib/notify_slack.py
+              - lib/sensor_data.py
+              - src/healthz.py
 
-# deploy-actuator:
-#     stage: deploy
-#     image:
-#         name: bitnami/kubectl:latest
-#         entrypoint: [""]
-#     script:
-#         - kubectl config get-contexts
-#         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-#         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
-#     rules:
-#         # NOTE: 自動実行ではデプロイしない
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: never
-#         - changes:
-#               - app/unit_cooler.py
-#               - lib/aircon.py
-#               - lib/config.py
-#               - lib/control_pubsub.py
-#               - lib/fd_q10c.py
-#               - lib/io_link.py
-#               - lib/logger.py
-#               - lib/ltc2874.py
-#               - lib/notify_slack.py
-#               - lib/sensor_data.py
-#               - lib/valve.py
-#               - src/healthz.py
+deploy-actuator:
+    stage: deploy
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - app/unit_cooler.py
+              - lib/aircon.py
+              - lib/config.py
+              - lib/control_pubsub.py
+              - lib/fd_q10c.py
+              - lib/io_link.py
+              - lib/logger.py
+              - lib/ltc2874.py
+              - lib/notify_slack.py
+              - lib/sensor_data.py
+              - lib/valve.py
+              - src/healthz.py
 
-# deploy-webapp:
-#     stage: deploy
-#     image:
-#         name: bitnami/kubectl:latest
-#         entrypoint: [""]
-#     script:
-#         - kubectl config get-contexts
-#         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-#         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
-#     rules:
-#         # NOTE: 自動実行ではデプロイしない
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: never
-#         - changes:
-#               - react/**/*
-#               - app/webapp.py
-#               - lib/*
+deploy-webapp:
+    stage: deploy
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - react/**/*
+              - app/webapp.py
+              - lib/*
 
-# renovate:
-#     stage: renovate
-#     image:
-#         name: registry.green-rabbit.net:5000/kimata/local_renovate:35
+renovate:
+    stage: renovate
+    image:
+        name: registry.green-rabbit.net:5000/kimata/local_renovate:35
 
-#         entrypoint: [""]
-#     script:
-#         - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
-#         # # NOTE: ついでにお掃除
-#         #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
-#     rules:
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: always
-#         - changes:
-#               - renovate.json
+        entrypoint: [""]
+    script:
+        - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
+        # # NOTE: ついでにお掃除
+        #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: always
+        - changes:
+              - renovate.json
