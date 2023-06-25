@@ -62,19 +62,24 @@ def get_sense_data(config):
     return sense_data
 
 
-def watering_amount(config):
+def watering(config):
     if os.environ["DUMMY_MODE"] == "true":
         offset_day = 7
     else:
         offset_day = 0
 
-    return get_day_sum(
+    amount = get_day_sum(
         config["controller"]["influxdb"],
         config["controller"]["watering"]["measure"],
         config["controller"]["watering"]["hostname"],
         "flow",
         offset_day,
     )
+
+    return {
+        "amount": amount,
+        "price": amount * config["controller"]["watering"]["unit_price"] / 1000.0,
+    }
 
 
 def get_last_message(config, message_queue):
@@ -95,7 +100,7 @@ def get_stats(config, server_host, server_port, message_queue):
     sense_data = get_sense_data(config)
 
     return {
-        "watering": watering_amount(config),
+        "watering": watering(config),
         "sensor": sense_data,
         "mode": get_last_message(config, message_queue),
         "cooler_status": get_cooler_status(sense_data),
