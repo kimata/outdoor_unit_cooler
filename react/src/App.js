@@ -4,6 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import moment from "moment-timezone";
 
 import { useEffect, useState } from "react";
+
+import preval from 'preval.macro'
+
 import Watering from "./components/Watering/Watering";
 import CoolingMode from "./components/CoolingMode/CoolingMode";
 import Sensor from "./components/Sensor/Sensor";
@@ -15,14 +18,16 @@ const App = () => {
     const [ctrlStat, setCtrlStat] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
     const [error, setError] = useState(false);
-
+    const buildDate = moment(preval`module.exports = new Date().toLocaleString();`).format('llll');
+    const buildDateFrom = moment(preval`module.exports = new Date().toLocaleString();`).fromNow();
+    
     useEffect(() => {
         const loadCtrlStat = async () => {
             let res = await fetchCtrlStat(API_ENDPOINT);
             setError(false);
             setCtrlStat(res);
             setReady(true);
-            setUpdateTime(moment().format("YYYY-MM-DD HH:mm:ss"));
+            setUpdateTime(moment().format('llll'));
         };
         loadCtrlStat();
 
@@ -83,7 +88,16 @@ const App = () => {
                     </div>
                 </div>
             </div>
-            <div className="float-end text-end m-2">Last update: {updateTime}</div>
+            <div class="p-1 float-end text-end m-2">
+                <small>
+                    <p class="text-muted m-0">
+                        <small>ビルド日時: {{ buildDate }} [{{ buildDateFrom }}]</small>
+                    </p>
+                    <p class="text-muted m-0">
+                        <small>更新日時: {updateTime}</small>
+                    </p>
+                </small>
+            </div>
         </div>
     );
 };
