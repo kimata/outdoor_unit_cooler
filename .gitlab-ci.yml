@@ -82,13 +82,15 @@ test-webapp-docker:
     image: registry.green-rabbit.net:5000/kimata/local_playwright:01323795
 
     script:
+        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done
+        
         - docker pull ${CI_REGISTRY_IMAGE}
         
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py
           
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/webapp.py
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
@@ -109,17 +111,19 @@ test-healthz-docker:
     stage: test
 
     script:
+        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done
+        
         - docker pull ${CI_REGISTRY_IMAGE}
 
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py
 
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -D
           
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} --publish-all=true ${CI_REGISTRY_IMAGE}
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/webapp.py
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
