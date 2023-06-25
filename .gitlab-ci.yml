@@ -9,6 +9,7 @@ stages:
 
 build-react:
     stage: build-webapp
+    
     image: node:20.3
     script:
         - cd react
@@ -24,6 +25,8 @@ build-react:
 
 build-image:
     stage: build-image
+    needs: ["build-react"]
+    
     image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d386d462
 
     variables:
@@ -46,13 +49,15 @@ build-image:
 
 test-controller-sample:
     stage: test
-
+    needs: ["build-image"]
+    
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
         - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
 
 test-controller-regular:
     stage: test
+    needs: ["build-image"]
 
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
@@ -60,6 +65,7 @@ test-controller-regular:
 
 test-actuator-sample:
     stage: test
+    needs: ["build-image"]
 
     variables:
         SERVER_HOST: 192.168.0.20
@@ -70,6 +76,8 @@ test-actuator-sample:
 
 test-actuator-regular:
     stage: test
+    needs: ["build-image"]
+    
     variables:
         SERVER_HOST: 192.168.0.20
 
@@ -79,6 +87,8 @@ test-actuator-regular:
        
 test-webapp-docker:
     stage: test
+    needs: ["build-image"]
+    
     image: registry.green-rabbit.net:5000/kimata/local_playwright:01323795
 
     script:
@@ -109,6 +119,7 @@ test-webapp-docker:
 
 test-healthz-docker:
     stage: test
+    needs: ["build-image"]
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
@@ -149,6 +160,8 @@ test-healthz-docker:
             
 deploy-controller:
     stage: deploy
+    needs: ["test-controller-regular"]
+    
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -171,6 +184,8 @@ deploy-controller:
 
 deploy-actuator:
     stage: deploy
+    needs: ["test-actuator-regular"]
+    
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -198,6 +213,8 @@ deploy-actuator:
 
 deploy-webapp:
     stage: deploy
+    needs: ["test-webapp-docker"]
+    
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -214,6 +231,26 @@ deploy-webapp:
               - app/webapp.py
               - lib/*
 
+deploy-webapp-demo:
+    stage: deploy
+    needs: ["test-webapp-docker"]
+    
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp-demo
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - react/**/*
+              - app/webapp.py
+              - lib/*
+              
 renovate:
     stage: renovate
     image:
