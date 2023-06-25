@@ -83,7 +83,7 @@ test-webapp-docker:
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done
+        - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
         
         - docker pull ${CI_REGISTRY_IMAGE}
         
@@ -112,7 +112,7 @@ test-healthz-docker:
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done
+        - docker ps  --filter "label=job=test-webapp-docker" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
         
         - docker pull ${CI_REGISTRY_IMAGE}
 
