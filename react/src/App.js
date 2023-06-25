@@ -18,8 +18,8 @@ const App = () => {
     const [ctrlStat, setCtrlStat] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
     const [error, setError] = useState(false);
-    const buildDate = moment(preval`module.exports = new Date().toLocaleString();`).format('llll');
-    const buildDateFrom = moment(preval`module.exports = new Date().toLocaleString();`).fromNow();
+    const buildDate = moment(preval`module.exports = new Date().toUTCString();`).format('llll');
+    const buildDateFrom = moment(preval`module.exports = new Date().toUTCString();`).fromNow();
     
     useEffect(() => {
         const loadCtrlStat = async () => {
@@ -91,10 +91,10 @@ const App = () => {
             <div class="p-1 float-end text-end m-2">
                 <small>
                     <p class="text-muted m-0">
-                        <small>ビルド日時: {{ buildDate }} [{{ buildDateFrom }}]</small>
+                        <small>更新日時: {updateTime}</small>
                     </p>
                     <p class="text-muted m-0">
-                        <small>更新日時: {updateTime}</small>
+                        <small>ビルド日時: { buildDate } [{ buildDateFrom }]</small>
                     </p>
                 </small>
             </div>
