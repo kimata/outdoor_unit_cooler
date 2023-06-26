@@ -31,6 +31,7 @@ import math
 import signal
 import pathlib
 import logging
+from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
 
 import fluent.sender
 
@@ -40,7 +41,6 @@ import control_pubsub
 
 import traceback
 from config import load_config
-import notify_slack
 import logger
 
 DUMMY_MODE_SPEEDUP = 12.0
@@ -58,23 +58,8 @@ def sig_handler(num, frame):
         should_terminate = True
 
 
-def notify_error(config, message):
-    logging.error(message)
-
-    if "slack" not in config:
-        return
-
-    notify_slack.error(
-        config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"]["name"],
-        config["slack"]["from"],
-        message,
-        config["slack"]["error"]["interval_min"],
-    )
-
-
-def notify_hazard(config, message):
-    notify_error(config, message)
+def notify_hazard(message):
+    work_log(message, WORK_LOG_LEVEL.ERROR)
 
     pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
     valve.set_state(valve.VALVE_STATE.CLOSE)
@@ -82,7 +67,7 @@ def notify_hazard(config, message):
 
 def check_hazard(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
+        notify_hazard("水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
 
         return True
     else:
@@ -103,16 +88,15 @@ def check_valve_status(config, valve_status):
         if (flow is not None) and (valve_status["duration"] > 10):
             # バルブが開いてから時間が経っている場合
             if flow < config["actuator"]["valve"]["on"]["min"]:
-                notify_error(
-                    config,
+                # NOTE: ハザード扱いにはしない
+                work_log(
                     "元栓が閉じています．(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)".format(
                         duration=valve_status["duration"], flow=flow
                     ),
+                    WORK_LOG_LEVEL.ERROR,
                 )
             elif flow > config["actuator"]["valve"]["on"]["max"]:
-                notify_hazard(
-                    config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
-                )
+                notify_hazard("水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
     else:
         logging.debug(
             "Valve is close for {duration:.1f} sec".format(
@@ -131,7 +115,6 @@ def check_valve_status(config, valve_status):
                 and (flow > config["actuator"]["valve"]["off"]["max"])
             ):
                 notify_hazard(
-                    config,
                     (
                         "電磁弁が壊れていますので制御を停止します．"
                         + "(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)"
@@ -208,6 +191,7 @@ def valve_ctrl_worker(
     interval_sec = config["actuator"]["interval_sec"] / speedup
     receive_time = datetime.datetime.now()
     is_receive = False
+    mode_index_prev = -1
     try:
         while True:
             start_time = time.time()
@@ -220,6 +204,15 @@ def valve_ctrl_worker(
                 logging.info(
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
+                if mode_index_prev != cooling_mode["mode_index"]:
+                    work_log(
+                        "冷却モードが変更されました．({prev} → {cur})".format(
+                            prev="?" if mode_index_prev == -1 else mode_index_prev,
+                            cur=cooling_mode["mode_index"],
+                        )
+                    )
+                mode_index_prev = cooling_mode["mode_index"]
+
             if check_hazard(config):
                 cooling_mode = {"state": valve.COOLING_STATE.IDLE}
 
@@ -369,6 +362,7 @@ signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = Queue()
 
 logging.info("Initialize valve")
+init()
 valve.init(config["actuator"]["valve"]["pin_no"])
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う

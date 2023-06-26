@@ -7,7 +7,7 @@ import logging
 import threading
 import traceback
 from valve_state import VALVE_STATE, COOLING_STATE
-
+from work_log import work_log
 
 if os.environ.get("DUMMY_MODE", None) is None:
     import RPi.GPIO as GPIO
@@ -205,6 +205,7 @@ def set_cooling_working(duty_info):
     if not STAT_PATH_VALVE_STATE_WORKING.exists():
         STAT_PATH_VALVE_STATE_WORKING.parent.mkdir(parents=True, exist_ok=True)
         STAT_PATH_VALVE_STATE_WORKING.touch()
+        work_log("冷却を開始します．")
         logging.info("COOLING: IDLE -> WORKING")
         return set_state(VALVE_STATE.OPEN)
 
@@ -223,6 +224,7 @@ def set_cooling_working(duty_info):
                     left=duty_info["off_sec"]
                 )
             )
+            work_log("OFF Duty になったのでバルブを締めます．")
             return set_state(VALVE_STATE.CLOSE)
         else:
             logging.info(
@@ -239,6 +241,7 @@ def set_cooling_working(duty_info):
                     left=duty_info["on_sec"]
                 )
             )
+            work_log("ON Duty になったのでバルブを開けます．")
             return set_state(VALVE_STATE.OPEN)
         else:
             logging.info(
@@ -255,6 +258,7 @@ def set_cooling_idle():
     if not STAT_PATH_VALVE_STATE_IDLE.exists():
         STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
         STAT_PATH_VALVE_STATE_IDLE.touch()
+        work_log("冷却を停止しました．")
         logging.info("COOLING: WORKING -> IDLE")
         return set_state(VALVE_STATE.CLOSE)
     else:
@@ -280,6 +284,7 @@ if __name__ == "__main__":
         set_cooling_state(
             {
                 "state": COOLING_STATE.WORKING,
+                "mode_index": 1,
                 "duty": {"enable": True, "on_sec": 1, "off_sec": 2},
             }
         )
