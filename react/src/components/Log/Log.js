@@ -17,12 +17,22 @@ const Log = ({ isReady, log }) => {
     };
 
     const logData = (log) => {
-        console.log(log)
+        if (log.length !== 0) {
+            return (
+                <div>
+                    <div class="container text-start mb-3" data-testid="log">
+                        <div class="row">
+                            ログがありません．
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div>
                 <div class="container text-start mb-3" data-testid="log">
                     {
-                        if (log.length !=0) {
                             log.slice((page - 1) * size, page * size).map((entry, index) => {
                                 let date = moment(entry.date)
                                 let log_date = date.format("M月D日(ddd) HH:mm");
@@ -39,27 +49,20 @@ const Log = ({ isReady, log }) => {
                                     </div>
                                 )
                             })
-                        } else {
-                            return (
-                                <div class="row">
-                                    ログがありません．
-                                </dvi>
-                            )
-                        }
-                }
+                    }
                 </div>
 
                 <div class="position-absolute bottom-0 start-50 translate-middle-x">
-                <PaginationControl
-                    page={page}
-                    between={3}
-                    total={log.length}
-                    limit={size}
-                    changePage={(page) => {
-                        setPage(page); 
-                    }}
-                    ellipsis={1}
-                />
+                    <PaginationControl
+                        page={page}
+                        between={3}
+                        total={log.length}
+                        limit={size}
+                        changePage={(page) => {
+                            setPage(page); 
+                        }}
+                        ellipsis={1}
+                    />
                 </div>
             </div>
         )
