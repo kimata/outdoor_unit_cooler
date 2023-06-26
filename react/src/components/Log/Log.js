@@ -17,7 +17,7 @@ const Log = ({ isReady, log }) => {
     };
 
     const logData = (log) => {
-        if (log.length !== 0) {
+        if (log.length === 0) {
             return (
                 <div>
                     <div class="container text-start mb-3" data-testid="log">
