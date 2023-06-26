@@ -20,11 +20,9 @@ from flask import Flask
 from flask_cors import CORS
 import sys
 import pathlib
-import time
 import logging
 from socket import getaddrinfo
 from socket import AF_INET, SOCK_STREAM
-import atexit
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
@@ -52,15 +50,6 @@ def nslookup(hostname):
 
         return sockaddr[0]
     return None
-
-
-def notify_terminate():
-    webapp_log.app_log("🏃 アプリを再起動します．")
-    # NOTE: ログを送信できるまでの時間待つ
-    time.sleep(1)
-
-
-atexit.register(notify_terminate)
 
 
 def queuing_message(config, message_queue, message):
@@ -158,6 +147,8 @@ if __name__ == "__main__":
     app.register_blueprint(webapp_log.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    # app.debug = True
+    webapp_log.init(config)
+
+    app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
     app.run(host="0.0.0.0", threaded=True, use_reloader=True)
