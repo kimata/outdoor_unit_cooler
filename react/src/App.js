@@ -13,9 +13,10 @@ import Sensor from "./components/Sensor/Sensor";
 import AirConditioner from "./components/AirConditioner/AirConditioner";
 
 const App = () => {
-    const API_ENDPOINT = "/unit_cooler/api/stat";
+    const API_ENDPOINT_STAT = "/unit_cooler/api/stat";
     const [isReady, setReady] = useState(false);
-    const [ctrlStat, setCtrlStat] = useState([]);
+    const [stat, setStat] = useState([]);
+    const [log, setLog] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
     const [error, setError] = useState(false);
     const buildDate = moment(preval`module.exports = new Date().toUTCString();`).format('llll');
@@ -23,12 +24,20 @@ const App = () => {
     
     useEffect(() => {
         const loadCtrlStat = async () => {
-            let res = await fetchCtrlStat(API_ENDPOINT);
+            let res = await fetchData(API_ENDPOINT_STAT);
             setError(false);
-            setCtrlStat(res);
+            setStat(res);
             setReady(true);
             setUpdateTime(moment().format('llll'));
         };
+        // const loadCtrlStat = async () => {
+        //     let res = await fetchData(API_ENDPOINT_STAT);
+        //     setCtrlError(false);
+        //     setStat(res);
+        //     setReady(true);
+        //     setUpdateTime(moment().format('llll'));
+        // };
+
         loadCtrlStat();
 
         const intervalId = setInterval(() => {
@@ -51,16 +60,13 @@ const App = () => {
         );
     };
 
-    const showError = (ctrlStat, error) => {
+    const showError = (error) => {
         if (error) {
             return errorMessage("データの読み込みに失敗しました．");
         }
-        // if (ctrlStat.hazard) {
-        //   return errorMessage("電磁弁もしくは流量計に問題が発生しています．");
-        // }
     };
 
-    const fetchCtrlStat = (url) => {
+    const fetchData = (url) => {
         return new Promise((resolve, reject) => {
             fetch(url)
                 .then((res) => res.json())
@@ -77,14 +83,14 @@ const App = () => {
             <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                 <h1 className="display-6 my-0 mr-md-auto font-weight-normal">室外機自動冷却システム</h1>
             </div>
-            {showError(ctrlStat, error)}
+            {showError(error)}
             <div>
                 <div className="container">
                     <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
-                        <Watering isReady={isReady} ctrlStat={ctrlStat} />
-                        <CoolingMode isReady={isReady} ctrlStat={ctrlStat} />
-                        <AirConditioner isReady={isReady} ctrlStat={ctrlStat} />
-                        <Sensor isReady={isReady} ctrlStat={ctrlStat} />
+                        <Watering isReady={isReady} stat={stat} />
+                        <CoolingMode isReady={isReady} stat={stat} />
+                        <AirConditioner isReady={isReady} stat={stat} />
+                        <Sensor isReady={isReady} stat={stat} />
                     </div>
                 </div>
             </div>

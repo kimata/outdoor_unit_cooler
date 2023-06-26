@@ -3,7 +3,7 @@ import "moment/locale/ja";
 
 import { valueText, dateText } from "../../lib/util";
 
-const Sensor = ({ isReady, ctrlStat }) => {
+const Sensor = ({ isReady, stat }) => {
     const loading = () => {
         return (
             <span className="display-1 align-middle ms-4">
@@ -32,13 +32,13 @@ const Sensor = ({ isReady, ctrlStat }) => {
         );
     };
 
-    const outdoorStatus = (ctrlStat) => {
-        if (ctrlStat.outdoor_status.message != null) {
-            return <div>{ctrlStat.outdoor_status.message}</div>;
+    const outdoorStatus = (stat) => {
+        if (stat.outdoor_status.message != null) {
+            return <div>{stat.outdoor_status.message}</div>;
         }
     };
 
-    const sensorInfo = (ctrlStat) => {
+    const sensorInfo = (stat) => {
         return (
             <div data-testid="sensor-info">
                 <table className="table">
@@ -54,13 +54,13 @@ const Sensor = ({ isReady, ctrlStat }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {sensorRow(ctrlStat.sensor.temp[0], "℃")}
-                        {sensorRow(ctrlStat.sensor.humi[0], "%")}
-                        {sensorRow(ctrlStat.sensor.lux[0], "lx")}
-                        {sensorRow(ctrlStat.sensor.solar_rad[0], "W/m^2")}
+                        {sensorRow(stat.sensor.temp[0], "℃")}
+                        {sensorRow(stat.sensor.humi[0], "%")}
+                        {sensorRow(stat.sensor.lux[0], "lx")}
+                        {sensorRow(stat.sensor.solar_rad[0], "W/m^2")}
                     </tbody>
                 </table>
-                <div className="text-start">{outdoorStatus(ctrlStat)}</div>
+                <div className="text-start">{outdoorStatus(stat)}</div>
             </div>
         );
     };
@@ -72,7 +72,7 @@ const Sensor = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">センサー値</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(ctrlStat) : loading()}</div>
+                    <div className="card-body">{isReady ? sensorInfo(stat) : loading()}</div>
                 </div>
             </div>
         </div>

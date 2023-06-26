@@ -1,4 +1,4 @@
-const CoolingMode = ({ isReady, ctrlStat }) => {
+const CoolingMode = ({ isReady, stat }) => {
     const dutyInfo = (mode) => {
         return (
             <div className="container">
@@ -47,7 +47,7 @@ const CoolingMode = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">現在の冷却モード</h4>
                     </div>
-                    <div className="card-body">{isReady ? modeInfo(ctrlStat.mode) : loading()}</div>
+                    <div className="card-body">{isReady ? modeInfo(stat.mode) : loading()}</div>
                 </div>
             </div>
         </div>

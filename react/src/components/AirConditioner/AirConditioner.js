@@ -2,7 +2,7 @@ import moment from "moment-timezone";
 
 import { valueText, dateText } from "../../lib/util";
 
-const AirConditioner = ({ isReady, ctrlStat }) => {
+const AirConditioner = ({ isReady, stat }) => {
     const loading = () => {
         return (
             <span className="display-1 align-middle ms-4">
@@ -51,13 +51,13 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
             </tr>
         );
     };
-    const coolerStatus = (ctrlStat) => {
-        if (ctrlStat.cooler_status.message != null) {
-            return <div>{ctrlStat.cooler_status.message}</div>;
+    const coolerStatus = (stat) => {
+        if (stat.cooler_status.message != null) {
+            return <div>{stat.cooler_status.message}</div>;
         }
     };
 
-    const sensorInfo = (ctrlStat) => {
+    const sensorInfo = (stat) => {
         return (
             <div data-testid="aircon-info">
                 <table className="table">
@@ -71,12 +71,12 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {ctrlStat.sensor.power.map((airconData, index) => (
+                        {stat.sensor.power.map((airconData, index) => (
                             <AirconRow airconData={airconData} key={index} />
                         ))}
                     </tbody>
                 </table>
-                <div className="text-start">{coolerStatus(ctrlStat)}</div>
+                <div className="text-start">{coolerStatus(stat)}</div>
             </div>
         );
     };
@@ -88,7 +88,7 @@ const AirConditioner = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">エアコン稼働状況</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(ctrlStat) : loading()}</div>
+                    <div className="card-body">{isReady ? sensorInfo(stat) : loading()}</div>
                 </div>
             </div>
         </div>

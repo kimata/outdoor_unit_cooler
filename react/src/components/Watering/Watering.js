@@ -1,6 +1,6 @@
 import watering_icon from "../../img/watering.png";
 
-const Watering = ({ isReady, ctrlStat }) => {
+const Watering = ({ isReady, stat }) => {
     const amount = (watering) => {
         return (
             <div className="card-body outdoor_unit">
@@ -47,7 +47,7 @@ const Watering = ({ isReady, ctrlStat }) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">本日の散水量</h4>
                     </div>
-                    {isReady ? amount(ctrlStat.watering) : loading()}
+                    {isReady ? amount(stat.watering) : loading()}
                 </div>
             </div>
         </div>
