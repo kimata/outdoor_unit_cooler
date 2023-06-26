@@ -172,7 +172,7 @@ def cmd_receive_worker(config, server_host, server_port, cmd_queue, is_one_time=
         return 0
     except:
         logging.error("Stop receive worker")
-        notify_error(config, traceback.format_exc())
+        notify_error(traceback.format_exc())
         return -1
 
 
@@ -207,7 +207,7 @@ def valve_ctrl_worker(
                 if mode_index_prev != cooling_mode["mode_index"]:
                     work_log(
                         "冷却モードが変更されました．({prev} → {cur})".format(
-                            prev="?" if mode_index_prev == -1 else mode_index_prev,
+                            prev="init" if mode_index_prev == -1 else mode_index_prev,
                             cur=cooling_mode["mode_index"],
                         )
                     )
@@ -226,7 +226,7 @@ def valve_ctrl_worker(
             if (datetime.datetime.now() - receive_time).total_seconds() > config[
                 "controller"
             ]["interval_sec"] * 10:
-                notify_error(config, "Unable to receive command.")
+                notify_error("Unable to receive command.")
 
             if should_terminate:
                 logging.info("Terminate control worker")
@@ -237,7 +237,7 @@ def valve_ctrl_worker(
             time.sleep(sleep_sec)
     except:
         logging.error("Stop control worker")
-        notify_error(config, traceback.format_exc())
+        notify_error(traceback.format_exc())
         return -1
 
 
@@ -252,7 +252,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         )
         hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
     except:
-        notify_error(config, "Failed to initialize monitor worker")
+        notify_error("Failed to initialize monitor worker")
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
     if interval_sec < 60:
@@ -309,7 +309,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             time.sleep(sleep_sec)
     except:
         logging.error("Stop monitor worker")
-        notify_error(config, traceback.format_exc())
+        notify_error(traceback.format_exc())
         return -1
 
 
