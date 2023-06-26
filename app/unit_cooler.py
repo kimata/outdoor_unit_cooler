@@ -362,7 +362,7 @@ signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = Queue()
 
 logging.info("Initialize valve")
-init()
+init(config)
 valve.init(config["actuator"]["valve"]["pin_no"])
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
