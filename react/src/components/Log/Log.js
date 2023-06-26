@@ -21,23 +21,31 @@ const Log = ({ isReady, log }) => {
         return (
             <div>
                 <div class="container text-start mb-3" data-testid="log">
-                {
-                    log.slice((page - 1) * size, page * size).map((entry, index) => {
-                        let date = moment(entry.date)
-                        let log_date = date.format("M月D日(ddd) HH:mm");
-                        let log_fromNow = date.fromNow();
-                        
-                        return (
-                            <div class="row">
-                                <div class="col-12 font-weight-bold">
-                                    { log_date }
-                                    <small class="text-muted">({ log_fromNow })</small>
-                                </div>
-                                <div class="col-12 log-message mb-1">{entry.message}</div>
-                                <hr class="dashed" />
-                            </div>
-                        )
-                    })
+                    {
+                        if (log.length !=0) {
+                            log.slice((page - 1) * size, page * size).map((entry, index) => {
+                                let date = moment(entry.date)
+                                let log_date = date.format("M月D日(ddd) HH:mm");
+                                let log_fromNow = date.fromNow();
+                                
+                                return (
+                                    <div class="row">
+                                        <div class="col-12 font-weight-bold">
+                                            { log_date }
+                                            <small class="text-muted">({ log_fromNow })</small>
+                                        </div>
+                                        <div class="col-12 log-message mb-1">{entry.message}</div>
+                                        <hr class="dashed" />
+                                    </div>
+                                )
+                            })
+                        } else {
+                            return (
+                                <div class="row">
+                                    ログがありません．
+                                </dvi>
+                            )
+                        }
                 }
                 </div>
 
