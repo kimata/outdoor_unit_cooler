@@ -20,5 +20,6 @@ def test_valve(page, host, port):
     expect(page.get_by_test_id("watering-amount-info")).to_have_count(1)
     expect(page.get_by_test_id("watering-price-info")).to_have_count(1)
     expect(page.get_by_test_id("cooling-info")).to_have_count(1, timeout=100 * 1000)
+    expect(page.get_by_test_id("log")).to_have_count(1)
 
     expect(page.get_by_test_id("error")).to_have_count(0)
