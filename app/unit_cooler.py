@@ -31,7 +31,6 @@ import math
 import signal
 import pathlib
 import logging
-from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
 
 import fluent.sender
 
@@ -41,6 +40,7 @@ import control_pubsub
 
 import traceback
 from config import load_config
+from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
 import logger
 
 DUMMY_MODE_SPEEDUP = 12.0
