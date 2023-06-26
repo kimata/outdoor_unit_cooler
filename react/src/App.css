@@ -18,3 +18,15 @@
     background-repeat: no-repeat;
     background-size: 200px;
 }
+hr.dashed {
+    border-top: 2px dashed #999;
+}
+
+.page-link {
+    color: #6c757d !important;
+}
+.page-item.active .page-link {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+}

@@ -11,10 +11,13 @@ import Watering from "./components/Watering/Watering";
 import CoolingMode from "./components/CoolingMode/CoolingMode";
 import Sensor from "./components/Sensor/Sensor";
 import AirConditioner from "./components/AirConditioner/AirConditioner";
+import Log from "./components/Log/Log.js";
 
 const App = () => {
     const API_ENDPOINT_STAT = "/unit_cooler/api/stat";
-    const [isReady, setReady] = useState(false);
+    const API_ENDPOINT_LOG = "/unit_cooler/api/log_view";
+    const [isStatReady, setStatReady] = useState(false);
+    const [isLogReady, setLogReady] = useState(false);
     const [stat, setStat] = useState([]);
     const [log, setLog] = useState([]);
     const [updateTime, setUpdateTime] = useState("Unknown");
@@ -23,26 +26,28 @@ const App = () => {
     const buildDateFrom = moment(preval`module.exports = new Date().toUTCString();`).fromNow();
     
     useEffect(() => {
-        const loadCtrlStat = async () => {
+        const loadStat = async () => {
             let res = await fetchData(API_ENDPOINT_STAT);
             setError(false);
             setStat(res);
-            setReady(true);
+            setStatReady(true);
             setUpdateTime(moment().format('llll'));
         };
-        // const loadCtrlStat = async () => {
-        //     let res = await fetchData(API_ENDPOINT_STAT);
-        //     setCtrlError(false);
-        //     setStat(res);
-        //     setReady(true);
-        //     setUpdateTime(moment().format('llll'));
-        // };
+        const loadLog = async () => {
+            let res = await fetchData(API_ENDPOINT_LOG);
+            setError(false);
+            setLog(res.data)
+            setLogReady(true);
+            setUpdateTime(moment().format('llll'));
+        };
 
-        loadCtrlStat();
+        loadStat();
+        loadLog();
 
         const intervalId = setInterval(() => {
-            loadCtrlStat();
-        }, 10000);
+            loadStat();
+            loadLog();
+        }, 1000);
         return () => {
             clearInterval(intervalId);
         };
@@ -87,10 +92,11 @@ const App = () => {
             <div>
                 <div className="container">
                     <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3 ms-3 me-3">
-                        <Watering isReady={isReady} stat={stat} />
-                        <CoolingMode isReady={isReady} stat={stat} />
-                        <AirConditioner isReady={isReady} stat={stat} />
-                        <Sensor isReady={isReady} stat={stat} />
+                        <Watering isReady={isStatReady} stat={stat} />
+                        <CoolingMode isReady={isStatReady} stat={stat} />
+                        <AirConditioner isReady={isStatReady} stat={stat} />
+                        <Sensor isReady={isStatReady} stat={stat} />
+                        <Log isReady={isLogReady} log={log} />
                     </div>
                 </div>
             </div>
