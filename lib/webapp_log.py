@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 import os
 from enum import IntEnum
-from flask import jsonify, Blueprint, g
+from flask import jsonify, Blueprint, request
 import logging
 import threading
+import time
 import sqlite3
+import datetime
 from multiprocessing.pool import ThreadPool
-
+from wsgiref.handlers import format_date_time
 from webapp_config import APP_URL_PREFIX, LOG_DB_PATH
 from webapp_event import notify_event, EVENT_TYPE
 from flask_util import support_jsonp, gzipped
@@ -118,9 +120,20 @@ def api_log_clear():
 @support_jsonp
 @gzipped
 def api_log_view():
-    g.disable_cache = True
+    log = get_log()
 
-    return jsonify(get_log())
+    response = jsonify({"data": log})
+    if len(log) == 0:
+        last_modified = time.time()
+    else:
+        last_modified = datetime.datetime.strptime(
+            log[0]["date"], "%Y-%m-%d %H:%M:%S"
+        ).timestamp()
+
+    response.headers["Last-Modified"] = format_date_time(last_modified)
+    response.make_conditional(request)
+
+    return response
 
 
 if __name__ == "__main__":
