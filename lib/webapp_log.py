@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 from enum import IntEnum
-from flask import jsonify, Blueprint, g, current_app
+from flask import jsonify, Blueprint, g
 import logging
 import threading
 import sqlite3
@@ -22,20 +22,19 @@ class APP_LOG_LEVEL(IntEnum):
 
 blueprint = Blueprint("webapp-log", __name__, url_prefix=APP_URL_PREFIX)
 
-config = None
 sqlite = None
 log_lock = None
 thread_pool = None
+config = None
 
 
-@blueprint.before_app_first_request
-def init():
+def init(config_):
     global config
     global sqlite
     global log_lock
     global thread_pool
 
-    config = current_app.config["CONFIG"]
+    config = config_
 
     sqlite = sqlite3.connect(LOG_DB_PATH, check_same_thread=False)
     sqlite.execute("CREATE TABLE IF NOT EXISTS log(date INT, message TEXT)")
@@ -47,6 +46,7 @@ def init():
 
 
 def app_log_impl(message, level):
+    global config
     with log_lock:
         sqlite.execute(
             'INSERT INTO log VALUES (DATETIME("now", "localtime"), ?)', [message]
@@ -68,7 +68,7 @@ def app_log_impl(message, level):
                 config["slack"]["error"]["interval_min"],
             )
 
-        if current_app.config["DUMMY_MODE"]:
+        if os.environ["DUMMY_MODE"] == "true":
             logging.error("This application is terminated because it is in dummy mode.")
             os._exit(-1)
 
@@ -83,12 +83,24 @@ def app_log(message, level=APP_LOG_LEVEL.INFO):
     else:
         logging.info(message)
 
-    # NOTE: ブラウザからアクセスされる前に再起動される場合．
-    if thread_pool is None:
-        app_log_impl(message, level)
-
     # NOTE: 実際のログ記録は別スレッドに任せて，すぐにリターンする
     thread_pool.apply_async(app_log_impl, (message, level))
+
+
+def get_log():
+    global sqlite
+
+    if os.environ["DUMMY_MODE"] == "true":
+        stop_day = 7
+    else:
+        stop_day = 0
+
+    cur = sqlite.cursor()
+    cur.execute(
+        'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?)',
+        ["{stop_day} days".format(stop_day=stop_day)],
+    )
+    return cur.fetchall()[::-1]
 
 
 @blueprint.route("/api/log_clear", methods=["GET"])
@@ -108,28 +120,15 @@ def api_log_clear():
 def api_log_view():
     g.disable_cache = True
 
-    cur = sqlite.cursor()
-    cur.execute("SELECT * FROM log")
-    return jsonify({"data": cur.fetchall()[::-1]})
+    return jsonify(get_log())
 
 
 if __name__ == "__main__":
     import logger
-    import time
     from config import load_config
 
     logger.init("test", level=logging.INFO)
 
-    # NOTE: テスト用に強制的に書き換える
-    class current_app:  # noqa: F811
-        config = {"CONFIG": load_config()}
+    init(load_config())
 
-    init()
-
-    for i in range(5):
-        app_log("テスト {i}".format(i=i))
-
-    time.sleep(1)
-
-    thread_pool.close()
-    thread_pool.terminate()
+    print(get_log())

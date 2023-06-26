@@ -29,6 +29,7 @@ thread_pool = None
 
 def init(config_):
     global config
+    global sqlite
     global log_lock
     global thread_pool
 
@@ -81,9 +82,14 @@ def work_log(message, level=WORK_LOG_LEVEL.INFO):
     thread_pool.apply_async(work_log_impl, (message, level))
 
 
-def get_work_log():
+def get_work_log(stop_day=0):
+    global sqlite
+
     cur = sqlite.cursor()
-    cur.execute("SELECT * FROM log")
+    cur.execute(
+        'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?)',
+        ["{stop_day} days".format(stop_day=stop_day)],
+    )
     return cur.fetchall()[::-1]
 
 
