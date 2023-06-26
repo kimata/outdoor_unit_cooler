@@ -82,16 +82,15 @@ def notify_hazard(config, message):
 
 def check_hazard(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_error(config, "過去に故障が発生しているので制御を停止しています．")
+        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
+
         return True
     else:
         return False
 
 
 def set_cooling_state(cooling_mode):
-    if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
-
+    check_hazard(config)
     return valve.set_cooling_state(cooling_mode)
 
 
@@ -104,9 +103,16 @@ def check_valve_status(config, valve_status):
         if (flow is not None) and (valve_status["duration"] > 10):
             # バルブが開いてから時間が経っている場合
             if flow < config["actuator"]["valve"]["on"]["min"]:
-                notify_error(config, "元栓が閉じています．")
+                notify_error(
+                    config,
+                    "元栓が閉じています．(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)".format(
+                        duration=valve_status["duration"], flow=flow
+                    ),
+                )
             elif flow > config["actuator"]["valve"]["on"]["max"]:
-                notify_hazard(config, "水漏れしています．")
+                notify_hazard(
+                    config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
+                )
     else:
         logging.debug(
             "Valve is close for {duration:.1f} sec".format(
@@ -114,7 +120,7 @@ def check_valve_status(config, valve_status):
             )
         )
         if valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]:
-            # バルブが閉じてから時間が経っている場合
+            # バルブが閉じてから長い時間が経っている場合，センサーを停止する
             flow = 0.0
             valve.stop_sensing()
         else:
@@ -124,7 +130,13 @@ def check_valve_status(config, valve_status):
                 and (flow is not None)
                 and (flow > config["actuator"]["valve"]["off"]["max"])
             ):
-                notify_hazard(config, "電磁弁が壊れていますので制御を停止します．")
+                notify_hazard(
+                    config,
+                    (
+                        "電磁弁が壊れていますので制御を停止します．"
+                        + "(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)"
+                    ).format(duration=valve_status["duration"], flow=flow),
+                )
 
     return {"state": valve_status["state"], "flow": flow}
 
