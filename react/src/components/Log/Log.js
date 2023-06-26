@@ -6,7 +6,6 @@ import "moment/locale/ja";
 
 const Log = ({ isReady, log }) => {
     const [page, setPage] = useState(1)
-    const [total, setTotal] = useState(1)
     const size = 5
 
     const loading = () => {
