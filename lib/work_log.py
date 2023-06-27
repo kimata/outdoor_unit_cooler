@@ -32,8 +32,11 @@ def work_log(message, level=WORK_LOG_LEVEL.INFO):
         notify_error(config, message)
 
 
-def notify_error(message):
+def notify_error(message, is_log=False):
     global config
+
+    if is_log:
+        logging.error(message)
 
     if "slack" not in config:
         return

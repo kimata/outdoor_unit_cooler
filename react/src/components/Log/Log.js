@@ -33,13 +33,13 @@ const Log = ({ isReady, log }) => {
             <div>
                 <div class="container text-start mb-3" data-testid="log">
                     {
-                            log.slice((page - 1) * size, page * size).map((entry, index) => {
-                                let date = moment(entry.date)
-                                let log_date = date.format("M月D日(ddd) HH:mm");
-                                let log_fromNow = date.fromNow();
+                        log.slice((page - 1) * size, page * size).map((entry, index) => {
+                            let date = moment(entry.date)
+                            let log_date = date.format("M月D日(ddd) HH:mm");
+                            let log_fromNow = date.fromNow();
                                 
-                                return (
-                                    <div class="row">
+                            return (
+                                <div class="row">
                                         <div class="col-12 font-weight-bold">
                                             { log_date }
                                             <small class="text-muted">({ log_fromNow })</small>

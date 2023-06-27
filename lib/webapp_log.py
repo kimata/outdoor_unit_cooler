@@ -92,13 +92,10 @@ def app_log(message, level=APP_LOG_LEVEL.INFO, exit=False):
         thread_pool.close()
 
 
-def get_log():
+def get_log(stop_day):
     global sqlite
 
-    if os.environ.get("DUMMY_MODE", "false") == "true":
-        stop_day = 7
-    else:
-        stop_day = 0
+    # NOTE: stop_day 日前までののログしか出さない
 
     cur = sqlite.cursor()
     cur.execute(
@@ -123,17 +120,20 @@ def api_log_clear():
 @support_jsonp
 @gzipped
 def api_log_view():
-    log = get_log()
+    stop_day = request.args.get("stop_day", 0, type=int)
 
-    response = jsonify({"data": log})
+    log = get_log(stop_day)
+
     if len(log) == 0:
-        last_modified = time.time()
+        last_time = time.time()
     else:
-        last_modified = datetime.datetime.strptime(
+        last_time = datetime.datetime.strptime(
             log[0]["date"], "%Y-%m-%d %H:%M:%S"
         ).timestamp()
 
-    response.headers["Last-Modified"] = format_date_time(last_modified)
+    response = jsonify({"data": log, "last_time": last_time})
+
+    response.headers["Last-Modified"] = format_date_time(last_time)
     response.make_conditional(request)
 
     return response

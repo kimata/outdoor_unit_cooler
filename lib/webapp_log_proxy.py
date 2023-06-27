@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, request
 import logging
 import requests
 import json
 
 from webapp_config import APP_URL_PREFIX
 from flask_util import support_jsonp, gzipped
-
+from wsgiref.handlers import format_date_time
 
 blueprint = Blueprint("webapp-proxy", __name__, url_prefix=APP_URL_PREFIX)
 
@@ -28,7 +28,7 @@ def get_log():
         res = requests.get(api_url)
 
         # NOTE: どのみち，また JSON 文字列に戻すけど...
-        return json.loads(res.text)["data"]
+        return json.loads(res.text)
     except:
         logging.error("Unable to fetch log from {url}".format(url=api_url))
         return []
@@ -38,8 +38,14 @@ def get_log():
 @support_jsonp
 @gzipped
 def api_log_view():
+    log = get_log()
 
-    return jsonify({"data": get_log()})
+    response = jsonify(log)
+
+    response.headers["Last-Modified"] = format_date_time(log["last_time"])
+    response.make_conditional(request)
+
+    return response
 
 
 if __name__ == "__main__":
