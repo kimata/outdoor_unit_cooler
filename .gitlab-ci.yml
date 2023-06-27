@@ -198,7 +198,7 @@ test-healthz-docker:
             
 deploy-controller:
     stage: deploy
-    needs: ["test-controller-regular"]
+    needs: ["test-controller-regular", "test-healthz-docker"]
     
     image:
         name: bitnami/kubectl:latest
@@ -222,7 +222,7 @@ deploy-controller:
 
 deploy-actuator:
     stage: deploy
-    needs: ["test-actuator-regular"]
+    needs: ["test-actuator-regular", "test-healthz-docker"]
     
     image:
         name: bitnami/kubectl:latest
@@ -251,7 +251,7 @@ deploy-actuator:
 
 deploy-webapp:
     stage: deploy
-    needs: ["test-webapp-docker"]
+    needs: ["test-webapp-docker", "test-healthz-docker"]
     
     image:
         name: bitnami/kubectl:latest
@@ -271,7 +271,7 @@ deploy-webapp:
 
 deploy-webapp-demo:
     stage: deploy
-    needs: ["test-webapp-docker"]
+    needs: ["test-webapp-docker", "test-healthz-docker"]
     
     image:
         name: bitnami/kubectl:latest
