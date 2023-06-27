@@ -42,10 +42,9 @@ const App = () => {
             setUpdateTime(moment().format('llll'));
         };
 
-        let eventSource = null
-        
+        let eventSource = null;
         const watchEvent = async () => {
-            let eventSource = new EventSource(API_ENDPOINT_EVENT);
+            eventSource = new EventSource(API_ENDPOINT_EVENT);
             eventSource.addEventListener("message", (e) => {
                 if (e.data === "log") {
                     loadLog();
