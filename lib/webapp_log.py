@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 from enum import IntEnum
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, g
 import logging
 import threading
 import time
@@ -120,6 +120,10 @@ def api_log_clear():
 @support_jsonp
 @gzipped
 def api_log_view():
+    # NOTE: @gzipped をつけた場合，キャッシュ用のヘッダを付与しているので，
+    # 無効化する．
+    g.disable_cache = True
+
     stop_day = request.args.get("stop_day", 0, type=int)
 
     log = get_log(stop_day)

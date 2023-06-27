@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, g
 import logging
 import requests
 import json
@@ -38,6 +38,10 @@ def get_log():
 @support_jsonp
 @gzipped
 def api_log_view():
+    # NOTE: @gzipped をつけた場合，キャッシュ用のヘッダを付与しているので，
+    # 無効化する．
+    g.disable_cache = True
+
     log = get_log()
 
     response = jsonify(log)
