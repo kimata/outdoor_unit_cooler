@@ -31,8 +31,8 @@ import control_pubsub
 
 import webapp_base
 import webapp_util
-import webapp_log
 import webapp_event
+import webapp_log_proxy
 
 
 def nslookup(hostname):
@@ -144,10 +144,10 @@ if __name__ == "__main__":
     app.register_blueprint(webapp_base.blueprint_default)
     app.register_blueprint(webapp_base.blueprint)
     app.register_blueprint(webapp_event.blueprint)
-    app.register_blueprint(webapp_log.blueprint)
+    app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    webapp_log.init(config)
+    webapp_log_proxy.init(config["web"]["log_api"]["url"])
 
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする

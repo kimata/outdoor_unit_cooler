@@ -30,5 +30,6 @@ COPY . .
 
 EXPOSE 2222
 EXPOSE 5000
+EXPOSE 5001
 
 CMD ["./app/unit_cooler.py"]

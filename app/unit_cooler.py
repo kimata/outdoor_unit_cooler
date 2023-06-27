@@ -47,6 +47,7 @@ from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
 import webapp_log
 import logger
 
+LOG_SERVER_PORT = 5001
 DUMMY_MODE_SPEEDUP = 12.0
 
 recv_cooling_mode = None
@@ -318,6 +319,9 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
 
 
 def log_server_start(config):
+    # NOTE: アクセスログは無効にする
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
     app = Flask(__name__)
 
     CORS(app)
@@ -331,7 +335,7 @@ def log_server_start(config):
 
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
-    app.run(host="0.0.0.0", threaded=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=LOG_SERVER_PORT, threaded=True, use_reloader=False)
 
 
 ######################################################################

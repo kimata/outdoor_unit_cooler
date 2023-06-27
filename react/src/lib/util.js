@@ -10,6 +10,6 @@ export const dateText = (date) => {
     if (date == null) {
         return "?";
     } else {
-        return date.format("M/D HH:mm:ss");
+        return date.format("M/D HH:mm");
     }
 };
