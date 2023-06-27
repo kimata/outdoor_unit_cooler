@@ -3,6 +3,7 @@
 from flask import jsonify, Blueprint, request, g
 import logging
 import requests
+import os
 import json
 
 from webapp_config import APP_URL_PREFIX
@@ -23,9 +24,11 @@ def init(api_url_):
 def get_log():
     global api_url
 
+    stop_day = 7 if os.environ.get("DUMMY_MODE", "false") == "true" else 0
+
     try:
         # NOTE: 簡易リバースプロキシ
-        res = requests.get(api_url)
+        res = requests.get(api_url, params={"stop_day ": stop_day})
 
         # NOTE: どのみち，また JSON 文字列に戻すけど...
         return json.loads(res.text)
