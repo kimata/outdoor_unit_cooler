@@ -44,7 +44,7 @@ def gzipped(f):
                 response.headers["Cache-Control"] = "no-store, must-revalidate"
                 response.headers["Expires"] = "0"
             else:
-                response.headers["Cache-Control"] = "max-age=31536000"
+                response.headers["Cache-Control"] = "max-age=86400"
 
             return response
 
