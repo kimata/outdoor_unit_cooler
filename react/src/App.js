@@ -61,6 +61,7 @@ const App = () => {
 
         loadStat();
         loadLog();
+        watchEvent();
 
         const intervalId = setInterval(() => {
             loadStat();
