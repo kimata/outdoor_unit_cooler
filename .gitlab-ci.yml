@@ -68,28 +68,44 @@ test-actuator-sample:
     needs: ["build-image"]
 
     variables:
-        SERVER_HOST: 192.168.0.20
+        CONTROL_HOST: 192.168.0.20
         CURL_IMAGE: curlimages/curl:8.1.2 
 
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
-          ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
+
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
+          ./app/cooler_controller.py -D
+
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
+          ./app/unit_cooler.py -O -D -c config.example.yaml
+          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
         - docker run --rm ${CURL_IMAGE} --head --silent
-          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}):5001/unit_cooler/api/log_view
-        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}
+        - sleep 5
+          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
 
 test-actuator-regular:
     stage: test
     needs: ["build-image"]
     
     variables:
-        SERVER_HOST: 192.168.0.20
-
+        CURL_IMAGE: curlimages/curl:8.1.2 
+        
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -s ${SERVER_HOST} -O -D
-       
+
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
+          ./app/cooler_controller.py -D
+
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
+          ./app/unit_cooler.py  -O -D
+          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - docker run --rm ${CURL_IMAGE} --head --silent
+        - sleep 5
+          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
+
 test-webapp-docker:
     stage: test
     needs: ["build-image"]
