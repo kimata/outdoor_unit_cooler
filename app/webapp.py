@@ -5,12 +5,13 @@
 水やりを自動化するアプリのサーバーです
 
 Usage:
-  webapp.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-D]
+  webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-D]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
-  -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
-  -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
+  -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
+  -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -a ACTUATOR_HOST  : アクチュエータのホスト名を指定します． [default: localhost]
   -D                : ダミーモードで実行します．
 """
 
@@ -93,10 +94,13 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     config_file = args["-c"]
-    server_hostname = os.environ.get("HEMS_SERVER_HOST", args["-s"])
-    server_host = nslookup(server_hostname)
-    server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+    server_hostname = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
+    server_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
+    actuator_hostname = os.environ.get("HEMS_ACTUATOR_HOST", args["-a"])
     dummy_mode = args["-D"]
+
+    server_host = nslookup(server_hostname)
+    actuator_host = nslookup(actuator_hostname)
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
@@ -147,7 +151,9 @@ if __name__ == "__main__":
     app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    webapp_log_proxy.init(config["web"]["log_api"]["url"])
+    webapp_log_proxy.init(
+        "http://{host}:5001/unit_cooler/api/log_view".format(host=actuator_host)
+    )
 
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする

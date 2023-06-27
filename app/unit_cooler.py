@@ -4,12 +4,12 @@
 エアコン室外機の冷却を行うと共に流量を Fluentd に送信します
 
 Usage:
-  unit_cooler.py [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-O] [-D] [-t SPEEDUP] [-d]
+  unit_cooler.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-O] [-D] [-t SPEEDUP] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
-  -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
-  -p SERVER_PORT    : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
+  -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
+  -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -O                : 1回のみ実行
   -D                : ダミーモードで実行します．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
@@ -161,16 +161,16 @@ def queue_put(config, cmd_queue, message):
 
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
-def cmd_receive_worker(config, server_host, server_port, cmd_queue, is_one_time=False):
+def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=False):
     logging.info(
         "Start command receive worker ({host}:{port})".format(
-            host=server_host, port=server_port
+            host=control_host, port=pub_port
         )
     )
     try:
         control_pubsub.start_client(
-            server_host,
-            server_port,
+            control_host,
+            pub_port,
             lambda message: queue_put(config, cmd_queue, message),
             is_one_time,
         )
@@ -342,8 +342,8 @@ def log_server_start(config):
 args = docopt(__doc__)
 
 config_file = args["-c"]
-server_host = os.environ.get("HEMS_SERVER_HOST", args["-s"])
-server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+control_host = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
+pub_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
 dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
 speedup = int(args["-t"])
 is_one_time = args["-O"]
@@ -396,7 +396,7 @@ pool = ThreadPool(processes=3)
 result_list = []
 result_list.append(
     pool.apply_async(
-        cmd_receive_worker, (config, server_host, server_port, cmd_queue, is_one_time)
+        cmd_receive_worker, (config, control_host, pub_port, cmd_queue, is_one_time)
     )
 )
 result_list.append(
