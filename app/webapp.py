@@ -151,9 +151,7 @@ if __name__ == "__main__":
     app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    webapp_log_proxy.init(
-        "http://{host}:5001/unit_cooler/api/log_view".format(host=actuator_host)
-    )
+    webapp_log_proxy.init("http://{host}:5001/unit_cooler".format(host=actuator_host))
 
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
