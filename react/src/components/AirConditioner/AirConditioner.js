@@ -45,7 +45,7 @@ const AirConditioner = ({ isReady, stat }) => {
                     </div>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
-                <td className="text-end col-3">
+                <td className="text-end col-3 text-wrap">
                     <small>{dateText(date)}</small>
                 </td>
             </tr>
