@@ -25,7 +25,7 @@ const Sensor = ({ isReady, stat }) => {
                     <small>{unit}</small>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
-                <td className="text-end col-3 text-nowrap">
+                <td className="text-start col-3 text-nowrap">
                     <small>{dateText(date)}</small>
                 </td>
             </tr>
