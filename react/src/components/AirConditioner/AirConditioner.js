@@ -25,7 +25,7 @@ const AirConditioner = ({ isReady, stat }) => {
 
         return (
             <tr key="{index}" className="row">
-                <td className="text-start col-3 text-wrap">{props.airconData.name}</td>
+                <td className="text-start col-3 text-nowrap">{props.airconData.name}</td>
                 <td className="text-end col-4">
                     <div className="progress-label-container">
                         <div className="progress" style={{ height: "2em" }}>
@@ -45,7 +45,7 @@ const AirConditioner = ({ isReady, stat }) => {
                     </div>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
-                <td className="text-end col-3 text-wrap">
+                <td className="text-end col-3 text-nowrap">
                     <small>{dateText(date)}</small>
                 </td>
             </tr>
