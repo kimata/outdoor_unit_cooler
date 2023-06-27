@@ -53,7 +53,7 @@ test-controller-sample:
     
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
+        - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -c config.example.yaml -O
 
 test-controller-regular:
     stage: test
@@ -61,7 +61,7 @@ test-controller-regular:
 
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
+        - docker run -t --rm --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./app/cooler_controller.py -O
 
 test-actuator-sample:
     stage: test
@@ -69,10 +69,15 @@ test-actuator-sample:
 
     variables:
         SERVER_HOST: 192.168.0.20
+        CURL_IMAGE: curlimages/curl:8.1.2 
 
     script:
         - docker pull ${CI_REGISTRY_IMAGE}
-        - docker run -t --rm --label job=${CI_JOB_ID} ${CI_REGISTRY_IMAGE} ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
+          ./app/unit_cooler.py -c config.example.yaml -s ${SERVER_HOST} -O -D
+        - docker run --rm ${CURL_IMAGE}
+          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID})/unit_cooler/api/log_view
+        - docker attach ${CI_JOB_NAME}-${CI_JOB_ID}
 
 test-actuator-regular:
     stage: test

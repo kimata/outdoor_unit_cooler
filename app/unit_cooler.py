@@ -22,7 +22,7 @@ import os
 import sys
 
 from multiprocessing.pool import ThreadPool
-from multiprocessing import Queue
+from multiprocessing import Queue, Process
 
 from flask import Flask
 from flask_cors import CORS
@@ -409,10 +409,15 @@ result_list.append(
 )
 pool.close()
 
-log_server_start(config)
+# NOTE: 他のスレッドが終了したら，メインスレッドを終了させたいので，
+# Flask は別のプロセスで実行
+log_p = Process(target=log_server_start, args=(config,))
+log_p.start()
 
 for result in result_list:
     if result.get() != 0:
         sys.exit(-1)
+
+log_p.kill()
 
 sys.exit(0)
