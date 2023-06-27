@@ -44,6 +44,7 @@ const App = () => {
 
         let eventSource = null;
         const watchEvent = async () => {
+            console.log("watch event");
             eventSource = new EventSource(API_ENDPOINT_EVENT);
             eventSource.addEventListener("message", (e) => {
                 if (e.data === "log") {
@@ -52,6 +53,7 @@ const App = () => {
             });
             eventSource.onerror = () => {
                 if (eventSource.readyState === 2) {
+                    console.log("disconnect event");
                     eventSource.close();
                     setTimeout(watchEvent, 1000);
                 }
