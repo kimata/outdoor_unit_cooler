@@ -44,5 +44,6 @@ def api_event():
     res = Response(event_stream(), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")
     res.headers.add("Cache-Control", "no-cache")
+    res.headers.add("X-Accel-Buffering", "no")
 
     return res
