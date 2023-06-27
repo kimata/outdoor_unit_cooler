@@ -249,45 +249,45 @@ deploy-actuator:
               - lib/valve.py
               - src/healthz.py
 
-# deploy-webapp:
-#     stage: deploy
-#     needs: ["test-webapp-docker"]
+deploy-webapp:
+    stage: deploy
+    needs: ["test-webapp-docker"]
     
-#     image:
-#         name: bitnami/kubectl:latest
-#         entrypoint: [""]
-#     script:
-#         - kubectl config get-contexts
-#         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-#         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
-#     rules:
-#         # NOTE: 自動実行ではデプロイしない
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: never
-#         - changes:
-#               - react/**/*
-#               - app/webapp.py
-#               - lib/*
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - react/**/*
+              - app/webapp.py
+              - lib/*
 
-# deploy-webapp-demo:
-#     stage: deploy
-#     needs: ["test-webapp-docker"]
+deploy-webapp-demo:
+    stage: deploy
+    needs: ["test-webapp-docker"]
     
-#     image:
-#         name: bitnami/kubectl:latest
-#         entrypoint: [""]
-#     script:
-#         - kubectl config get-contexts
-#         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-#         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp-demo
-#     rules:
-#         # NOTE: 自動実行ではデプロイしない
-#         - if: $CI_PIPELINE_SOURCE == "schedule"
-#           when: never
-#         - changes:
-#               - react/**/*
-#               - app/webapp.py
-#               - lib/*
+    image:
+        name: bitnami/kubectl:latest
+        entrypoint: [""]
+    script:
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp-demo
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - changes:
+              - react/**/*
+              - app/webapp.py
+              - lib/*
               
 renovate:
     stage: renovate
