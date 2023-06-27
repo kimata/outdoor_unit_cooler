@@ -47,12 +47,12 @@ const App = () => {
         const watchEvent = async () => {
             let eventSource = new EventSource(API_ENDPOINT_EVENT);
             eventSource.addEventListener("message", (e) => {
-                if (e.data == "log") {
+                if (e.data === "log") {
                     loadLog();
                 }
             });
             eventSource.onerror = () => {
-                if (eventSource.readyState == 2) {
+                if (eventSource.readyState === 2) {
                     eventSource.close();
                     setTimeout(watchEvent, 1000);
                 }
