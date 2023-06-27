@@ -79,13 +79,13 @@ test-actuator-sample:
 
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -O -D -c config.example.yaml
-          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+          -s ${CI_JOB_NAME}-${CI_JOB_ID}-1
+
+        - sleep 5
           
         - docker run --rm ${CURL_IMAGE} --head --silent
-          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
-          
-        - sleep 5
-        
+          http://${CI_JOB_NAME}-${CI_JOB_ID}-2:5001/unit_cooler/api/log_view       
+       
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
 
 test-actuator-regular:
@@ -102,14 +102,13 @@ test-actuator-regular:
           ./app/cooler_controller.py -D
 
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
-          ./app/unit_cooler.py  -O -D
-          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+          ./app/unit_cooler.py  -O -D -s ${CI_JOB_NAME}-${CI_JOB_ID}-1
+
+        - sleep 5
           
         - docker run --rm ${CURL_IMAGE} --head --silent
-           http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
-           
-        - sleep 5
-        
+           http://${CI_JOB_NAME}-${CI_JOB_ID}-2:5001/unit_cooler/api/log_view         
+       
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
 
 test-webapp-docker:
@@ -166,12 +165,10 @@ test-healthz-docker:
           ./app/cooler_controller.py
 
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
-          ./app/unit_cooler.py
-          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -D
+          ./app/unit_cooler.py -s ${CI_JOB_NAME}-${CI_JOB_ID}-1 -D
           
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
-          ./app/webapp.py
-          -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+          ./app/webapp.py -s ${CI_JOB_NAME}-${CI_JOB_ID}-1
 
         - sleep 120
 
