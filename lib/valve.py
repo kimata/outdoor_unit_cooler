@@ -12,8 +12,9 @@ from work_log import work_log
 if os.environ.get("DUMMY_MODE", "false") != "true":
     import RPi.GPIO as GPIO
     import fd_q10c
-elif os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-    logging.warning("Using dummy GPIO")
+else:
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        logging.warning("Using dummy GPIO")
 
     # NOTE: 本物の GPIO のように振る舞うダミーのライブラリ
     class GPIO:
