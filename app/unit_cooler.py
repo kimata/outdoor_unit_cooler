@@ -24,6 +24,9 @@ import sys
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Queue
 
+from flask import Flask
+from flask_cors import CORS
+
 import socket
 import time
 import datetime
@@ -41,6 +44,7 @@ import control_pubsub
 import traceback
 from config import load_config
 from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
+import webapp_log
 import logger
 
 DUMMY_MODE_SPEEDUP = 12.0
@@ -313,6 +317,23 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         return -1
 
 
+def log_server_start(config):
+    app = Flask(__name__)
+
+    CORS(app)
+
+    app.config["CONFIG"] = config
+    app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
+
+    app.register_blueprint(webapp_log.blueprint)
+
+    webapp_log.init(config)
+
+    # app.debug = True
+    # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
+    app.run(host="0.0.0.0", threaded=True, use_reloader=False)
+
+
 ######################################################################
 args = docopt(__doc__)
 
@@ -383,6 +404,8 @@ result_list.append(
     pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
 )
 pool.close()
+
+log_server_start(config)
 
 for result in result_list:
     if result.get() != 0:
