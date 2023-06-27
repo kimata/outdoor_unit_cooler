@@ -47,7 +47,7 @@ const App = () => {
         const intervalId = setInterval(() => {
             loadStat();
             loadLog();
-        }, 1000);
+        }, 10000);
         return () => {
             clearInterval(intervalId);
         };
