@@ -45,6 +45,7 @@ import traceback
 from config import load_config
 from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
 import webapp_log
+import webapp_event
 import logger
 
 LOG_SERVER_PORT = 5001
@@ -322,7 +323,7 @@ def log_server_start(config):
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    app = Flask(__name__)
+    app = Flask("unit_cooler_log")
 
     CORS(app)
 
@@ -330,6 +331,7 @@ def log_server_start(config):
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
 
     app.register_blueprint(webapp_log.blueprint)
+    app.register_blueprint(webapp_event.blueprint)
 
     webapp_log.init(config)
 
