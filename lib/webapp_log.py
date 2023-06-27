@@ -75,7 +75,7 @@ def app_log_impl(message, level):
             os._exit(-1)
 
 
-def app_log(message, level=APP_LOG_LEVEL.INFO):
+def app_log(message, level=APP_LOG_LEVEL.INFO, exit=False):
     global thread_pool
 
     if level == APP_LOG_LEVEL.ERROR:
@@ -87,6 +87,9 @@ def app_log(message, level=APP_LOG_LEVEL.INFO):
 
     # NOTE: 実際のログ記録は別スレッドに任せて，すぐにリターンする
     thread_pool.apply_async(app_log_impl, (message, level))
+
+    if exit:
+        thread_pool.close()
 
 
 def get_log():
