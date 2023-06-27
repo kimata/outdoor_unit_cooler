@@ -22,7 +22,7 @@ def get_sense_data(config):
     sense_data = {}
     timezone = pytz.timezone("Asia/Tokyo")
 
-    if os.environ["DUMMY_MODE"] == "true":
+    if os.environ.get("DUMMY_MODE", "false") == "true":
         start = "-192h"
         stop = "-168h"
     else:
@@ -63,7 +63,7 @@ def get_sense_data(config):
 
 
 def watering(config):
-    if os.environ["DUMMY_MODE"] == "true":
+    if os.environ.get("DUMMY_MODE", "false") == "true":
         offset_day = 7
     else:
         offset_day = 0
@@ -83,7 +83,7 @@ def watering(config):
 
 
 def get_last_message(config, message_queue):
-    if os.environ["DUMMY_MODE"] == "true":
+    if os.environ.get("DUMMY_MODE", "false") == "true":
         return gen_control_msg(config)
     else:
         # NOTE: 現在の実際の制御モードを取得する．

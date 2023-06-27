@@ -56,6 +56,4 @@ if __name__ == "__main__":
 
     init(load_config())
 
-    os.environ["DUMMY_MODE"] = "false"
-
     print(webapp_log.get_log())

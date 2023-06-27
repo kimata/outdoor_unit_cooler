@@ -9,7 +9,7 @@ import traceback
 from valve_state import VALVE_STATE, COOLING_STATE
 from work_log import work_log
 
-if os.environ.get("DUMMY_MODE", None) is None:
+if os.environ.get("DUMMY_MODE", "false") != "true":
     import RPi.GPIO as GPIO
     import fd_q10c
 else:

@@ -70,7 +70,7 @@ def app_log_impl(message, level):
                 config["slack"]["error"]["interval_min"],
             )
 
-        if os.environ["DUMMY_MODE"] == "true":
+        if os.environ.get("DUMMY_MODE", "false") == "true":
             logging.error("This application is terminated because it is in dummy mode.")
             os._exit(-1)
 
@@ -95,7 +95,7 @@ def app_log(message, level=APP_LOG_LEVEL.INFO, exit=False):
 def get_log():
     global sqlite
 
-    if os.environ["DUMMY_MODE"] == "true":
+    if os.environ.get("DUMMY_MODE", "false") == "true":
         stop_day = 7
     else:
         stop_day = 0

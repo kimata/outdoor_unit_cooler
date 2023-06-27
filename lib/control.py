@@ -26,7 +26,7 @@ def notify_error(config, message):
 
 
 def get_sense_data(config):
-    if os.environ["DUMMY_MODE"] == "true":
+    if os.environ.get("DUMMY_MODE", "false") == "true":
         start = "-169h"
         stop = "-168h"
     else:
