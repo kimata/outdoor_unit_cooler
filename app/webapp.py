@@ -132,7 +132,7 @@ if __name__ == "__main__":
         if dummy_mode:
             logging.warning("Set dummy mode")
 
-    app = Flask(__name__)
+    app = Flask("unit_cooler")
 
     CORS(app)
 
