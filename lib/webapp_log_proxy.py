@@ -23,11 +23,15 @@ def init(api_url_):
 def get_log():
     global api_url
 
-    # NOTE: 簡易リバースプロキシ
-    res = requests.get(api_url)
+    try:
+        # NOTE: 簡易リバースプロキシ
+        res = requests.get(api_url)
 
-    # NOTE: どのみち，また JSON 文字列に戻すけど...
-    return json.loads(res.text)["data"]
+        # NOTE: どのみち，また JSON 文字列に戻すけど...
+        return json.loads(res.text)["data"]
+    except:
+        logging.error("Unable to fetch log from {url}".format(url=api_url))
+        return []
 
 
 @blueprint.route("/api/log_view", methods=["GET"])

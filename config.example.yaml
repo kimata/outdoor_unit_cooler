@@ -87,6 +87,9 @@ receiver:
         file: /dev/shm/healthz.receiver
 
 web:
+    log_api:
+        url: http://127.0.0.1:5001/unit_cooler/api/log_view
+  
     liveness:
         file: /dev/shm/healthz.web
 
