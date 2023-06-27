@@ -16,6 +16,7 @@ import Log from "./components/Log/Log.js";
 const App = () => {
     const API_ENDPOINT_STAT = "/unit_cooler/api/stat";
     const API_ENDPOINT_LOG = "/unit_cooler/api/log_view";
+    const API_ENDPOINT_EVENT = "/unit_cooler/api/event";
     const [isStatReady, setStatReady] = useState(false);
     const [isLogReady, setLogReady] = useState(false);
     const [stat, setStat] = useState([]);
@@ -41,18 +42,35 @@ const App = () => {
             setUpdateTime(moment().format('llll'));
         };
 
+        let eventSource = null
+        
+        const watchEvent = async () => {
+            let eventSource = new EventSource(API_ENDPOINT_EVENT);
+            eventSource.addEventListener("message", (e) => {
+                if (e.data == "log") {
+                    loadLog();
+                }
+            });
+            eventSource.onerror = () => {
+                if (eventSource.readyState == 2) {
+                    eventSource.close();
+                    setTimeout(watchEvent, 1000);
+                }
+            };
+        };
+
         loadStat();
         loadLog();
 
         const intervalId = setInterval(() => {
             loadStat();
-            loadLog();
-        }, 10000);
+        }, 60000);
         return () => {
             clearInterval(intervalId);
         };
     }, []);
 
+    
     const errorMessage = (message) => {
         return (
             <div className="row justify-content-center" data-testid="error">
