@@ -42,6 +42,8 @@ def get_log():
         return []
 
 
+# NOTE: リバースプロキシの場合は，webapp_event ではなく，
+# ここで /api/event をハンドリングする
 @blueprint.route("/api/event", methods=["GET"])
 def api_event():
     # NOTE: EventStream を中継する

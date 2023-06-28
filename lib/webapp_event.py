@@ -66,6 +66,7 @@ def event_index(event_type):
 
 def notify_event(event_type):
     global event_count
+    logging.info("notify event")
     event_count[event_index(event_type)] += 1
 
 

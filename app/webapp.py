@@ -32,7 +32,6 @@ import control_pubsub
 
 import webapp_base
 import webapp_util
-import webapp_event
 import webapp_log_proxy
 
 
@@ -147,7 +146,6 @@ if __name__ == "__main__":
 
     app.register_blueprint(webapp_base.blueprint_default)
     app.register_blueprint(webapp_base.blueprint)
-    app.register_blueprint(webapp_event.blueprint)
     app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
