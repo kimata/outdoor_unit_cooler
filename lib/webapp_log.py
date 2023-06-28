@@ -100,7 +100,7 @@ def get_log(stop_day):
     cur = sqlite.cursor()
     cur.execute(
         'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?)',
-        ["{stop_day} days".format(stop_day=stop_day)],
+        ["-{stop_day} days".format(stop_day=stop_day)],
     )
     return cur.fetchall()[::-1]
 
@@ -120,11 +120,11 @@ def api_log_clear():
 @support_jsonp
 @gzipped
 def api_log_view():
+    stop_day = request.args.get("stop_day", 0, type=int)
+
     # NOTE: @gzipped をつけた場合，キャッシュ用のヘッダを付与しているので，
     # 無効化する．
     g.disable_cache = True
-
-    stop_day = request.args.get("stop_day", 0, type=int)
 
     log = get_log(stop_day)
 
@@ -151,4 +151,4 @@ if __name__ == "__main__":
 
     init(load_config())
 
-    print(get_log())
+    print(get_log(1))
