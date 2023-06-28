@@ -62,9 +62,11 @@ const App = () => {
         loadStat();
         watchEvent();
 
+        // NOTE: 更新日時表記が，「1分前」になる前に更新を終えれる
+        // タイミングで規定する
         const intervalId = setInterval(() => {
             loadStat();
-        }, 60000);
+        }, 58000);
         return () => {
             clearInterval(intervalId);
         };
