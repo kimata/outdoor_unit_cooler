@@ -259,6 +259,8 @@ deploy-actuator:
               - lib/notify_slack.py
               - lib/sensor_data.py
               - lib/valve.py
+              - lib/webapp_base.py
+              - lib/webapp_log.py
               - src/healthz.py
 
 deploy-webapp:
