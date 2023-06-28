@@ -31,7 +31,7 @@ def notify_watch_impl(queue):
 
 
 def notify_watch(queue):
-    threading.Thread(notify_watch_impl, (queue,)).start()
+    threading.Thread(target=notify_watch_impl, args=(queue,)).start()
 
 
 def notify_event(event_type):
