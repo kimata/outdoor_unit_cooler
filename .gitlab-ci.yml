@@ -225,7 +225,10 @@ deploy-controller:
           when: never
         - changes:
               - app/cooler_controller.py
+              - lib/aircon.py
               - lib/config.py
+              - lib/control.py
+              - lib/valve_state.py
               - lib/control_pubsub.py
               - lib/logger.py
               - lib/notify_slack.py
@@ -259,8 +262,13 @@ deploy-actuator:
               - lib/notify_slack.py
               - lib/sensor_data.py
               - lib/valve.py
+              - lib/valve_state.py
+              - lib/webapp_config.py
               - lib/webapp_base.py
               - lib/webapp_log.py
+              - lib/webapp_event.py
+              - lib/flask_util.py
+              - lib/work_log.py
               - src/healthz.py
 
 deploy-webapp:
