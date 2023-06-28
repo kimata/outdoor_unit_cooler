@@ -49,8 +49,8 @@ def api_event():
         url = "{base_url}{api_endpoint}".format(
             base_url=api_base_url, api_endpoint="/api/event"
         )
-        client = sseclient.SSEClient(requests.get(url, stream=True))
-        for event in client.events():
+        sse = sseclient.SSEClient(url)
+        for event in sse:
             yield "data: {}\n\n".format(event.data)
 
     res = Response(event_stream(), mimetype="text/event-stream")

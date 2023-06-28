@@ -34,6 +34,7 @@ import math
 import signal
 import pathlib
 import logging
+import atexit
 
 import fluent.sender
 
@@ -203,7 +204,9 @@ def valve_ctrl_worker(
             start_time = time.time()
 
             if not cmd_queue.empty():
-                cooling_mode = cmd_queue.get()
+                while not cmd_queue.empty():
+                    cooling_mode = cmd_queue.get()
+
                 recv_cooling_mode = cooling_mode
                 receive_time = datetime.datetime.now()
                 is_receive = True
@@ -337,7 +340,7 @@ def log_server_start(config, queue):
     webapp_event.notify_watch(queue)
 
     # app.debug = True
-    # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
+    # NOTE: Flask 主体ではないので，自動リロードは OFF にする．
     app.run(host="0.0.0.0", port=LOG_SERVER_PORT, threaded=True, use_reloader=False)
 
 
@@ -418,11 +421,20 @@ pool.close()
 log_p = Process(target=log_server_start, args=(config, log_event_queue))
 log_p.start()
 
+
+def terminate_log_server():
+    log_p.kill()
+    webapp_event.stop_watch()
+
+
+# NOTE: 終了した場合に，Web サーバも終了するようにしておく
+atexit.register(terminate_log_server)
+
 for result in result_list:
     if result.get() != 0:
         sys.exit(-1)
 
-webapp_event.stop_watch()
-log_p.kill()
+terminate_log_server()
+
 
 sys.exit(0)
