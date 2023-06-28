@@ -319,7 +319,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         return -1
 
 
-def log_server_start(config):
+def log_server_start(config, queue):
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
@@ -334,6 +334,7 @@ def log_server_start(config):
     app.register_blueprint(webapp_event.blueprint)
 
     webapp_log.init(config)
+    webapp_event.notify_watch(queue)
 
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
@@ -387,9 +388,10 @@ if not dummy_mode:
 
 signal.signal(signal.SIGTERM, sig_handler)
 cmd_queue = Queue()
+log_event_queue = Queue()
 
 logging.info("Initialize valve")
-init(config)
+init(config, log_event_queue)
 valve.init(config["actuator"]["valve"]["pin_no"])
 
 # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
@@ -413,7 +415,7 @@ pool.close()
 
 # NOTE: 他のスレッドが終了したら，メインスレッドを終了させたいので，
 # Flask は別のプロセスで実行
-log_p = Process(target=log_server_start, args=(config,))
+log_p = Process(target=log_server_start, args=(config, log_event_queue))
 log_p.start()
 
 for result in result_list:

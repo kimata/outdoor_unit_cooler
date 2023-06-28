@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from flask import Blueprint, Response
 from enum import Enum
+import threading
 import time
 
 from webapp_config import APP_URL_PREFIX
@@ -20,6 +21,17 @@ event_count = {
     EVENT_TYPE.SCHEDULE: 0,
     EVENT_TYPE.LOG: 0,
 }
+
+
+def notify_watch_impl(queue):
+    while True:
+        if not queue.empty():
+            notify_event(queue.get())
+        time.sleep(0.2)
+
+
+def notify_watch(queue):
+    threading.Thread(notify_watch_impl, (queue,)).start()
 
 
 def notify_event(event_type):

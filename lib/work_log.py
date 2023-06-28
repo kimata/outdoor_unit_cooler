@@ -7,6 +7,7 @@ import logging
 
 import notify_slack
 import webapp_log
+import webapp_event
 
 
 class WORK_LOG_LEVEL(IntEnum):
@@ -16,16 +17,23 @@ class WORK_LOG_LEVEL(IntEnum):
 
 
 config = None
+queue = None
 
 
-def init(config_):
+def init(config_, queue_):
     global config
+    global queue
 
     config = config_
+    queue = queue_
+
     webapp_log.init(config)
 
 
 def work_log(message, level=WORK_LOG_LEVEL.INFO):
+    global queue
+
+    queue.put(webapp_event.EVENT_TYPE.LOG)
     webapp_log.app_log(message, level)
 
     if level == WORK_LOG_LEVEL.ERROR:
