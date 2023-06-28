@@ -21,11 +21,11 @@ class EVENT_TYPE(Enum):
 # NOTE: サイズは上の Enum の個数+1 にしておく
 event_count = multiprocessing.Array("i", 4)
 
-stop_watch = False
+is_stop_watch = False
 
 
 def notify_watch_impl(queue):
-    global stop_watch
+    global is_stop_watch
 
     logging.info("Start notify watch thread")
 
@@ -34,23 +34,23 @@ def notify_watch_impl(queue):
             notify_event(queue.get())
         time.sleep(0.1)
 
-        if stop_watch:
+        if is_stop_watch:
             break
 
     logging.info("Stop notify watch thread")
 
 
 def notify_watch(queue):
-    global stop_watch
+    global is_stop_watch
 
-    stop_watch = False
+    is_stop_watch = False
     threading.Thread(target=notify_watch_impl, args=(queue,)).start()
 
 
 def stop_watch():
-    global stop_watch
+    global is_stop_watch
 
-    stop_watch = True
+    is_stop_watch = True
 
 
 def event_index(event_type):
