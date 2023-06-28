@@ -33,7 +33,7 @@ def get_log():
         )
         logging.info("stop_day={stop_day}".format(stop_day=stop_day))
         # NOTE: 簡易リバースプロキシ
-        res = requests.get(url, params={"stop_day ": stop_day})
+        res = requests.get(url, params={"stop_day": stop_day})
 
         # NOTE: どのみち，また JSON 文字列に戻すけど...
         return json.loads(res.text)
