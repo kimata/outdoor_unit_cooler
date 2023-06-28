@@ -320,8 +320,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
 
 
 def log_server_start(config, queue):
-    # NOTE: アクセスログは無効にする
-    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    # # NOTE: アクセスログは無効にする
+    # logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     app = Flask("unit_cooler_log")
 
