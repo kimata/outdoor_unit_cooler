@@ -68,7 +68,7 @@ def api_log_view():
     # NOTE: @gzipped をつけた場合，キャッシュ用のヘッダを付与しているので，
     # 無効化する．
     g.disable_cache = True
-
+    logging.error("call log_view")
     log = get_log()
 
     response = jsonify(log)
