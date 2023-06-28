@@ -122,8 +122,6 @@ def api_log_clear():
 def api_log_view():
     stop_day = request.args.get("stop_day", 0, type=int)
 
-    logging.info("stop_day={stop_day}".format(stop_day=stop_day))
-
     # NOTE: @gzipped をつけた場合，キャッシュ用のヘッダを付与しているので，
     # 無効化する．
     g.disable_cache = True

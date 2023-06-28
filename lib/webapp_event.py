@@ -66,7 +66,6 @@ def event_index(event_type):
 
 def notify_event(event_type):
     global event_count
-    logging.info("notify event")
     event_count[event_index(event_type)] += 1
 
 
@@ -78,20 +77,16 @@ def api_event():
         last_count = []
         for i in range(len(event_count)):
             last_count.append(event_count[i])
-        logging.error("EVENT LOOP")
+
         while True:
             time.sleep(1)
             for name, event_type in EVENT_TYPE.__members__.items():
                 i = event_index(event_type)
-                logging.info(event_count[i])
-                logging.info(last_count[i])
 
                 if last_count[i] != event_count[i]:
-                    logging.error("EVENT STREAM NOTIFY")
+                    logging.debug("notify event: {name}".format(name=event_type.value))
                     yield "data: {}\n\n".format(event_type.value)
                     last_count[i] = event_count[i]
-
-    logging.error("EVENT REQUEST")
 
     res = Response(event_stream(), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")

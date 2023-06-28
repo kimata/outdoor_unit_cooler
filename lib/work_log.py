@@ -60,7 +60,6 @@ def notify_error(message, is_log=False):
 
 if __name__ == "__main__":
     import logger
-    import os
     from config import load_config
 
     logger.init("test", level=logging.INFO)
