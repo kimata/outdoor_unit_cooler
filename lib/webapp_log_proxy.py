@@ -31,7 +31,7 @@ def get_log():
         url = "{base_url}{api_endpoint}".format(
             base_url=api_base_url, api_endpoint="/api/log_view"
         )
-        logging.info("stop_day={stop_day}".format(stop_day=stop_day))
+
         # NOTE: 簡易リバースプロキシ
         res = requests.get(url, params={"stop_day": stop_day})
 

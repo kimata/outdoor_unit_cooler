@@ -323,8 +323,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
 
 
 def log_server_start(config, queue):
-    # # NOTE: アクセスログは無効にする
-    # logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    # NOTE: アクセスログは無効にする
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     app = Flask("unit_cooler_log")
 
@@ -336,12 +336,18 @@ def log_server_start(config, queue):
     app.register_blueprint(webapp_log.blueprint)
     app.register_blueprint(webapp_event.blueprint)
 
-    webapp_log.init(config)
-    webapp_event.notify_watch(queue)
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        webapp_log.init(config)
+        webapp_event.notify_watch(queue)
 
     # app.debug = True
     # NOTE: Flask 主体ではないので，自動リロードは OFF にする．
-    app.run(host="0.0.0.0", port=LOG_SERVER_PORT, threaded=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=LOG_SERVER_PORT,
+        threaded=True,
+        use_reloader=False,
+    )
 
 
 ######################################################################
