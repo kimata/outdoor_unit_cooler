@@ -53,7 +53,7 @@ const App = () => {
             });
             eventSource.onerror = () => {
                 if (eventSource.readyState === 2) {
-                    eveentSource.close();
+                    eventSource.close();
                     setTimeout(watchEvent, 1000);
                 }
             };
