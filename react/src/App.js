@@ -47,6 +47,8 @@ const App = () => {
             console.log("watch event");
             eventSource = new EventSource(API_ENDPOINT_EVENT);
             eventSource.addEventListener("message", (e) => {
+                console.log("receive");
+                console.log(e);
                 if (e.data === "log") {
                     loadLog();
                 }
