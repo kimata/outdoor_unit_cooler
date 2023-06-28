@@ -422,6 +422,7 @@ for result in result_list:
     if result.get() != 0:
         sys.exit(-1)
 
+webapp_event.stop_watch()
 log_p.kill()
 
 sys.exit(0)

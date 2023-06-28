@@ -23,15 +23,27 @@ event_count = {
 }
 
 
+stop_watch = False
+
+
 def notify_watch_impl(queue):
     while True:
         if not queue.empty():
             notify_event(queue.get())
         time.sleep(0.2)
 
+        if stop_watch:
+            break
+
 
 def notify_watch(queue):
     threading.Thread(target=notify_watch_impl, args=(queue,)).start()
+
+
+def stop_watch():
+    global stop_watch
+
+    stop_watch = True
 
 
 def notify_event(event_type):
