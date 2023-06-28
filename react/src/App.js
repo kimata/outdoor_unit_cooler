@@ -68,6 +68,9 @@ const App = () => {
 
         const intervalId = setInterval(() => {
             loadStat();
+            // TODO: 本当は EventSoure のイベントに基づいてリロード
+            // したいけど，上手く動かないのでお茶を濁しておく．
+            loadLog();
         }, 60000);
         return () => {
             clearInterval(intervalId);
