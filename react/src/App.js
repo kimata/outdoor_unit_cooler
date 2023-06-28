@@ -44,33 +44,26 @@ const App = () => {
 
         let eventSource = null;
         const watchEvent = async () => {
-            console.log("watch event");
+            loadLog();
             eventSource = new EventSource(API_ENDPOINT_EVENT);
             eventSource.addEventListener("message", (e) => {
-                console.log("receive");
-                console.log(e);
                 if (e.data === "log") {
                     loadLog();
                 }
             });
             eventSource.onerror = () => {
                 if (eventSource.readyState === 2) {
-                    console.log("disconnect event");
-                    eventSource.close();
+                    eveentSource.close();
                     setTimeout(watchEvent, 1000);
                 }
             };
         };
 
         loadStat();
-        loadLog();
         watchEvent();
 
         const intervalId = setInterval(() => {
             loadStat();
-            // TODO: 本当は EventSoure のイベントに基づいてリロード
-            // したいけど，上手く動かないのでお茶を濁しておく．
-            loadLog();
         }, 60000);
         return () => {
             clearInterval(intervalId);
