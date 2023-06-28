@@ -192,7 +192,8 @@ test-webapp-docker:
             - controller_log.txt
             - actuator_log.txt
             - webapp_log.txt
-
+            - test/evidence/**
+            
 test-healthz-docker:
     stage: test
     needs: ["build-image"]
