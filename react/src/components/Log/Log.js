@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PaginationControl } from 'react-bootstrap-pagination-control';
-import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from 'react-bootstrap-icons';
-
+import { ToggleOff, ToggleOn, Speedometer, SunriseFill } from 'react-bootstrap-icons';
+// , SunsetFill
 import moment from "moment-timezone";
 import "moment/locale/ja";
 
@@ -18,7 +18,11 @@ const Log = ({ isReady, log }) => {
     };
 
     const messageIcon  = (message) => {
-        if (message.match(/On Duty/)) {
+        if (message.match(/開始/)) {
+            return (
+                <SunriseFill />
+            )
+        } else if (message.match(/On Duty/)) {
             return (
                 <ToggleOn />
             )
