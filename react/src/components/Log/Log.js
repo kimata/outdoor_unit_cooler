@@ -26,7 +26,7 @@ const Log = ({ isReady, log }) => {
             )
         } else if (message.match(/ON Duty/)) {
             return (
-                <span class="me-1">
+                <span class="me-1 text-green-500">
                     <ToggleOn />
                 </span>
                     
