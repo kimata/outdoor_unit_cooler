@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PaginationControl } from 'react-bootstrap-pagination-control';
+import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from 'react-bootstrap-icons';
 
 import moment from "moment-timezone";
 import "moment/locale/ja";
@@ -14,6 +15,31 @@ const Log = ({ isReady, log }) => {
                 <span className="display-5">Loading...</span>
             </span>
         );
+    };
+
+    const messageIcon  = (message) => {
+        if (message.match(/On Duty/)) {
+            return (
+                <ToggleOn />
+            )
+        } else if (message.match(/Off Duty/)) {
+            return (
+                <ToggleOff />
+            )
+        } else if (message.match(/変更/)) {
+            return (
+                <Speedometer />
+            )
+        }
+    }
+    
+    const formatMessage  = (message) => {
+        return (
+            <span>
+                {messageIcon(message)}
+                {message}
+            </span>
+        )
     };
 
     const logData = (log) => {
@@ -44,7 +70,7 @@ const Log = ({ isReady, log }) => {
                                             { log_date }
                                             <small class="text-muted">({ log_fromNow })</small>
                                         </div>
-                                        <div class="col-12 log-message mb-1">{entry.message}</div>
+                                    <div class="col-12 log-message mb-1">{formatMessage(entry.message)}</div>
                                         <hr class="dashed" />
                                     </div>
                                 )

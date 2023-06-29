@@ -14,6 +14,7 @@
         "preval.macro": "^5.0.0",
         "react": "^18.2.0",
         "react-bootstrap": "^2.7.4",
+        "react-bootstrap-icons": "^1.10.3",
         "react-bootstrap-pagination-control": "^1.0.5",
         "react-dom": "^18.2.0",
         "react-scripts": "^5.0.1",
