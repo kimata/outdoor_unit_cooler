@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PaginationControl } from 'react-bootstrap-pagination-control';
-import { ToggleOff, ToggleOn, Speedometer, SunriseFill } from 'react-bootstrap-icons';
-// , SunsetFill
+import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill  } from 'react-bootstrap-icons';
+
 import moment from "moment-timezone";
 import "moment/locale/ja";
 
@@ -20,7 +20,13 @@ const Log = ({ isReady, log }) => {
     const messageIcon  = (message) => {
         if (message.match(/開始/)) {
             return (
-                <span class="me-1 text-primary">
+                <span class="me-1 text-success">
+                    <SunriseFill />
+                </span>
+            )
+        } else if (message.match(/停止/)) {
+            return (
+                <span class="me-1 text-warning">
                     <SunriseFill />
                 </span>
             )
@@ -39,7 +45,7 @@ const Log = ({ isReady, log }) => {
             )
         } else if (message.match(/変更/)) {
             return (
-                <span class="me-1 text-info">
+                <span class="me-1 text-success">
                     <Speedometer />
                 </span>
             )
