@@ -19,7 +19,7 @@ const Watering = ({ isReady, stat }) => {
                                 </div>
                                 <div className="col-12 mt-3">
                                     <span className="text-start ms-4 text-muted" data-testid="watering-price-info">
-                                        <span className="fw-bold display-6 digit">{watering.price.toFixed(2)}</span>
+                                        <span className="fw-bold display-6 digit">{watering.price.toFixed(1)}</span>
                                         <span className="ms-2">円</span>
                                     </span>
                                 </div>
