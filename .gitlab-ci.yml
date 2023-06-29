@@ -289,6 +289,8 @@ deploy-actuator:
               - app/unit_cooler.py
               - lib/aircon.py
               - lib/config.py
+              - lib/control.py
+              - lib/control_config.py
               - lib/control_pubsub.py
               - lib/fd_q10c.py
               - lib/io_link.py
