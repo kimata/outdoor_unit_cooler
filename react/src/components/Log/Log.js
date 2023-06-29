@@ -27,7 +27,7 @@ const Log = ({ isReady, log }) => {
         } else if (message.match(/停止/)) {
             return (
                 <span class="me-1 text-warning">
-                    <SunriseFill />
+                    <SunsetFill />
                 </span>
             )
         } else if (message.match(/ON Duty/)) {
