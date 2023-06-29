@@ -20,7 +20,7 @@ const Log = ({ isReady, log }) => {
     const messageIcon  = (message) => {
         if (message.match(/開始/)) {
             return (
-                <span class="me-2 text-success">
+                <span class="me-2 text-danger">
                     <SunriseFill />
                 </span>
             )
