@@ -20,26 +20,26 @@ const Log = ({ isReady, log }) => {
     const messageIcon  = (message) => {
         if (message.match(/開始/)) {
             return (
-                <span class="me-1">
+                <span class="me-1 text-primary">
                     <SunriseFill />
                 </span>
             )
         } else if (message.match(/ON Duty/)) {
             return (
-                <span class="me-1 text-green-500">
+                <span class="me-1 text-success">
                     <ToggleOn />
                 </span>
                     
             )
         } else if (message.match(/OFF Duty/)) {
             return (
-                <span class="me-1">
+                <span class="me-1 text-secondary">
                     <ToggleOff />
                 </span>
             )
         } else if (message.match(/変更/)) {
             return (
-                <span class="me-1">
+                <span class="me-1 text-info">
                     <Speedometer />
                 </span>
             )
