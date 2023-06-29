@@ -103,7 +103,7 @@ CORRECTION_CONDITION = [
         )
         and (sense_data["lux"][0]["value"] < LUX_THRESHOLD),
         "message": lambda sense_data: (
-            " 外気温 ({temp:.1f} ℃) {temp_threshold:.1f} ℃ より高いものの，"
+            " 外気温 ({temp:.1f} ℃) が {temp_threshold:.1f} ℃ より高いものの，"
             + "照度 ({lux:,.0f} LUX) が {lux_threshold:,.0f} LUX より小さいので，"
             + "冷却を少し弱めます．(outdoor_status: -1)"
         ).format(
