@@ -57,7 +57,7 @@ const Sensor = ({ isReady, stat }) => {
                         {sensorRow(stat.sensor.temp[0], "℃")}
                         {sensorRow(stat.sensor.humi[0], "%")}
                         {sensorRow(stat.sensor.lux[0], "lx")}
-                        {sensorRow(stat.sensor.solar_rad[0], "W/m^2")}
+                        {sensorRow(stat.sensor.solar_rad[0], <span>W/m<sup>2</sup></span>)}
                     </tbody>
                 </table>
                 <div className="text-start">{outdoorStatus(stat)}</div>
