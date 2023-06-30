@@ -18,8 +18,8 @@
             "sizes": "512x512"
         }
     ],
-    "start_url": ".",
-    "display": "standalone",
+    "start_url": "/unit_cooler/",
+    "display": "browser",
     "theme_color": "#000000",
     "background_color": "#ffffff"
 }
