@@ -1,5 +1,6 @@
 import moment from "moment-timezone";
 import "moment/locale/ja";
+import reactStringReplace from 'react-string-replace';
 
 import { valueText, dateText } from "../../lib/util";
 
@@ -33,8 +34,13 @@ const Sensor = ({ isReady, stat }) => {
     };
 
     const outdoorStatus = (stat) => {
+        let message = stat.outdoor_status.message
+        message = reactStringReplace(message, 'm^2', (match, i) => (
+                <span>m<sup>2</sup></span>
+        ));
+        
         if (stat.outdoor_status.message != null) {
-            return <div>{stat.outdoor_status.message}</div>;
+            return <div>{message}</div>;
         }
     };
 
