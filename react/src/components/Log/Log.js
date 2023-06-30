@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import autoAnimate from '@formkit/auto-animate'
 import { PaginationControl } from 'react-bootstrap-pagination-control';
 import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill  } from 'react-bootstrap-icons';
 
@@ -7,6 +8,12 @@ import "moment/locale/ja";
 
 const Log = ({ isReady, log }) => {
     const [page, setPage] = useState(1)
+    const parent = useRef(null)
+
+    useEffect(() => {
+        parent.current && autoAnimate(parent.current)
+    }, [parent])
+
     const size = 5
 
     const loading = () => {
@@ -76,7 +83,7 @@ const Log = ({ isReady, log }) => {
 
         return (
             <div>
-                <div class="container text-start mb-3" data-testid="log">
+                <div class="container text-start mb-3" data-testid="log" ref={parent}>
                     {
                         log.slice((page - 1) * size, page * size).map((entry, index) => {
                             let date = moment(entry.date)

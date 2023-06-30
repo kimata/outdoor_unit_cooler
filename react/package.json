@@ -5,6 +5,7 @@
     "homepage": "/unit_cooler",
     "dependencies": {
         "@babel/plugin-proposal-private-property-in-object": "7.21",
+        "@formkit/auto-animate": "^0.7.0",
         "@testing-library/jest-dom": "^5.16.5",
         "@testing-library/react": "^14.0.0",
         "@testing-library/user-event": "^14.4.3",
