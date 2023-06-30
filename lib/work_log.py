@@ -8,6 +8,7 @@ import logging
 import notify_slack
 import webapp_log
 import webapp_event
+from control import notify_error
 
 
 class WORK_LOG_LEVEL(IntEnum):
@@ -38,24 +39,6 @@ def work_log(message, level=WORK_LOG_LEVEL.INFO):
 
     if level == WORK_LOG_LEVEL.ERROR:
         notify_error(config, message)
-
-
-def notify_error(message, is_log=False):
-    global config
-
-    if is_log:
-        logging.error(message)
-
-    if "slack" not in config:
-        return
-
-    notify_slack.error(
-        config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"]["name"],
-        config["slack"]["from"],
-        message,
-        config["slack"]["error"]["interval_min"],
-    )
 
 
 if __name__ == "__main__":

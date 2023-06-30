@@ -44,7 +44,8 @@ import control_pubsub
 
 import traceback
 from config import load_config
-from work_log import init, work_log, notify_error, WORK_LOG_LEVEL
+from work_log import init, work_log, WORK_LOG_LEVEL
+from control import notify_error
 import webapp_log
 import webapp_event
 import logger

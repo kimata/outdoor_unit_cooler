@@ -13,7 +13,7 @@ import notify_slack
 def notify_error(config, message):
     logging.error(message)
 
-    if "slack" not in config:
+    if ("slack" not in config) or (os.environ.get("DUMMY_MODE", "false") == "true"):
         return
 
     notify_slack.error(
