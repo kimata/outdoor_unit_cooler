@@ -4,8 +4,6 @@
 from enum import IntEnum
 import logging
 
-
-import notify_slack
 import webapp_log
 import webapp_event
 from control import notify_error
