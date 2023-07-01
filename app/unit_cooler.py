@@ -52,6 +52,7 @@ import logger
 
 LOG_SERVER_PORT = 5001
 DUMMY_MODE_SPEEDUP = 12.0
+HAZARD_NOTIFY_INTERVAL_MIN = 30
 
 recv_cooling_mode = None
 should_terminate = False
@@ -67,23 +68,32 @@ def sig_handler(num, frame):
 
 
 def notify_hazard(message):
-    work_log(message, WORK_LOG_LEVEL.ERROR)
+    if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
+        (
+            time.time()
+            - pathlib.Path(config["actuator"]["hazard"]["file"]).stat().st_mtime
+        )
+        / 60
+        > HAZARD_NOTIFY_INTERVAL_MIN
+    ):
+        work_log(message, WORK_LOG_LEVEL.ERROR)
+        pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
 
-    pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
     valve.set_state(valve.VALVE_STATE.CLOSE)
 
 
 def check_hazard(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
         notify_hazard("水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
-
         return True
     else:
         return False
 
 
 def set_cooling_state(cooling_mode):
-    check_hazard(config)
+    if check_hazard(config):
+        cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+
     return valve.set_cooling_state(cooling_mode)
 
 
