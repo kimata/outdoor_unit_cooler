@@ -71,3 +71,7 @@ def remote_host(request):
         return socket.gethostbyaddr(request.remote_addr)[0]
     except:
         return request.remote_addr
+
+
+def auth_user(request):
+    return request.headers.get("X-Auth-Request-Email", "Unknown")
