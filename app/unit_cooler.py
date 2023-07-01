@@ -108,7 +108,7 @@ def check_valve_status(config, valve_status):
             if flow < config["actuator"]["valve"]["on"]["min"]:
                 # NOTE: ハザード扱いにはしない
                 work_log(
-                    "元栓が閉じています．(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)".format(
+                    "元栓が閉じています．(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
                         duration=valve_status["duration"], flow=flow
                     ),
                     WORK_LOG_LEVEL.ERROR,
@@ -135,7 +135,7 @@ def check_valve_status(config, valve_status):
                 notify_hazard(
                     (
                         "電磁弁が壊れていますので制御を停止します．"
-                        + "(バルブを開いてから{duration}秒経過しても流量が {flow:.1f} L/min)"
+                        + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
                     ).format(duration=valve_status["duration"], flow=flow),
                 )
 
