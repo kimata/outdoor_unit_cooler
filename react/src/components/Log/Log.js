@@ -118,7 +118,7 @@ const Log = ({ isReady, log }) => {
             <div className="card-deck mb-3 text-center">
                 <div className="card mb-4 shadow-sm">
                     <div className="card-header">
-                        <h4 className="my-0 font-weight-normal">ログ</h4>
+                        <h4 className="my-0 font-weight-normal">作動ログ</h4>
                     </div>
                     <div className="card-body">{isReady ? logData(log) : loading()}</div>
                 </div>
