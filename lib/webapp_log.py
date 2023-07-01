@@ -99,7 +99,7 @@ def get_log(stop_day):
 
     cur = sqlite.cursor()
     cur.execute(
-        'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?) ORDER BY date DESC LIMIT 200',
+        'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?) ORDER BY date DESC LIMIT 500',
         ["-{stop_day} days".format(stop_day=stop_day)],
     )
     return cur.fetchall()
