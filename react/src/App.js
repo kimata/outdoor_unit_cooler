@@ -14,9 +14,8 @@ import AirConditioner from "./components/AirConditioner/AirConditioner";
 import Log from "./components/Log/Log.js";
 
 const App = () => {
-    const API_ENDPOINT_STAT = "/unit_cooler/api/stat";
-    const API_ENDPOINT_LOG = "/unit_cooler/api/log_view";
-    const API_ENDPOINT_EVENT = "/unit_cooler/api/event";
+    const API_ENDPOINT = "/unit_cooler/api";
+    
     const [isStatReady, setStatReady] = useState(false);
     const [isLogReady, setLogReady] = useState(false);
     const [stat, setStat] = useState([]);
@@ -28,14 +27,14 @@ const App = () => {
     
     useEffect(() => {
         const loadStat = async () => {
-            let res = await fetchData(API_ENDPOINT_STAT);
+            let res = await fetchData(API_ENDPOINT + '/stat');
             setError(false);
             setStat(res);
             setStatReady(true);
             setUpdateTime(moment().format('llll'));
         };
         const loadLog = async () => {
-            let res = await fetchData(API_ENDPOINT_LOG);
+            let res = await fetchData(API_ENDPOINT + '/log_view');
             setError(false);
             setLog(res.data)
             setLogReady(true);
@@ -45,7 +44,7 @@ const App = () => {
         let eventSource = null;
         const watchEvent = async () => {
             loadLog();
-            eventSource = new EventSource(API_ENDPOINT_EVENT);
+            eventSource = new EventSource(API_ENDPOINT + '/event');
             eventSource.addEventListener("message", (e) => {
                 if (e.data === "log") {
                     loadLog();
