@@ -13,7 +13,6 @@ blueprint = Blueprint("webapp-base", __name__, url_prefix=APP_URL_PREFIX)
 @blueprint.route("/<path:filename>")
 @gzipped
 def webapp(filename):
-
     return send_from_directory(STATIC_FILE_PATH, filename)
 
 

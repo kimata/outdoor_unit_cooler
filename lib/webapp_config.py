@@ -3,7 +3,8 @@
 import pathlib
 
 APP_URL_PREFIX = "/unit_cooler"
-STATIC_FILE_PATH = "../react/build/"
+
+STATIC_FILE_PATH = pathlib.Path(__file__).parent.parent / "react" / "build"
 
 LOG_DB_PATH = pathlib.Path(__file__).parent.parent / "data" / "log.db"
 
