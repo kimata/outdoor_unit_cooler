@@ -263,6 +263,7 @@ deploy-controller:
               - lib/aircon.py
               - lib/config.py
               - lib/control.py
+              - lib/control_config.py
               - lib/valve_state.py
               - lib/control_pubsub.py
               - lib/logger.py
