@@ -8,7 +8,7 @@ import threading
 import time
 import sqlite3
 import datetime
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Queue
 from wsgiref.handlers import format_date_time
 from webapp_config import APP_URL_PREFIX, LOG_DB_PATH
 from webapp_event import notify_event, EVENT_TYPE
@@ -25,9 +25,11 @@ class APP_LOG_LEVEL(IntEnum):
 blueprint = Blueprint("webapp-log", __name__, url_prefix=APP_URL_PREFIX)
 
 sqlite = None
+log_thread = None
 log_lock = None
-thread_pool = None
+log_queue = None
 config = None
+should_terminate = False
 
 
 def init(config_):
@@ -35,6 +37,8 @@ def init(config_):
     global sqlite
     global log_lock
     global thread_pool
+    global log_queue
+    global should_terminate
 
     config = config_
 
@@ -44,7 +48,19 @@ def init(config_):
     sqlite.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
 
     log_lock = threading.Lock()
-    thread_pool = ThreadPool(processes=3)
+    log_queue = Queue()
+    log_thread = threading.Thread(target=app_log_worker, args=(log_queue,))
+    log_thread.start()
+
+
+def term():
+    global thread_pool
+    global sqlite
+    global should_terminate
+
+    should_terminate = False
+    log_thread.join()
+    sqlite.close()
 
 
 def app_log_impl(message, level):
@@ -75,8 +91,19 @@ def app_log_impl(message, level):
             os._exit(-1)
 
 
-def app_log(message, level=APP_LOG_LEVEL.INFO, exit=False):
-    global thread_pool
+def app_log_worker(log_queue):
+    while True:
+        if not log_queue.empty():
+            log = log_queue.get()
+            app_log_impl(log["message"], log["level"])
+        if should_terminate:
+            break
+
+        time.sleep(0.2)
+
+
+def app_log(message, level=APP_LOG_LEVEL.INFO):
+    global log_queue
 
     if level == APP_LOG_LEVEL.ERROR:
         logging.error(message)
@@ -86,10 +113,7 @@ def app_log(message, level=APP_LOG_LEVEL.INFO, exit=False):
         logging.info(message)
 
     # NOTE: 実際のログ記録は別スレッドに任せて，すぐにリターンする
-    thread_pool.apply_async(app_log_impl, (message, level))
-
-    if exit:
-        thread_pool.close()
+    log_queue.put({"message": message, "level": level})
 
 
 def get_log(stop_day):
