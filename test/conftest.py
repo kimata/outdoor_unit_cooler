@@ -25,5 +25,5 @@ def browser_context_args(browser_context_args, request):
         "record_video_dir": "test/evidence/{test_name}".format(
             test_name=request.node.name
         ),
-        "record_video_size": {"width": 800, "height": 1600},
+        "record_video_size": {"width": 2400, "height": 1600},
     }

@@ -13,6 +13,7 @@ def app_url(host, port):
 
 ######################################################################
 def test_valve(page, host, port):
+    page.set_viewport_size({"width": 2400, "height": 1600})
     page.goto(app_url(host, port))
 
     expect(page.get_by_test_id("aircon-info")).to_have_count(1)
