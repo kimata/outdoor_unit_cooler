@@ -23,8 +23,8 @@ SOLAR_RAD_THRESHOLD_HIGH = 700
 HUMI_THRESHOLD = 96
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
 TEMP_THRESHOLD_HIGH = 32
-# 屋外の温度がこの値を超えていたら，冷却の強度を強める
-TEMP_THRESHOLD_MID = 28
+# 屋外の温度がこの値を超えていたら，冷却の強度を少し強める
+TEMP_THRESHOLD_MID = 29
 
 
 MESSAGE_LIST = [
