@@ -36,8 +36,8 @@ def init(config_):
     global config
     global sqlite
     global log_lock
-    global thread_pool
     global log_queue
+    global log_thread
     global should_terminate
 
     config = config_
@@ -54,8 +54,8 @@ def init(config_):
 
 
 def term():
-    global thread_pool
     global sqlite
+    global log_thread
     global should_terminate
 
     should_terminate = False
