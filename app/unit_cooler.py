@@ -442,6 +442,7 @@ log_p.start()
 def terminate_log_server():
     log_p.kill()
     webapp_event.stop_watch()
+    webapp_log.term()
 
 
 # NOTE: 終了した場合に，Web サーバも終了するようにしておく
