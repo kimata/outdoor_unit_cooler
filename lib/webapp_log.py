@@ -47,6 +47,7 @@ def init(config_):
     sqlite.commit()
     sqlite.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
 
+    should_terminate = False
     log_lock = threading.Lock()
     log_queue = Queue()
     log_thread = threading.Thread(target=app_log_worker, args=(log_queue,))
@@ -58,13 +59,16 @@ def term():
     global log_thread
     global should_terminate
 
-    should_terminate = False
+    should_terminate = True
     log_thread.join()
     sqlite.close()
 
 
 def app_log_impl(message, level):
+    global sqlite
+    global log_lock
     global config
+
     with log_lock:
         sqlite.execute(
             'INSERT INTO log VALUES (DATETIME("now", "localtime"), ?)', [message]
@@ -92,6 +96,8 @@ def app_log_impl(message, level):
 
 
 def app_log_worker(log_queue):
+    global should_terminate
+
     while True:
         if not log_queue.empty():
             log = log_queue.get()
