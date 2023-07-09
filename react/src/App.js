@@ -120,16 +120,16 @@ const App = () => {
                     </div>
                 </div>
             </div>
-            <div class="p-1 float-end text-end m-2">
+            <div className="p-1 float-end text-end m-2 mt-4">
                 <small>
-                    <p class="text-muted m-0">
+                    <p className="text-muted m-0">
                         <small>更新日時: {updateTime}</small>
                     </p>
-                    <p class="text-muted m-0">
+                    <p className="text-muted m-0">
                         <small>ビルド日時: { buildDate } [{ buildDateFrom }]</small>
                     </p>
-                    <p>
-                        <a href="https://github.com/kimata/e-ink_weather_panel/">
+                    <p className="display-6">
+                        <a href="https://github.com/kimata/e-ink_weather_panel/" className="text-secondary">
                             <Github />
                         </a>
                     </p>
