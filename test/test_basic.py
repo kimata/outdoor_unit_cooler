@@ -11,9 +11,14 @@ def app_url(host, port):
     return APP_URL_TMPL.format(host=host, port=port)
 
 
+def init(page):
+    page.on("console", lambda msg: print(msg.text))
+    page.set_viewport_size({"width": 2400, "height": 1600})
+
+
 ######################################################################
 def test_valve(page, host, port):
-    page.set_viewport_size({"width": 2400, "height": 1600})
+    init(page)
     page.goto(app_url(host, port))
 
     expect(page.get_by_test_id("aircon-info")).to_have_count(1)

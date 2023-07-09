@@ -18,6 +18,14 @@ def port(request):
     return request.config.getoption("--port")
 
 
+@pytest.fixture
+def page(page):
+    timeout = 2000
+    page.set_default_navigation_timeout(timeout)
+    page.set_default_timeout(timeout)
+    yield page
+
+
 @pytest.fixture(scope="function")
 def browser_context_args(browser_context_args, request):
     return {
