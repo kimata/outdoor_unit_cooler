@@ -1,6 +1,7 @@
 import "./App.css";
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Github } from 'react-bootstrap-icons';
 import moment from "moment-timezone";
 
 import { useEffect, useState } from "react";
@@ -126,6 +127,11 @@ const App = () => {
                     </p>
                     <p class="text-muted m-0">
                         <small>ビルド日時: { buildDate } [{ buildDateFrom }]</small>
+                    </p>
+                    <p>
+                        <a href="https://github.com/kimata/e-ink_weather_panel/">
+                            <Github />
+                        </a>
                     </p>
                 </small>
             </div>
