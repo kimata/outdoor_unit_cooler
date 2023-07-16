@@ -42,19 +42,15 @@ MESSAGE_LIST = [
     },
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 30 * 60},
+        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 20 * 60},
     },
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 20 * 60},
+        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 15 * 60},
     },
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 10 * 60},
-    },
-    {
-        "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 10 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 8 * 60},
     },
     {
         "state": COOLING_STATE.WORKING,
@@ -62,7 +58,11 @@ MESSAGE_LIST = [
     },
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.5 * 60, "off_sec": 6 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 4 * 60},
+    },
+    {
+        "state": COOLING_STATE.WORKING,
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 3 * 60},
     },
 ]
 
