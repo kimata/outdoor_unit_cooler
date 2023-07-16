@@ -21,8 +21,10 @@ SOLAR_RAD_THRESHOLD_LOW = 200
 SOLAR_RAD_THRESHOLD_HIGH = 700
 # 屋外の湿度がこの値を超えていたら，冷却を停止する
 HUMI_THRESHOLD = 96
+# 屋外の温度がこの値を超えていたら，冷却の強度を大きく強める
+TEMP_THRESHOLD_HIGH_H = 35
 # 屋外の温度がこの値を超えていたら，冷却の強度を強める
-TEMP_THRESHOLD_HIGH = 32
+TEMP_THRESHOLD_HIGH_L = 32
 # 屋外の温度がこの値を超えていたら，冷却の強度を少し強める
 TEMP_THRESHOLD_MID = 29
 
@@ -71,7 +73,7 @@ MESSAGE_LIST = [
     # 8
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 3 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 2 * 60},
     },
 ]
 
@@ -87,11 +89,20 @@ CORRECTION_CONDITION = [
     },
     {
         "judge": lambda sense_data: sense_data["temp"][0]["value"]
-        > TEMP_THRESHOLD_HIGH,
+        > TEMP_THRESHOLD_HIGH_H,
+        "message": lambda sense_data: (
+            "外気温 ({temp:.1f} ℃) が "
+            + "{threshold:.1f} ℃ より高いので冷却を大きく強化します．(outdoor_status: 2)"
+        ).format(temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD_HIGH_H),
+        "correction": 3,
+    },
+    {
+        "judge": lambda sense_data: sense_data["temp"][0]["value"]
+        > TEMP_THRESHOLD_HIGH_L,
         "message": lambda sense_data: (
             "外気温 ({temp:.1f} ℃) が "
             + "{threshold:.1f} ℃ より高いので冷却を強化します．(outdoor_status: 2)"
-        ).format(temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD_HIGH),
+        ).format(temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD_HIGH_L),
         "correction": 2,
     },
     {
