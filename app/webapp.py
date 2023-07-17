@@ -83,21 +83,7 @@ def watch_client(
     )
 
 
-if __name__ == "__main__":
-    import logger
-    from config import load_config
-    from multiprocessing import Queue
-    import threading
-    import os
-
-    args = docopt(__doc__)
-
-    config_file = args["-c"]
-    server_hostname = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
-    server_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
-    actuator_hostname = os.environ.get("HEMS_ACTUATOR_HOST", args["-a"])
-    dummy_mode = args["-D"]
-
+def start(config_file, server_hostname, server_port, actuator_hostname, dummy_mode):
     server_host = nslookup(server_hostname)
     actuator_host = nslookup(actuator_hostname)
 
@@ -154,3 +140,21 @@ if __name__ == "__main__":
     # app.debug = True
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
     app.run(host="0.0.0.0", threaded=True, use_reloader=True)
+
+
+if __name__ == "__main__":
+    import logger
+    from config import load_config
+    from multiprocessing import Queue
+    import threading
+    import os
+
+    args = docopt(__doc__)
+
+    config_file = args["-c"]
+    server_hostname = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
+    server_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
+    actuator_hostname = os.environ.get("HEMS_ACTUATOR_HOST", args["-a"])
+    dummy_mode = args["-D"]
+
+    start(config_file, server_hostname, server_port, actuator_hostname, dummy_mode)
