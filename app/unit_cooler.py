@@ -368,98 +368,113 @@ def log_server_start(config, queue):
     )
 
 
-######################################################################
-args = docopt(__doc__)
+def start(
+    config_file, control_host, pub_port, dummy_mode, speedup, is_one_time, debug_mode
+):
+    if debug_mode:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
 
-config_file = args["-c"]
-control_host = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
-pub_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
-dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
-speedup = int(args["-t"])
-is_one_time = args["-O"]
-debug_mode = args["-d"]
+    logger.init(
+        "hems.unit_cooler",
+        level=log_level,
+        # dir_path=pathlib.Path(os.path.dirname(__file__)).parent / "log",
+    )
 
-if debug_mode:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.INFO
+    # NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
+    if dummy_mode:
+        logging.warning("Set dummy mode")
+        os.environ["DUMMY_MODE"] = "true"
 
-logger.init(
-    "hems.unit_cooler",
-    level=log_level,
-    # dir_path=pathlib.Path(os.path.dirname(__file__)).parent / "log",
-)
+    logging.info("Using config config: {config_file}".format(config_file=config_file))
+    config = load_config(config_file)
 
-# NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
-if dummy_mode:
-    logging.warning("Set dummy mode")
-    os.environ["DUMMY_MODE"] = "true"
+    # NOTE: Raspberry Pi 以外で実行したときにログで通知したいので，
+    # ロガーを初期化した後に import する
+    import valve
 
-logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
-
-# NOTE: Raspberry Pi 以外で実行したときにログで通知したいので，
-# ロガーを初期化した後に import する
-import valve
-
-if not dummy_mode:
-    # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
-    # なり，電磁弁の故障を誤判定する可能性がある．
-    for i in range(config["actuator"]["interval_sec"]):
-        logging.info(
-            "Wait for the old Pod to finish ({i:3} / {total:3})".format(
-                i=i + 1, total=config["actuator"]["interval_sec"]
+    if not dummy_mode:
+        # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
+        # なり，電磁弁の故障を誤判定する可能性がある．
+        for i in range(config["actuator"]["interval_sec"]):
+            logging.info(
+                "Wait for the old Pod to finish ({i:3} / {total:3})".format(
+                    i=i + 1, total=config["actuator"]["interval_sec"]
+                )
             )
+            time.sleep(1)
+
+    signal.signal(signal.SIGTERM, sig_handler)
+    cmd_queue = Queue()
+    log_event_queue = Queue()
+
+    logging.info("Initialize valve")
+    init(config, log_event_queue)
+    valve.init(config["actuator"]["valve"]["pin_no"])
+
+    # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
+    pool = ThreadPool(processes=3)
+
+    result_list = []
+    result_list.append(
+        pool.apply_async(
+            cmd_receive_worker, (config, control_host, pub_port, cmd_queue, is_one_time)
         )
-        time.sleep(1)
-
-signal.signal(signal.SIGTERM, sig_handler)
-cmd_queue = Queue()
-log_event_queue = Queue()
-
-logging.info("Initialize valve")
-init(config, log_event_queue)
-valve.init(config["actuator"]["valve"]["pin_no"])
-
-# NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
-pool = ThreadPool(processes=3)
-
-result_list = []
-result_list.append(
-    pool.apply_async(
-        cmd_receive_worker, (config, control_host, pub_port, cmd_queue, is_one_time)
     )
-)
-result_list.append(
-    pool.apply_async(
-        valve_ctrl_worker, (config, cmd_queue, dummy_mode, speedup, is_one_time)
+
+    result_list.append(
+        pool.apply_async(
+            valve_ctrl_worker, (config, cmd_queue, dummy_mode, speedup, is_one_time)
+        )
     )
-)
-result_list.append(
-    pool.apply_async(valve_monitor_worker, (config, dummy_mode, speedup, is_one_time))
-)
-pool.close()
+    result_list.append(
+        pool.apply_async(
+            valve_monitor_worker, (config, dummy_mode, speedup, is_one_time)
+        )
+    )
+    pool.close()
 
-# NOTE: 他のスレッドが終了したら，メインスレッドを終了させたいので，
-# Flask は別のプロセスで実行
-log_p = Process(target=log_server_start, args=(config, log_event_queue))
-log_p.start()
+    # NOTE: 他のスレッドが終了したら，メインスレッドを終了させたいので，
+    # Flask は別のプロセスで実行
+    log_p = Process(target=log_server_start, args=(config, log_event_queue))
+    log_p.start()
+
+    def terminate_log_server():
+        log_p.kill()
+        webapp_event.stop_watch()
+        webapp_log.term()
+
+    # NOTE: 終了した場合に，Web サーバも終了するようにしておく
+    atexit.register(terminate_log_server)
+
+    for result in result_list:
+        if result.get() != 0:
+            sys.exit(-1)
+
+    terminate_log_server()
+
+    sys.exit(0)
 
 
-def terminate_log_server():
-    log_p.kill()
-    webapp_event.stop_watch()
-    webapp_log.term()
+######################################################################
+if __name__ == "__main__":
+    args = docopt(__doc__)
 
+    config_file = args["-c"]
+    control_host = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
+    pub_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
+    dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
+    speedup = int(args["-t"])
+    is_one_time = args["-O"]
+    debug_mode = args["-d"]
 
-# NOTE: 終了した場合に，Web サーバも終了するようにしておく
-atexit.register(terminate_log_server)
-
-for result in result_list:
-    if result.get() != 0:
-        sys.exit(-1)
-
-terminate_log_server()
-
-
-sys.exit(0)
+    start(
+        config_file,
+        control_host,
+        pub_port,
+        dummy_mode,
+        speedup,
+        is_one_time,
+        debug_mode,
+    )
