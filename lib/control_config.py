@@ -19,6 +19,8 @@ LUX_THRESHOLD = 300
 SOLAR_RAD_THRESHOLD_LOW = 200
 # 太陽の日射量がこの値未満の場合，冷却の強度を強める
 SOLAR_RAD_THRESHOLD_HIGH = 700
+# 太陽の日射量がこの値より大きい場合，昼間とする
+SOLAR_RAD_THRESHOLD_DAYTIME = 50
 # 屋外の湿度がこの値を超えていたら，冷却を停止する
 HUMI_THRESHOLD = 96
 # 屋外の温度がこの値を超えていたら，冷却の強度を大きく強める
@@ -88,21 +90,39 @@ CORRECTION_CONDITION = [
         "correction": -4,
     },
     {
-        "judge": lambda sense_data: sense_data["temp"][0]["value"]
-        > TEMP_THRESHOLD_HIGH_H,
+        "judge": lambda sense_data: (
+            sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_H
+        )
+        and (sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_DAYTIME),
         "message": lambda sense_data: (
-            "外気温 ({temp:.1f} ℃) が "
+            "日射量 ({solar_rad:,.0f} W/m^2) が "
+            + "{solar_rad_threshold:,.0f} W/m^2 より大きく，"
+            + "外気温 ({temp:.1f} ℃) が "
             + "{threshold:.1f} ℃ より高いので冷却を大きく強化します．(outdoor_status: 2)"
-        ).format(temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD_HIGH_H),
+        ).format(
+            solar_rad=sense_data["solar_rad"][0]["value"],
+            solar_rad_threshold=SOLAR_RAD_THRESHOLD_DAYTIME,
+            temp=sense_data["temp"][0]["value"],
+            threshold=TEMP_THRESHOLD_HIGH_H,
+        ),
         "correction": 3,
     },
     {
-        "judge": lambda sense_data: sense_data["temp"][0]["value"]
-        > TEMP_THRESHOLD_HIGH_L,
+        "judge": lambda sense_data: (
+            sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_L
+        )
+        and (sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_DAYTIME),
         "message": lambda sense_data: (
-            "外気温 ({temp:.1f} ℃) が "
+            "日射量 ({solar_rad:,.0f} W/m^2) が "
+            + "{solar_rad_threshold:,.0f} W/m^2 より大きく，"
+            + "外気温 ({temp:.1f} ℃) が "
             + "{threshold:.1f} ℃ より高いので冷却を強化します．(outdoor_status: 2)"
-        ).format(temp=sense_data["temp"][0]["value"], threshold=TEMP_THRESHOLD_HIGH_L),
+        ).format(
+            solar_rad=sense_data["solar_rad"][0]["value"],
+            solar_rad_threshold=SOLAR_RAD_THRESHOLD_DAYTIME,
+            temp=sense_data["temp"][0]["value"],
+            threshold=TEMP_THRESHOLD_HIGH_L,
+        ),
         "correction": 2,
     },
     {
