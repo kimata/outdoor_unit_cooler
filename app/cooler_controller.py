@@ -54,55 +54,85 @@ def test_client(server_host, server_port):
     )
 
 
+# NOTE: Last Value Caching Proxy
+def cache_proxy_start(config, server_host, real_port, server_port, is_one_time):
+    try:
+        threading.Thread(
+            target=control_pubsub.start_proxy,
+            args=(server_host, real_port, server_port, is_one_time),
+        ).start()
+    except:
+        notify_error(config, traceback.format_exc())
+        raise
+
+
+def server_start(config, real_port, dummy_mode, speedup, is_one_time):
+    try:
+        control_pubsub.start_server(
+            real_port,
+            lambda: gen_control_msg(config, dummy_mode, speedup),
+            config["controller"]["interval_sec"] / speedup,
+            is_one_time,
+        )
+    except:
+        notify_error(config, traceback.format_exc())
+        raise
+
+
+def start(
+    config_file, server_host, real_port, server_port, dummy_mode, speedup, is_one_time
+):
+    if debug_mode:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    logger.init("hems.unit_cooler", level=log_level)
+
+    if client_mode:
+        test_client(server_host, server_port)
+        sys.exit(0)
+    elif view_msg_mode:
+        print_control_msg()
+
+    logging.info("Start controller (port: {port})".format(port=server_port))
+
+    logging.info("Using config config: {config_file}".format(config_file=config_file))
+    config = load_config(config_file)
+
+    if dummy_mode:
+        logging.warning("DUMMY mode")
+        os.environ["DUMMY_MODE"] = "true"
+
+    try:
+        cache_proxy_start(config, server_host, real_port, server_port, is_one_time)
+        server_start(config, real_port, dummy_mode, speedup, is_one_time)
+    except:
+        notify_error(config, traceback.format_exc())
+        raise
+
+
 ######################################################################
-args = docopt(__doc__)
+if __name__ == "__main__":
+    args = docopt(__doc__)
 
-config_file = args["-c"]
-server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
-real_port = args["-r"]
-dummy_mode = args["-D"]
-speedup = int(args["-t"])
-debug_mode = args["-d"]
-client_mode = args["-C"]
-server_host = args["-s"]
-is_one_time = args["-O"]
-view_msg_mode = args["-V"]
+    config_file = args["-c"]
+    server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
+    real_port = args["-r"]
+    dummy_mode = args["-D"]
+    speedup = int(args["-t"])
+    debug_mode = args["-d"]
+    client_mode = args["-C"]
+    server_host = args["-s"]
+    is_one_time = args["-O"]
+    view_msg_mode = args["-V"]
 
-if debug_mode:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.INFO
-
-logger.init("hems.unit_cooler", level=log_level)
-
-if client_mode:
-    test_client(server_host, server_port)
-    sys.exit(0)
-elif view_msg_mode:
-    print_control_msg()
-
-logging.info("Start controller (port: {port})".format(port=server_port))
-
-logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
-
-if dummy_mode:
-    logging.warning("DUMMY mode")
-    os.environ["DUMMY_MODE"] = "true"
-
-try:
-    # NOTE: Last Value Caching Proxy
-    threading.Thread(
-        target=control_pubsub.start_proxy,
-        args=(server_host, real_port, server_port, is_one_time),
-    ).start()
-
-    control_pubsub.start_server(
+    start(
+        config_file,
+        server_host,
         real_port,
-        lambda: gen_control_msg(config, dummy_mode, speedup),
-        config["controller"]["interval_sec"] / speedup,
+        server_port,
+        dummy_mode,
+        speedup,
         is_one_time,
     )
-except:
-    notify_error(config, traceback.format_exc())
-    raise
