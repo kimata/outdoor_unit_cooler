@@ -103,6 +103,7 @@ def check_valve_status(config, valve_status):
     flow = -1
     if valve_status["state"] == valve.VALVE_STATE.OPEN:
         flow = valve.get_flow()
+        check_valve_status.last_flow = flow
         if (flow is not None) and (valve_status["duration"] > 10):
             # バルブが開いてから時間が経っている場合
             if flow < config["actuator"]["valve"]["on"]["min"]:
@@ -121,12 +122,15 @@ def check_valve_status(config, valve_status):
                 duration=valve_status["duration"]
             )
         )
-        if valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]:
-            # バルブが閉じてから長い時間が経っている場合，センサーを停止する
+        if (
+            valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]
+        ) and (check_valve_status.last_flow == 0):
+            # バルブが閉じてから長い時間が経っていて流量も 0 の場合，センサーを停止する
             flow = 0.0
             valve.stop_sensing()
         else:
             flow = valve.get_flow()
+            check_valve_status.last_flow = flow
             if (
                 (valve_status["duration"] > 120)
                 and (flow is not None)
@@ -140,6 +144,9 @@ def check_valve_status(config, valve_status):
                 )
 
     return {"state": valve_status["state"], "flow": flow}
+
+
+check_valve_status.last_flow = 0
 
 
 def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
