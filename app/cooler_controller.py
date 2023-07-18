@@ -4,7 +4,7 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-r REAL_PORT] [-O] [-D] [-t SPEEDUP] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-r REAL_PORT] [-n COUNT] [-D] [-t SPEEDUP] [-d]
   cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-P PROXY_PORT] [-d]
   cooler_controller.py -V
 
@@ -12,7 +12,7 @@ Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
   -r REAL_PORT      : ZeroMQ の 本当のサーバーを動作させるポートを指定します． [default: 2200]
-  -O                : 1回のみ実行
+  -n COUNT          : n 回制御メッセージを生成したら終了します．0 は制限なし．[default: 0]
   -D                : 冷却モードをランダムに生成するモードで動作すします．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
@@ -55,58 +55,84 @@ def test_client(server_host, server_port):
 
 
 # NOTE: Last Value Caching Proxy
-def cache_proxy_start(config, server_host, real_port, server_port, is_one_time):
+def cache_proxy_start(config, server_host, real_port, server_port, msg_count):
     try:
         threading.Thread(
             target=control_pubsub.start_proxy,
-            args=(server_host, real_port, server_port, is_one_time),
+            args=(server_host, real_port, server_port, msg_count),
         ).start()
     except:
         notify_error(config, traceback.format_exc())
         raise
 
 
-def server_start(config, real_port, dummy_mode, speedup, is_one_time):
+def server_start(config, real_port, dummy_mode, speedup, msg_count):
     try:
         control_pubsub.start_server(
             real_port,
             lambda: gen_control_msg(config, dummy_mode, speedup),
             config["controller"]["interval_sec"] / speedup,
-            is_one_time,
+            msg_count,
         )
     except:
         notify_error(config, traceback.format_exc())
         raise
 
 
-def start(
-    config_file, server_host, real_port, server_port, dummy_mode, speedup, is_one_time
-):
-    if debug_mode:
+def start(arg):
+    setting = {
+        "config_file": "config.yaml",
+        "server_host": "localhost",
+        "real_port": 2200,
+        "server_port": 2222,
+        "client_mode": False,
+        "view_msg_mode": False,
+        "dummy_mode": False,
+        "debug_mode": False,
+        "speedup": 1,
+        "msg_count": 0,
+    }
+    setting.update(arg)
+
+    if setting["debug_mode"]:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
 
     logger.init("hems.unit_cooler", level=log_level)
 
-    if client_mode:
-        test_client(server_host, server_port)
+    if setting["client_mode"]:
+        test_client(setting["server_host"], setting["server_port"])
         sys.exit(0)
-    elif view_msg_mode:
+    elif setting["view_msg_mode"]:
         print_control_msg()
 
-    logging.info("Start controller (port: {port})".format(port=server_port))
+    logging.info("Start controller (port: {port})".format(port=setting["server_port"]))
 
-    logging.info("Using config config: {config_file}".format(config_file=config_file))
-    config = load_config(config_file)
+    logging.info(
+        "Using config config: {config_file}".format(config_file=setting["config_file"])
+    )
+    config = load_config(setting["config_file"])
 
-    if dummy_mode:
+    if setting["dummy_mode"]:
         logging.warning("DUMMY mode")
         os.environ["DUMMY_MODE"] = "true"
 
     try:
-        cache_proxy_start(config, server_host, real_port, server_port, is_one_time)
-        server_start(config, real_port, dummy_mode, speedup, is_one_time)
+        cache_proxy_start(
+            config,
+            setting["server_host"],
+            setting["real_port"],
+            setting["server_port"],
+            setting["msg_count"],
+        )
+        server_start(
+            config,
+            setting["real_port"],
+            setting["dummy_mode"],
+            setting["speedup"],
+            setting["msg_count"],
+        )
     except:
         notify_error(config, traceback.format_exc())
         raise
@@ -124,15 +150,20 @@ if __name__ == "__main__":
     debug_mode = args["-d"]
     client_mode = args["-C"]
     server_host = args["-s"]
-    is_one_time = args["-O"]
+    msg_count = args["-n"]
     view_msg_mode = args["-V"]
 
-    start(
-        config_file,
-        server_host,
-        real_port,
-        server_port,
-        dummy_mode,
-        speedup,
-        is_one_time,
-    )
+    ctrl_arg = {
+        "config_file": config_file,
+        "server_host": server_host,
+        "real_port": real_port,
+        "server_port": server_port,
+        "client_mode": client_mode,
+        "view_msg_mode": view_msg_mode,
+        "dummy_mode": dummy_mode,
+        "debug_mode": debug_mode,
+        "speedup": speedup,
+        "msg_count": msg_count,
+    }
+
+    start(ctrl_arg)

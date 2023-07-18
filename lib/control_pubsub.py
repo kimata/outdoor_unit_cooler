@@ -10,7 +10,7 @@ CH = "unit_cooler"
 SER_TIMEOUT = 10
 
 
-def start_server(server_port, func, interval_sec, is_one_time=False):
+def start_server(server_port, func, interval_sec, msg_count=0):
     logging.info("Start control server (port: {port})...".format(port=server_port))
 
     context = zmq.Context()
@@ -25,9 +25,9 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
         start_time = time.time()
         socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
 
-        if is_one_time:
-            # NOTE: Proxy がいるので，2回回す
-            if i == 1:
+        if msg_count != 0:
+            # NOTE: Proxy が間に入るので，1回多く回す
+            if i == msg_count:
                 break
             i += 1
 
@@ -38,7 +38,7 @@ def start_server(server_port, func, interval_sec, is_one_time=False):
 
 # NOTE: Last Value Caching Proxy
 # see https://zguide.zeromq.org/docs/chapter5/
-def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
+def start_proxy(server_host, server_port, proxy_port, msg_count=0):
     logging.info(
         "Start proxy server (front: {server_host}:{server_port}, port: {port})...".format(
             server_host=server_host, server_port=server_port, port=proxy_port
@@ -60,6 +60,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
     poller.register(frontend, zmq.POLLIN)
     poller.register(backend, zmq.POLLIN)
 
+    i = 0
     while True:
         try:
             events = dict(poller.poll(1000))
@@ -72,7 +73,10 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
             logging.debug("Store cache")
             cache[ch] = json_str
             backend.send_string(recv_data)
-            if is_one_time:
+
+        if msg_count != 0:
+            i += 1
+            if i == msg_count:
                 break
 
         if backend in events:
@@ -92,7 +96,7 @@ def start_proxy(server_host, server_port, proxy_port, is_one_time=False):
                     logging.warn("Cache is empty")
 
 
-def start_client(server_host, server_port, func, is_one_time=False):
+def start_client(server_host, server_port, func, msg_count=0):
     logging.info("Start control client...")
 
     context = zmq.Context()
@@ -103,17 +107,21 @@ def start_client(server_host, server_port, func, is_one_time=False):
 
     logging.info("Client initialize done.")
 
+    i = 0
     while True:
         ch, json_str = socket.recv_string().split(" ", 1)
         json_data = json.loads(json_str)
         logging.debug("recv {json}".format(json=json_data))
         func(json_data)
 
-        if is_one_time:
-            socket.disconnect(target)
-            socket.close()
-            context.destroy()
-            break
+        if msg_count != 0:
+            i += 1
+            if i == msg_count:
+                break
+
+    socket.disconnect(target)
+    socket.close()
+    context.destroy()
 
 
 def get_last_message(server_host, server_port):

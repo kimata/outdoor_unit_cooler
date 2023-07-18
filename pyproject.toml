@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "rasp-shutter"
+version = "0.1.0"
+description = "電動シャッターを自動制御するアプリです．"
+authors = ["KIMATA Tetsuya <kimata@green-rabbit.net>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+influxdb-client = {extras = ["ciso"], version = "^1.36.1"}
+pytest-freezegun = "^0.4.2"
+slack-bolt = "^1.18.0"
+docopt = "^0.6.2"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.11.1"
+PyYAML = "^6.0"
+Flask = "^2.3.2"
+Flask-Cors = "^4.0.0"
+coloredlogs = "^15.0.1"
+pytest-html = "^3.2.0"
+playwright = "^1.36.0"
+pytest-playwright = "^0.3.3"
+schedule = "^1.2.0"
+pytz = "^2023.3"
+psutil = "^5.9.5"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
