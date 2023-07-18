@@ -41,10 +41,19 @@ import fluent.sender
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import control_pubsub
-
+from actuator import (
+    set_cooling_state,
+    get_valve_status,
+    send_valve_condition,
+    check_valve_condition,
+    stop_valve_monitor,
+    notify_hazard,
+    check_hazard,
+)
 import traceback
 from config import load_config
 from work_log import init, work_log, WORK_LOG_LEVEL
+from valve_state import VALVE_STATE, COOLING_STATE
 from control import notify_error
 import webapp_log
 import webapp_event
@@ -52,7 +61,6 @@ import logger
 
 LOG_SERVER_PORT = 5001
 DUMMY_MODE_SPEEDUP = 12.0
-HAZARD_NOTIFY_INTERVAL_MIN = 30
 
 recv_cooling_mode = None
 should_terminate = False
@@ -65,123 +73,6 @@ def sig_handler(num, frame):
 
     if num == signal.SIGTERM:
         should_terminate = True
-
-
-def notify_hazard(config, message):
-    import valve
-
-    if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
-        (
-            time.time()
-            - pathlib.Path(config["actuator"]["hazard"]["file"]).stat().st_mtime
-        )
-        / 60
-        > HAZARD_NOTIFY_INTERVAL_MIN
-    ):
-        work_log(message, WORK_LOG_LEVEL.ERROR)
-        pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
-
-    valve.set_state(valve.VALVE_STATE.CLOSE)
-
-
-def check_hazard(config):
-    if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
-        return True
-    else:
-        return False
-
-
-def set_cooling_state(config, cooling_mode):
-    import valve
-
-    if check_hazard(config):
-        cooling_mode = {"state": valve.COOLING_STATE.IDLE}
-
-    return valve.set_cooling_state(cooling_mode)
-
-
-def check_valve_status(config, valve_status):
-    import valve
-
-    logging.debug("Check valve")
-
-    flow = -1
-    if valve_status["state"] == valve.VALVE_STATE.OPEN:
-        flow = valve.get_flow()
-        check_valve_status.last_flow = flow
-        if (flow is not None) and (valve_status["duration"] > 10):
-            # バルブが開いてから時間が経っている場合
-            if flow < config["actuator"]["valve"]["on"]["min"]:
-                # NOTE: ハザード扱いにはしない
-                work_log(
-                    "元栓が閉じています．(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
-                        duration=valve_status["duration"], flow=flow
-                    ),
-                    WORK_LOG_LEVEL.ERROR,
-                )
-            elif flow > config["actuator"]["valve"]["on"]["max"]:
-                notify_hazard(
-                    config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
-                )
-    else:
-        logging.debug(
-            "Valve is close for {duration:.1f} sec".format(
-                duration=valve_status["duration"]
-            )
-        )
-        if (
-            valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]
-        ) and (check_valve_status.last_flow == 0):
-            # バルブが閉じてから長い時間が経っていて流量も 0 の場合，センサーを停止する
-            flow = 0.0
-            valve.stop_sensing()
-        else:
-            flow = valve.get_flow()
-            check_valve_status.last_flow = flow
-            if (
-                (valve_status["duration"] > 120)
-                and (flow is not None)
-                and (flow > config["actuator"]["valve"]["off"]["max"])
-            ):
-                notify_hazard(
-                    config,
-                    (
-                        "電磁弁が壊れていますので制御を停止します．"
-                        + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
-                    ).format(duration=valve_status["duration"], flow=flow),
-                )
-
-    return {"state": valve_status["state"], "flow": flow}
-
-
-check_valve_status.last_flow = 0
-
-
-def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
-    global recv_cooling_mode
-
-    # NOTE: 少し加工して送りたいので，まずコピーする
-    send_data = {"state": valve_condition["state"]}
-
-    if valve_condition["flow"] is not None:
-        send_data["flow"] = valve_condition["flow"]
-
-    if recv_cooling_mode is not None:
-        send_data["cooling_mode"] = recv_cooling_mode["mode_index"]
-
-    send_data["state"] = valve_condition["state"].value
-    send_data["hostname"] = hostname
-
-    logging.debug("Send: {valve_condition}".format(valve_condition=send_data))
-
-    if dummy_mode:
-        return
-
-    if sender.emit("rasp", send_data):
-        logging.debug("Send OK")
-    else:
-        logging.error(sender.last_error)
 
 
 def queue_put(config, cmd_queue, message):
@@ -214,8 +105,6 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=Fa
 def valve_ctrl_worker(
     config, cmd_queue, dummy_mode=False, speedup=1, is_one_time=False
 ):
-    import valve
-
     global recv_cooling_mode
 
     logging.info("Start control worker")
@@ -223,7 +112,7 @@ def valve_ctrl_worker(
     if dummy_mode:
         logging.warning("DUMMY mode")
 
-    cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+    cooling_mode = {"state": COOLING_STATE.IDLE}
     interval_sec = config["actuator"]["interval_sec"] / speedup
     receive_time = datetime.datetime.now()
     is_receive = False
@@ -252,7 +141,7 @@ def valve_ctrl_worker(
                 mode_index_prev = cooling_mode["mode_index"]
 
             if check_hazard(config):
-                cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+                cooling_mode = {"state": COOLING_STATE.IDLE}
 
             set_cooling_state(config, cooling_mode)
 
@@ -281,8 +170,6 @@ def valve_ctrl_worker(
 
 # NOTE: バルブの状態をモニタするワーカ
 def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False):
-    import valve
-
     logging.info("Start monitor worker")
 
     sender = None
@@ -306,8 +193,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         while True:
             start_time = time.time()
 
-            valve_status = valve.get_status()
-            valve_condition = check_valve_status(config, valve_status)
+            valve_status = get_valve_status()
+            valve_condition = check_valve_condition(config, valve_status)
 
             send_valve_condition(sender, hostname, valve_condition, dummy_mode)
 
@@ -322,7 +209,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                 )
                 i += 1
 
-            if valve_status["state"] == valve.VALVE_STATE.OPEN:
+            if valve_status["state"] == VALVE_STATE.OPEN:
                 if valve_condition["flow"] is None:
                     flow_unknown += 1
                 else:
@@ -338,7 +225,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                 break
             elif flow_unknown > (config["monitor"]["sense"]["giveup"] / 2):
                 logging.warn("流量計が応答しないので一旦，リセットします．")
-                valve.stop_flow_monitor()
+                stop_valve_monitor()
 
             if should_terminate:
                 logging.info("Terminate monitor worker")
@@ -403,7 +290,7 @@ def start(
     logging.info("Using config config: {config_file}".format(config_file=config_file))
     config = load_config(config_file)
 
-    # NOTE: Raspberry Pi 以外で実行したときにログで通知したいので，
+    # NOTE: Raspberry Pi 以外で実行したときに，valve の中でそれをログ通知したいので，
     # ロガーを初期化した後に import する
     import valve
 
