@@ -150,7 +150,7 @@ if __name__ == "__main__":
     debug_mode = args["-d"]
     client_mode = args["-C"]
     server_host = args["-s"]
-    msg_count = args["-n"]
+    msg_count = int(args["-n"])
     view_msg_mode = args["-V"]
 
     ctrl_arg = {

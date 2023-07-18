@@ -35,6 +35,8 @@ def start_server(server_port, func, interval_sec, msg_count=0):
         logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
         time.sleep(sleep_sec)
 
+    logging.info("Stop control server")
+
 
 # NOTE: Last Value Caching Proxy
 # see https://zguide.zeromq.org/docs/chapter5/
