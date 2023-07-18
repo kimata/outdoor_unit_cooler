@@ -42,6 +42,7 @@ sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
 import control_pubsub
 from actuator import (
+    init_actuator,
     set_cooling_state,
     get_valve_status,
     send_valve_condition,
@@ -290,10 +291,6 @@ def start(
     logging.info("Using config config: {config_file}".format(config_file=config_file))
     config = load_config(config_file)
 
-    # NOTE: Raspberry Pi 以外で実行したときに，valve の中でそれをログ通知したいので，
-    # ロガーを初期化した後に import する
-    import valve
-
     if not dummy_mode:
         # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
         # なり，電磁弁の故障を誤判定する可能性がある．
@@ -311,7 +308,7 @@ def start(
 
     logging.info("Initialize valve")
     init(config, log_event_queue)
-    valve.init(config["actuator"]["valve"]["pin_no"])
+    init_actuator(config["actuator"]["valve"]["pin_no"])
 
     # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
     pool = ThreadPool(processes=3)

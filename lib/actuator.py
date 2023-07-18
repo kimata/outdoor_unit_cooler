@@ -3,11 +3,21 @@
 import pathlib
 import time
 import logging
-import valve
 
 from work_log import work_log, WORK_LOG_LEVEL
 
 HAZARD_NOTIFY_INTERVAL_MIN = 30
+
+actuator_valve = None
+
+
+def init_actuator(pin_no):
+    global actuator_valve
+
+    import valve
+
+    actuator_valve = valve
+    actuator_valve.init(pin_no)
 
 
 def notify_hazard(config, message):
@@ -22,7 +32,7 @@ def notify_hazard(config, message):
         work_log(message, WORK_LOG_LEVEL.ERROR)
         pathlib.Path(config["actuator"]["hazard"]["file"]).touch()
 
-    valve.set_state(valve.VALVE_STATE.CLOSE)
+    actuator_valve.set_state(actuator_valve.VALVE_STATE.CLOSE)
 
 
 def check_hazard(config):
@@ -35,25 +45,25 @@ def check_hazard(config):
 
 def set_cooling_state(config, cooling_mode):
     if check_hazard(config):
-        cooling_mode = {"state": valve.COOLING_STATE.IDLE}
+        cooling_mode = {"state": actuator_valve.COOLING_STATE.IDLE}
 
-    return valve.set_cooling_state(cooling_mode)
+    return actuator_valve.set_cooling_state(cooling_mode)
 
 
 def get_valve_status():
-    return valve.get_status()
+    return actuator_valve.get_status()
 
 
 def stop_valve_monitor():
-    valve.stop_flow_monitor()
+    actuator_valve.stop_flow_monitor()
 
 
 def check_valve_condition(config, valve_status):
     logging.debug("Check valve condition")
 
     flow = -1
-    if valve_status["state"] == valve.VALVE_STATE.OPEN:
-        flow = valve.get_flow()
+    if valve_status["state"] == actuator_valve.VALVE_STATE.OPEN:
+        flow = actuator_valve.get_flow()
         check_valve_condition.last_flow = flow
         if (flow is not None) and (valve_status["duration"] > 10):
             # バルブが開いてから時間が経っている場合
@@ -80,9 +90,9 @@ def check_valve_condition(config, valve_status):
         ) and (check_valve_condition.last_flow == 0):
             # バルブが閉じてから長い時間が経っていて流量も 0 の場合，センサーを停止する
             flow = 0.0
-            valve.stop_sensing()
+            actuator_valve.stop_sensing()
         else:
-            flow = valve.get_flow()
+            flow = actuator_valve.get_flow()
             check_valve_condition.last_flow = flow
             if (
                 (valve_status["duration"] > 120)
