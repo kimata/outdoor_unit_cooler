@@ -4,13 +4,13 @@
 エアコン室外機の冷却を行うと共に流量を Fluentd に送信します
 
 Usage:
-  unit_cooler.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-O] [-D] [-t SPEEDUP] [-d]
+  unit_cooler.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-n COUNT] [-D] [-t SPEEDUP] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
   -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
-  -O                : 1回のみ実行
+  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし．[default: 0]
   -D                : ダミーモードで実行します．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
@@ -82,7 +82,7 @@ def queue_put(config, cmd_queue, message):
 
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
-def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=False):
+def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
     logging.info(
         "Start command receive worker ({host}:{port})".format(
             host=control_host, port=pub_port
@@ -93,7 +93,7 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=Fa
             control_host,
             pub_port,
             lambda message: queue_put(config, cmd_queue, message),
-            is_one_time,
+            msg_count,
         )
         return 0
     except:
@@ -103,12 +103,10 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=Fa
 
 
 # NOTE: バルブを制御するワーカ
-def valve_ctrl_worker(
-    config, cmd_queue, dummy_mode=False, speedup=1, is_one_time=False
-):
+def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=0):
     global recv_cooling_mode
 
-    logging.info("Start control worker")
+    logging.info("Start valve control worker")
 
     if dummy_mode:
         logging.warning("DUMMY mode")
@@ -116,8 +114,8 @@ def valve_ctrl_worker(
     cooling_mode = {"state": COOLING_STATE.IDLE}
     interval_sec = config["actuator"]["interval_sec"] / speedup
     receive_time = datetime.datetime.now()
-    is_receive = False
     mode_index_prev = -1
+    receive_count = 0
     try:
         while True:
             start_time = time.time()
@@ -125,10 +123,10 @@ def valve_ctrl_worker(
             if not cmd_queue.empty():
                 while not cmd_queue.empty():
                     cooling_mode = cmd_queue.get()
+                    receive_count += 1
 
                 recv_cooling_mode = cooling_mode
                 receive_time = datetime.datetime.now()
-                is_receive = True
                 logging.info(
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
@@ -148,8 +146,9 @@ def valve_ctrl_worker(
 
             pathlib.Path(config["actuator"]["liveness"]["file"]).touch()
 
-            if is_one_time and is_receive:
-                return 0
+            if msg_count != 0:
+                if receive_count >= msg_count:
+                    break
 
             if (datetime.datetime.now() - receive_time).total_seconds() > config[
                 "controller"
@@ -163,8 +162,11 @@ def valve_ctrl_worker(
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
+
+        logging.info("Stop valve control worker")
+        return 0
     except:
-        logging.error("Stop control worker")
+        logging.error("Stop valve control worker")
         notify_error(config, traceback.format_exc())
         return -1
 
@@ -273,10 +275,19 @@ def log_server_start(config, queue):
     )
 
 
-def start(
-    config_file, control_host, pub_port, dummy_mode, speedup, is_one_time, debug_mode
-):
-    if debug_mode:
+def start(arg):
+    setting = {
+        "config_file": config_file,
+        "control_host": control_host,
+        "pub_port": pub_port,
+        "dummy_mode": dummy_mode,
+        "speedup": speedup,
+        "msg_count": msg_count,
+        "debug_mode": debug_mode,
+    }
+    setting.update(arg)
+
+    if setting["debug_mode"]:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
@@ -288,14 +299,14 @@ def start(
     )
 
     # NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
-    if dummy_mode:
+    if setting["dummy_mode"]:
         logging.warning("Set dummy mode")
         os.environ["DUMMY_MODE"] = "true"
 
     logging.info("Using config config: {config_file}".format(config_file=config_file))
-    config = load_config(config_file)
+    config = load_config(setting["config_file"])
 
-    if not dummy_mode:
+    if not setting["dummy_mode"]:
         # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
         # なり，電磁弁の故障を誤判定する可能性がある．
         for i in range(config["actuator"]["interval_sec"]):
@@ -320,18 +331,33 @@ def start(
     result_list = []
     result_list.append(
         pool.apply_async(
-            cmd_receive_worker, (config, control_host, pub_port, cmd_queue, is_one_time)
+            cmd_receive_worker,
+            (
+                config,
+                setting["control_host"],
+                setting["pub_port"],
+                cmd_queue,
+                setting["msg_count"],
+            ),
         )
     )
 
     result_list.append(
         pool.apply_async(
-            valve_ctrl_worker, (config, cmd_queue, dummy_mode, speedup, is_one_time)
+            valve_ctrl_worker,
+            (
+                config,
+                cmd_queue,
+                setting["dummy_mode"],
+                setting["speedup"],
+                setting["msg_count"],
+            ),
         )
     )
     result_list.append(
         pool.apply_async(
-            valve_monitor_worker, (config, dummy_mode, speedup, is_one_time)
+            valve_monitor_worker,
+            (config, setting["dummy_mode"], setting["speedup"], setting["msg_count"]),
         )
     )
     pool.close()
@@ -367,15 +393,17 @@ if __name__ == "__main__":
     pub_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
     dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
     speedup = int(args["-t"])
-    is_one_time = args["-O"]
+    msg_count = int(args["-n"])
     debug_mode = args["-d"]
 
-    start(
-        config_file,
-        control_host,
-        pub_port,
-        dummy_mode,
-        speedup,
-        is_one_time,
-        debug_mode,
-    )
+    app_arg = {
+        "config_file": config_file,
+        "control_host": control_host,
+        "pub_port": pub_port,
+        "dummy_mode": dummy_mode,
+        "speedup": speedup,
+        "msg_count": msg_count,
+        "debug_mode": debug_mode,
+    }
+
+    start(app_arg)

@@ -153,7 +153,7 @@ if __name__ == "__main__":
     msg_count = int(args["-n"])
     view_msg_mode = args["-V"]
 
-    ctrl_arg = {
+    app_arg = {
         "config_file": config_file,
         "server_host": server_host,
         "real_port": real_port,
@@ -166,4 +166,4 @@ if __name__ == "__main__":
         "msg_count": msg_count,
     }
 
-    start(ctrl_arg)
+    start(app_arg)
