@@ -14,6 +14,8 @@ actuator_valve = None
 def init_actuator(pin_no):
     global actuator_valve
 
+    # NOTE: Raspberry Pi 以外で実行したときに，GPIO をダミーで差し替え，
+    # valve の中でそれをログ通知したいので，初期化関数の中で import する
     import valve
 
     actuator_valve = valve
