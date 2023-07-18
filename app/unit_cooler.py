@@ -67,7 +67,7 @@ def sig_handler(num, frame):
         should_terminate = True
 
 
-def notify_hazard(message):
+def notify_hazard(config, message):
     import valve
 
     if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
@@ -86,7 +86,7 @@ def notify_hazard(message):
 
 def check_hazard(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard("水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
+        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
         return True
     else:
         return False
@@ -121,7 +121,9 @@ def check_valve_status(config, valve_status):
                     WORK_LOG_LEVEL.ERROR,
                 )
             elif flow > config["actuator"]["valve"]["on"]["max"]:
-                notify_hazard("水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
+                notify_hazard(
+                    config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
+                )
     else:
         logging.debug(
             "Valve is close for {duration:.1f} sec".format(
@@ -143,6 +145,7 @@ def check_valve_status(config, valve_status):
                 and (flow > config["actuator"]["valve"]["off"]["max"])
             ):
                 notify_hazard(
+                    config,
                     (
                         "電磁弁が壊れていますので制御を停止します．"
                         + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
