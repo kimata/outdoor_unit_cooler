@@ -68,6 +68,8 @@ def sig_handler(num, frame):
 
 
 def notify_hazard(message):
+    import valve
+
     if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
         (
             time.time()
@@ -90,7 +92,9 @@ def check_hazard(config):
         return False
 
 
-def set_cooling_state(cooling_mode):
+def set_cooling_state(config, cooling_mode):
+    import valve
+
     if check_hazard(config):
         cooling_mode = {"state": valve.COOLING_STATE.IDLE}
 
@@ -98,6 +102,8 @@ def set_cooling_state(cooling_mode):
 
 
 def check_valve_status(config, valve_status):
+    import valve
+
     logging.debug("Check valve")
 
     flow = -1
@@ -205,6 +211,8 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=Fa
 def valve_ctrl_worker(
     config, cmd_queue, dummy_mode=False, speedup=1, is_one_time=False
 ):
+    import valve
+
     global recv_cooling_mode
 
     logging.info("Start control worker")
@@ -243,7 +251,7 @@ def valve_ctrl_worker(
             if check_hazard(config):
                 cooling_mode = {"state": valve.COOLING_STATE.IDLE}
 
-            set_cooling_state(cooling_mode)
+            set_cooling_state(config, cooling_mode)
 
             pathlib.Path(config["actuator"]["liveness"]["file"]).touch()
 
@@ -270,6 +278,8 @@ def valve_ctrl_worker(
 
 # NOTE: バルブの状態をモニタするワーカ
 def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False):
+    import valve
+
     logging.info("Start monitor worker")
 
     sender = None
