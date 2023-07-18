@@ -167,7 +167,7 @@ test-webapp-docker:
     stage: test
     needs: ["build-image"]
     
-    image: registry.green-rabbit.net:5000/kimata/local_playwright:01323795
+    image: registry.green-rabbit.net:5000/kimata/local_playwright:230715B
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
