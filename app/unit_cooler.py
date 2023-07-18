@@ -277,13 +277,13 @@ def log_server_start(config, queue):
 
 def start(arg):
     setting = {
-        "config_file": config_file,
-        "control_host": control_host,
-        "pub_port": pub_port,
-        "dummy_mode": dummy_mode,
-        "speedup": speedup,
-        "msg_count": msg_count,
-        "debug_mode": debug_mode,
+        "config_file": "config.yaml",
+        "control_host": "localhost",
+        "pub_port": 2222,
+        "dummy_mode": False,
+        "speedup": 1,
+        "msg_count": 0,
+        "debug_mode": False,
     }
     setting.update(arg)
 
@@ -303,7 +303,9 @@ def start(arg):
         logging.warning("Set dummy mode")
         os.environ["DUMMY_MODE"] = "true"
 
-    logging.info("Using config config: {config_file}".format(config_file=config_file))
+    logging.info(
+        "Using config config: {config_file}".format(config_file=setting["config_file"])
+    )
     config = load_config(setting["config_file"])
 
     if not setting["dummy_mode"]:
@@ -375,13 +377,17 @@ def start(arg):
     # NOTE: 終了した場合に，Web サーバも終了するようにしておく
     atexit.register(terminate_log_server)
 
+    return (result_list, log_p)
+
+
+def wait_and_term(result_list, log_p):
     for result in result_list:
         if result.get() != 0:
             sys.exit(-1)
 
-    terminate_log_server()
-
-    sys.exit(0)
+    log_p.kill()
+    webapp_event.stop_watch()
+    webapp_log.term()
 
 
 ######################################################################
@@ -390,7 +396,7 @@ if __name__ == "__main__":
 
     config_file = args["-c"]
     control_host = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
-    pub_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
+    pub_port = int(os.environ.get("HEMS_PUB_PORT", args["-p"]))
     dummy_mode = os.environ.get("DUMMY_MODE", args["-D"])
     speedup = int(args["-t"])
     msg_count = int(args["-n"])
@@ -406,4 +412,6 @@ if __name__ == "__main__":
         "debug_mode": debug_mode,
     }
 
-    start(app_arg)
+    wait_and_term(*start(app_arg))
+
+    sys.exit(0)

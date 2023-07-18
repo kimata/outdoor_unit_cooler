@@ -57,23 +57,32 @@ def test_client(server_host, server_port):
 # NOTE: Last Value Caching Proxy
 def cache_proxy_start(config, server_host, real_port, server_port, msg_count):
     try:
-        threading.Thread(
+        thread = threading.Thread(
             target=control_pubsub.start_proxy,
             args=(server_host, real_port, server_port, msg_count),
-        ).start()
+        )
+        thread.start()
+
+        return thread
     except:
         notify_error(config, traceback.format_exc())
         raise
 
 
-def server_start(config, real_port, dummy_mode, speedup, msg_count):
+def control_server_start(config, real_port, dummy_mode, speedup, msg_count):
     try:
-        control_pubsub.start_server(
-            real_port,
-            lambda: gen_control_msg(config, dummy_mode, speedup),
-            config["controller"]["interval_sec"] / speedup,
-            msg_count,
+        thread = threading.Thread(
+            target=control_pubsub.start_server,
+            args=(
+                real_port,
+                lambda: gen_control_msg(config, dummy_mode, speedup),
+                config["controller"]["interval_sec"] / speedup,
+                msg_count,
+            ),
         )
+        thread.start()
+
+        return thread
     except:
         notify_error(config, traceback.format_exc())
         raise
@@ -103,9 +112,10 @@ def start(arg):
 
     if setting["client_mode"]:
         test_client(setting["server_host"], setting["server_port"])
-        sys.exit(0)
+        return
     elif setting["view_msg_mode"]:
         print_control_msg()
+        return
 
     logging.info("Start controller (port: {port})".format(port=setting["server_port"]))
 
@@ -119,23 +129,30 @@ def start(arg):
         os.environ["DUMMY_MODE"] = "true"
 
     try:
-        cache_proxy_start(
+        proxy_thread = cache_proxy_start(
             config,
             setting["server_host"],
             setting["real_port"],
             setting["server_port"],
             setting["msg_count"],
         )
-        server_start(
+        control_thread = control_server_start(
             config,
             setting["real_port"],
             setting["dummy_mode"],
             setting["speedup"],
             setting["msg_count"],
         )
+
+        return (proxy_thread, control_thread)
     except:
         notify_error(config, traceback.format_exc())
         raise
+
+
+def wait_and_term(proxy_thread, control_thread):
+    proxy_thread.join()
+    control_thread.join()
 
 
 ######################################################################
@@ -143,8 +160,8 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     config_file = args["-c"]
-    server_port = os.environ.get("HEMS_SERVER_PORT", args["-p"])
-    real_port = args["-r"]
+    server_port = int(os.environ.get("HEMS_SERVER_PORT", args["-p"]))
+    real_port = int(args["-r"])
     dummy_mode = args["-D"]
     speedup = int(args["-t"])
     debug_mode = args["-d"]
@@ -166,4 +183,6 @@ if __name__ == "__main__":
         "msg_count": msg_count,
     }
 
-    start(app_arg)
+    wait_and_term(*start(app_arg))
+
+    sys.exit(0)

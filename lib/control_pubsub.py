@@ -5,13 +5,14 @@ import zmq
 import json
 import logging
 import time
+import traceback
 
 CH = "unit_cooler"
 SER_TIMEOUT = 10
 
 
 def start_server(server_port, func, interval_sec, msg_count=0):
-    logging.info("Start control server (port: {port})...".format(port=server_port))
+    logging.info("Start ZMQ server (port: {port})...".format(port=server_port))
 
     context = zmq.Context()
 
@@ -21,28 +22,33 @@ def start_server(server_port, func, interval_sec, msg_count=0):
     logging.info("Server initialize done.")
 
     i = 0
-    while True:
-        start_time = time.time()
-        socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
+    try:
+        while True:
+            start_time = time.time()
+            socket.send_string(
+                "{ch} {json_str}".format(ch=CH, json_str=json.dumps(func()))
+            )
 
-        if msg_count != 0:
-            # NOTE: Proxy が間に入るので，1回多く回す
-            if i == msg_count:
-                break
-            i += 1
+            if msg_count != 0:
+                # NOTE: Proxy が間に入るので，1回多く回す
+                if i == msg_count:
+                    break
+                i += 1
 
-        sleep_sec = interval_sec - (time.time() - start_time)
-        logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
-        time.sleep(sleep_sec)
+            sleep_sec = interval_sec - (time.time() - start_time)
+            logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
+            time.sleep(sleep_sec)
+    except:
+        logging.error(traceback.format_exc())
 
-    logging.info("Stop control server")
+    logging.info("Stop ZMQ server")
 
 
 # NOTE: Last Value Caching Proxy
 # see https://zguide.zeromq.org/docs/chapter5/
 def start_proxy(server_host, server_port, proxy_port, msg_count=0):
     logging.info(
-        "Start proxy server (front: {server_host}:{server_port}, port: {port})...".format(
+        "Start ZMQ proxy server (front: {server_host}:{server_port}, port: {port})...".format(
             server_host=server_host, server_port=server_port, port=proxy_port
         )
     )
@@ -66,7 +72,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
     while True:
         try:
             events = dict(poller.poll(1000))
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # pragma: no cover
             break
 
         if frontend in events:
@@ -74,6 +80,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
             ch, json_str = recv_data.split(" ", 1)
             logging.debug("Store cache")
             cache[ch] = json_str
+
             backend.send_string(recv_data)
 
         if msg_count != 0:
@@ -95,11 +102,13 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )
                 else:
-                    logging.warn("Cache is empty")
+                    logging.warning("Cache is empty")
+
+    logging.info("Stop ZMQ proxy server")
 
 
 def start_client(server_host, server_port, func, msg_count=0):
-    logging.info("Start control client...")
+    logging.info("Start ZMQ client...")
 
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
@@ -121,12 +130,15 @@ def start_client(server_host, server_port, func, msg_count=0):
             if i == msg_count:
                 break
 
+    logging.info("Stop ZMQ client")
+
     socket.disconnect(target)
     socket.close()
     context.destroy()
 
 
-def get_last_message(server_host, server_port):
+# NOTE: 現在は使用していない
+def get_last_message(server_host, server_port):  # pragma: no cover
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     target = "tcp://{host}:{port}".format(host=server_host, port=server_port)

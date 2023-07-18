@@ -5,23 +5,27 @@
 水やりを自動化するアプリのサーバーです
 
 Usage:
-  webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-D]
+  webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-n COUNT] [-D]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
   -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
   -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -a ACTUATOR_HOST  : アクチュエータのホスト名を指定します． [default: localhost]
+  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし．[default: 0]
   -D                : ダミーモードで実行します．
 """
 
 from docopt import docopt
 
+import os
 from flask import Flask
 from flask_cors import CORS
 import sys
 import pathlib
 import logging
+from multiprocessing import Queue
+import threading
 from socket import getaddrinfo
 from socket import AF_INET, SOCK_STREAM
 
@@ -33,6 +37,10 @@ import control_pubsub
 import webapp_base
 import webapp_util
 import webapp_log_proxy
+import logger
+from config import load_config
+
+watch_thread = None
 
 
 def nslookup(hostname):
@@ -65,12 +73,7 @@ def queuing_message(config, message_queue, message):
     pathlib.Path(config["web"]["liveness"]["file"]).touch()
 
 
-def watch_client(
-    config,
-    server_host,
-    server_port,
-    message_queue,
-):
+def watch_client(config, server_host, server_port, message_queue, msg_count):
     logging.info(
         "Start watch client (host: {host}:{port})".format(
             host=server_host, port=server_port
@@ -80,41 +83,60 @@ def watch_client(
         server_host,
         server_port,
         lambda message: queuing_message(config, message_queue, message),
+        msg_count,
     )
 
 
-def start(config_file, server_hostname, server_port, actuator_hostname, dummy_mode):
-    server_host = nslookup(server_hostname)
-    actuator_host = nslookup(actuator_hostname)
+def create_app(arg):
+    global watch_thread
+    setting = {
+        "config_file": "config.yaml",
+        "control_host": "localhost",
+        "pub_port": 2222,
+        "actuator_host": "localhost",
+        "dummy_mode": False,
+        "msg_count": 0,
+    }
+    setting.update(arg)
+
+    control_host = nslookup(setting["control_host"])
+    actuator_host = nslookup(setting["actuator_host"])
 
     logger.init("hems.unit_cooler", level=logging.INFO)
 
     logging.info(
-        "Using ZMQ server of {server_host}:{server_port} (hostname: {server_hostname})".format(
-            server_hostname=server_hostname,
-            server_host=server_host,
-            server_port=server_port,
+        "Using ZMQ server of {control_host}:{control_port} (hostname: {hostname})".format(
+            control_host=setting["control_host"],
+            control_port=setting["pub_port"],
+            hostname=control_host,
         )
     )
-    config = load_config(config_file)
+    config = load_config(setting["config_file"])
 
     # NOTE: オプションでダミーモードが指定された場合，環境変数もそれに揃えておく
-    if dummy_mode:
+    if setting["dummy_mode"]:
         os.environ["DUMMY_MODE"] = "true"
     else:
         os.environ["DUMMY_MODE"] = "false"
 
     message_queue = Queue()
-    threading.Thread(
+    watch_thread = threading.Thread(
         target=watch_client,
-        args=(config, server_host, server_port, message_queue),
-    ).start()
+        args=(
+            config,
+            setting["control_host"],
+            setting["pub_port"],
+            message_queue,
+            setting["msg_count"],
+        ),
+    )
+    watch_thread.start()
 
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if dummy_mode:
+        if setting["dummy_mode"]:
             logging.warning("Set dummy mode")
 
     app = Flask("unit_cooler")
@@ -122,8 +144,8 @@ def start(config_file, server_hostname, server_port, actuator_hostname, dummy_mo
     CORS(app)
 
     app.config["CONFIG"] = config
-    app.config["SERVER_HOST"] = server_host
-    app.config["SERVER_PORT"] = server_port
+    app.config["SERVER_HOST"] = setting["control_host"]
+    app.config["SERVER_PORT"] = setting["pub_port"]
     app.config["MESSAGE_QUEUE"] = message_queue
 
     app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
@@ -135,26 +157,35 @@ def start(config_file, server_hostname, server_port, actuator_hostname, dummy_mo
     app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    webapp_log_proxy.init("http://{host}:5001/unit_cooler".format(host=actuator_host))
+    webapp_log_proxy.init(
+        "http://{host}:5001/unit_cooler".format(host=setting["actuator_host"])
+    )
 
     # app.debug = True
-    # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
-    app.run(host="0.0.0.0", threaded=True, use_reloader=True)
+
+    return app
 
 
 if __name__ == "__main__":
-    import logger
-    from config import load_config
-    from multiprocessing import Queue
-    import threading
-    import os
-
     args = docopt(__doc__)
 
     config_file = args["-c"]
-    server_hostname = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
-    server_port = os.environ.get("HEMS_PUB_PORT", args["-p"])
-    actuator_hostname = os.environ.get("HEMS_ACTUATOR_HOST", args["-a"])
+    control_host = os.environ.get("HEMS_CONTROL_HOST", args["-s"])
+    pub_port = int(os.environ.get("HEMS_PUB_PORT", args["-p"]))
+    actuator_host = os.environ.get("HEMS_ACTUATOR_HOST", args["-a"])
     dummy_mode = args["-D"]
+    msg_count = int(args["-n"])
 
-    start(config_file, server_hostname, server_port, actuator_hostname, dummy_mode)
+    app_arg = {
+        "config_file": config_file,
+        "control_host": control_host,
+        "pub_port": pub_port,
+        "actuator_host": actuator_host,
+        "dummy_mode": dummy_mode,
+        "msg_count": msg_count,
+    }
+
+    app = create_app(app_arg)
+
+    # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
+    app.run(host="0.0.0.0", threaded=True, use_reloader=True)

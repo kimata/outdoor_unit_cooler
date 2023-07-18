@@ -151,10 +151,13 @@ def print_control_msg():
                     off_sec=int(control_msg["duty"]["off_sec"]),
                     on_ratio=100.0
                     * control_msg["duty"]["on_sec"]
-                    / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"]),
+                    / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"])
+                    if (
+                        (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"])
+                        != 0
+                    )
+                    else 0,
                 )
             )
         else:
             logging.info("state: {state}".format(state=control_msg["state"].name))
-
-    sys.exit(0)
