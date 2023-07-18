@@ -115,9 +115,9 @@ def check_valve_condition(config, valve_status):
 check_valve_condition.last_flow = 0
 
 
-def send_valve_condition(sender, hostname, valve_condition, dummy_mode=False):
-    global recv_cooling_mode
-
+def send_valve_condition(
+    sender, hostname, recv_cooling_mode, valve_condition, dummy_mode=False
+):
     # NOTE: 少し加工して送りたいので，まずコピーする
     send_data = {"state": valve_condition["state"]}
 

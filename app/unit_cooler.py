@@ -98,7 +98,7 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, is_one_time=Fa
         return 0
     except:
         logging.error("Stop receive worker")
-        notify_error(traceback.format_exc(), True)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
@@ -154,7 +154,7 @@ def valve_ctrl_worker(
             if (datetime.datetime.now() - receive_time).total_seconds() > config[
                 "controller"
             ]["interval_sec"] * 10:
-                notify_error("Unable to receive command.", True)
+                notify_error(config, "Unable to receive command.")
 
             if should_terminate:
                 logging.info("Terminate control worker")
@@ -165,12 +165,14 @@ def valve_ctrl_worker(
             time.sleep(sleep_sec)
     except:
         logging.error("Stop control worker")
-        notify_error(traceback.format_exc(), True)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
 # NOTE: バルブの状態をモニタするワーカ
 def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False):
+    global recv_cooling_mode
+
     logging.info("Start monitor worker")
 
     sender = None
@@ -180,7 +182,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
         )
         hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
     except:
-        notify_error("Failed to initialize monitor worker", True)
+        notify_error(config, "Failed to initialize monitor worker")
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
     if interval_sec < 60:
@@ -197,7 +199,9 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             valve_status = get_valve_status()
             valve_condition = check_valve_condition(config, valve_status)
 
-            send_valve_condition(sender, hostname, valve_condition, dummy_mode)
+            send_valve_condition(
+                sender, hostname, recv_cooling_mode, valve_condition, dummy_mode
+            )
 
             if (i % log_period) == 0:
                 logging.info(
@@ -237,7 +241,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
             time.sleep(sleep_sec)
     except:
         logging.error("Stop monitor worker")
-        notify_error(traceback.format_exc(), True)
+        notify_error(config, traceback.format_exc())
         return -1
 
 
