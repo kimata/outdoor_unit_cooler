@@ -10,7 +10,7 @@ stages:
 build-react:
     stage: build-webapp
     
-    image: node:20.3
+    image: node:20.4
     script:
         - cd react
         - npm ci --cache .npm --prefer-offline
@@ -167,7 +167,7 @@ test-webapp-docker:
     stage: test
     needs: ["build-image"]
     
-    image: registry.green-rabbit.net:5000/kimata/local_playwright:230715B
+    image: registry.green-rabbit.net:5000/kimata/local_playwright:230715C
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
