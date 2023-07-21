@@ -11,7 +11,7 @@ import logging.handlers
 import pprint
 import time
 
-import io_link as io_link
+import sensor.io_link as io_link
 
 DEBUG = True
 
@@ -26,7 +26,7 @@ def error(message):
 
 
 def warn(message):
-    logging.warn(message)
+    logging.warning(message)
 
 
 def info(message):
@@ -38,11 +38,17 @@ def debug(message):
 
 
 def dump_byte_list(label, byte_list):
-    logging.debug("{}: {}".format(label, ", ".join(hex(x) for x in byte_list)))
+    logging.debug(
+        "{}: {}".format(label, ", ".join("0x{v:02X}".format(v=v) for v in byte_list))
+    )
 
 
 def ltc2874_reg_read(spi, reg):
-    return spi.xfer2([(0x00 << 5) | (reg << 1), 0x00])[1]
+    recv = spi.xfer2([(0x00 << 5) | (reg << 1), 0x00])
+
+    dump_byte_list("SPI READ", recv)
+
+    return recv[1]
 
 
 def ltc2874_reg_write(spi, reg, data):
@@ -140,7 +146,7 @@ def com_write(spi, ser, byte_list):
     # Drive enable
     ltc2874_reg_write(spi, 0x0D, 0x01)
 
-    dump_byte_list("SEND", byte_list)
+    dump_byte_list("COM SEND", byte_list)
 
     ser.write(struct.pack("{}B".format(len(byte_list)), *byte_list))
     ser.flush()
@@ -153,7 +159,7 @@ def com_read(spi, ser, length):
     recv = ser.read(length)
     byte_list = struct.unpack("{}B".format(len(recv)), recv)
 
-    dump_byte_list("RECV", byte_list)
+    dump_byte_list("COM RECV", byte_list)
 
     return byte_list
 
@@ -264,7 +270,7 @@ def isdu_read(spi, ser, index, data_type):
         elif (header >> 4) == 0x0C:
             error("ERROR reponse")
         else:
-            logging.warn("INVALID response: %s" % pprint.pformat(header))
+            warn("INVALID response: %s" % pprint.pformat(header))
             error("INVALID reponse")
 
     for x in range(remain - 1):

@@ -30,6 +30,11 @@ TEMP_THRESHOLD_HIGH_L = 32
 # 屋外の温度がこの値を超えていたら，冷却の強度を少し強める
 TEMP_THRESHOLD_MID = 29
 
+# 最低でもこの時間は ON にする (テスト時含む)
+ON_SEC_MIN = 10
+# 最低でもこの時間は OFF にする (テスト時含む)
+OFF_SEC_MIN = 10
+
 
 MESSAGE_LIST = [
     # 0
@@ -221,8 +226,8 @@ COOLER_CONDITION = [
 ]
 
 
-# NOTE: クーラーの稼働状況を 5 段階で評価する．
-# (5 がフル稼働，0 が非稼働)
+# NOTE: クーラーの稼働状況を評価する．
+# (数字が大きいほど稼働状況が活発)
 def get_cooler_status(sense_data):
     mode_map = {}
 
@@ -244,8 +249,8 @@ def get_cooler_status(sense_data):
             }
 
 
-# NOTE: 外部環境の状況を 5 段階で評価する．
-# (-2 が冷却停止, 0 が中立, 2 が強める)
+# NOTE: 外部環境の状況を評価する．
+# (数字が大きいほど冷却を強める)
 def get_outdoor_status(sense_data):
     logging.info(
         "気温: {temp:.1f} ℃, 湿度: {humi:.1f} %, 日射量: {solar_rad:,.0f} W/m^2, 照度: {lux:,.0f} LUX".format(

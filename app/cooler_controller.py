@@ -47,10 +47,8 @@ def test_client(server_host, server_port):
     control_pubsub.start_client(
         server_host,
         server_port,
-        lambda message: (
-            logging.info("receive: {message}".format(message=message)),
-            os._exit(0),
-        ),
+        lambda message: logging.info("receive: {message}".format(message=message)),
+        1,
     )
 
 
@@ -128,14 +126,9 @@ def start(arg):
         logging.warning("DUMMY mode")
         os.environ["DUMMY_MODE"] = "true"
 
+    proxy_thread = None
+    control_thread = None
     try:
-        proxy_thread = cache_proxy_start(
-            config,
-            setting["server_host"],
-            setting["real_port"],
-            setting["server_port"],
-            setting["msg_count"],
-        )
         control_thread = control_server_start(
             config,
             setting["real_port"],
@@ -143,16 +136,25 @@ def start(arg):
             setting["speedup"],
             setting["msg_count"],
         )
-
-        return (proxy_thread, control_thread)
+        proxy_thread = cache_proxy_start(
+            config,
+            setting["server_host"],
+            setting["real_port"],
+            setting["server_port"],
+            setting["msg_count"],
+        )
     except:
         notify_error(config, traceback.format_exc())
-        raise
+        pass
+
+    return (control_thread, proxy_thread)
 
 
-def wait_and_term(proxy_thread, control_thread):
-    proxy_thread.join()
-    control_thread.join()
+def wait_and_term(control_thread, proxy_thread):
+    if proxy_thread is not None:
+        proxy_thread.join()
+    if control_thread is not None:
+        control_thread.join()
 
 
 ######################################################################

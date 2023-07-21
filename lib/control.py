@@ -5,7 +5,13 @@ import logging
 import os
 import pathlib
 import sys
-from control_config import MESSAGE_LIST, get_cooler_status, get_outdoor_status
+from control_config import (
+    MESSAGE_LIST,
+    ON_SEC_MIN,
+    OFF_SEC_MIN,
+    get_cooler_status,
+    get_outdoor_status,
+)
 from sensor_data import fetch_data
 import notify_slack
 
@@ -60,22 +66,10 @@ def get_sense_data(config):
 
 
 def dummy_control_mode():
-    import random
-
-    # NOTE: ある程度連続性を持ったランダムな制御量を生成する
-    dice = int(random.random() * 10)
-    if dice < 2:
-        control_mode = max(min(int(random.random() * 15) - 4, 8), 0)
-    elif dice < 8:
-        control_mode = max(
-            min(int(dummy_control_mode.prev_mode + (random.random() - 0.5) * 4), 8), 0
-        )
-    else:
-        control_mode = dummy_control_mode.prev_mode
+    control_mode = (dummy_control_mode.prev_mode + 1) % len(MESSAGE_LIST)
+    dummy_control_mode.prev_mode = control_mode
 
     logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
-
-    dummy_control_mode.prev_mode = control_mode
 
     return control_mode
 
@@ -88,11 +82,15 @@ def judge_control_mode(config):
 
     sense_data = get_sense_data(config)
 
-    cooler_status = get_cooler_status(sense_data)
+    try:
+        cooler_status = get_cooler_status(sense_data)
+    except RuntimeError as e:
+        notify_error(config, e.args[0])
+        cooler_status = {"status": 0, "message": None}
 
     if cooler_status["status"] == 0:
         outdoor_status = {"status": None, "message": None}
-        control_mode = cooler_status["status"]
+        control_mode = 0
     else:
         outdoor_status = get_outdoor_status(sense_data)
         control_mode = max(cooler_status["status"] + outdoor_status["status"], 0)
@@ -132,8 +130,12 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
-        control_msg["duty"]["on_sec"] = int(control_msg["duty"]["on_sec"] / speedup)
-        control_msg["duty"]["off_sec"] = int(control_msg["duty"]["off_sec"] / speedup)
+        control_msg["duty"]["on_sec"] = max(
+            control_msg["duty"]["on_sec"] / speedup, ON_SEC_MIN
+        )
+        control_msg["duty"]["off_sec"] = max(
+            control_msg["duty"]["off_sec"] / speedup, OFF_SEC_MIN
+        )
 
     return control_msg
 

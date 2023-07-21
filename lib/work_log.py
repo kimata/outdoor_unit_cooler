@@ -29,6 +29,10 @@ def init(config_, queue_):
     webapp_log.init(config)
 
 
+def term():
+    webapp_log.term()
+
+
 def work_log(message, level=WORK_LOG_LEVEL.INFO):
     global queue
 

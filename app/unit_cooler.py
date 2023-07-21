@@ -53,7 +53,7 @@ from actuator import (
 )
 import traceback
 from config import load_config
-from work_log import init, work_log, WORK_LOG_LEVEL
+import work_log
 from valve_state import VALVE_STATE, COOLING_STATE
 from control import notify_error
 import webapp_log
@@ -95,6 +95,7 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
             lambda message: queue_put(config, cmd_queue, message),
             msg_count,
         )
+        logging.info("Stop receive worker")
         return 0
     except:
         logging.error("Stop receive worker")
@@ -131,7 +132,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                     "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                 )
                 if mode_index_prev != cooling_mode["mode_index"]:
-                    work_log(
+                    work_log.work_log(
                         "冷却モードが変更されました．({prev} → {cur})".format(
                             prev="init" if mode_index_prev == -1 else mode_index_prev,
                             cur=cooling_mode["mode_index"],
@@ -172,7 +173,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
 
 
 # NOTE: バルブの状態をモニタするワーカ
-def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False):
+def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     global recv_cooling_mode
 
     logging.info("Start monitor worker")
@@ -194,16 +195,18 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
 
     i = 0
     flow_unknown = 0
+    monitor_count = 0
+    ret = 0
     try:
         while True:
             start_time = time.time()
-
             valve_status = get_valve_status()
             valve_condition = check_valve_condition(config, valve_status)
 
             send_valve_condition(
                 sender, hostname, recv_cooling_mode, valve_condition, dummy_mode
             )
+            monitor_count += 1
 
             if (i % log_period) == 0:
                 logging.info(
@@ -224,8 +227,9 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
 
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
-            if is_one_time:
-                return 0
+            if msg_count != 0:
+                if monitor_count >= msg_count:
+                    break
 
             if flow_unknown > config["monitor"]["sense"]["giveup"]:
                 notify_hazard(config, "流量計が使えません．")
@@ -235,16 +239,18 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, is_one_time=False)
                 stop_valve_monitor()
 
             if should_terminate:
-                logging.info("Terminate monitor worker")
+                logging.error("Terminate monitor worker")
                 break
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
-        logging.error("Stop monitor worker")
         notify_error(config, traceback.format_exc())
-        return -1
+        ret = -1
+
+    logging.info("Stop monitor worker")
+    return ret
 
 
 def log_server_start(config, queue):
@@ -261,9 +267,8 @@ def log_server_start(config, queue):
     app.register_blueprint(webapp_log.blueprint)
     app.register_blueprint(webapp_event.blueprint)
 
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        webapp_log.init(config)
-        webapp_event.notify_watch(queue)
+    webapp_log.init(config, is_read_only=True)
+    webapp_event.notify_watch(queue)
 
     # app.debug = True
     # NOTE: Flask 主体ではないので，自動リロードは OFF にする．
@@ -308,7 +313,7 @@ def start(arg):
     )
     config = load_config(setting["config_file"])
 
-    if not setting["dummy_mode"]:
+    if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):
         # NOTE: 動作開始前に待つ．これを行わないと，複数の Pod が電磁弁を制御することに
         # なり，電磁弁の故障を誤判定する可能性がある．
         for i in range(config["actuator"]["interval_sec"]):
@@ -324,7 +329,7 @@ def start(arg):
     log_event_queue = Queue()
 
     logging.info("Initialize valve")
-    init(config, log_event_queue)
+    work_log.init(config, log_event_queue)
     init_actuator(config["actuator"]["valve"]["pin_no"])
 
     # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
@@ -373,6 +378,7 @@ def start(arg):
         log_p.kill()
         webapp_event.stop_watch()
         webapp_log.term()
+        work_log.term()
 
     # NOTE: 終了した場合に，Web サーバも終了するようにしておく
     atexit.register(terminate_log_server)
@@ -388,6 +394,9 @@ def wait_and_term(result_list, log_p):
     log_p.kill()
     webapp_event.stop_watch()
     webapp_log.term()
+    work_log.term()
+
+    sys.stdout.flush()
 
 
 ######################################################################

@@ -22,6 +22,10 @@ def init_actuator(pin_no):
     actuator_valve.init(pin_no)
 
 
+def clear_hazard(config):
+    pathlib.Path(config["actuator"]["hazard"]["file"]).unlink(missing_ok=True)
+
+
 def notify_hazard(config, message):
     if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
         (
@@ -130,7 +134,7 @@ def send_valve_condition(
     send_data["state"] = valve_condition["state"].value
     send_data["hostname"] = hostname
 
-    logging.debug("Send: {valve_condition}".format(valve_condition=send_data))
+    logging.info("Send: {valve_condition}".format(valve_condition=send_data))
 
     if dummy_mode:
         return

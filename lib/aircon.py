@@ -24,12 +24,14 @@ class MODE(Enum):
 def get_cooler_state(aircon_power, temp):
     mode = MODE.OFF
     if temp is None:
-        logging.error("外気温が不明のため，エアコン動作モードを判断できません．")
-        assert temp is not None
+        # NOTE: 外気温がわからないと暖房と冷房の区別がつかないので，致命的エラー扱いにする
+        raise RuntimeError("外気温が不明のため，エアコン動作モードを判断できません．")
 
     if aircon_power["value"] is None:
-        logging.warn(
-            "{name} の消費電力が不明のため，動作モードを判断できません．".format(name=aircon_power["name"])
+        logging.warning(
+            "{name} の消費電力が不明のため，動作モードを判断できません．OFFとみなします．".format(
+                name=aircon_power["name"]
+            )
         )
         return MODE.OFF
 

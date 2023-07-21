@@ -11,7 +11,7 @@ from work_log import work_log
 
 if os.environ.get("DUMMY_MODE", "false") != "true":
     import RPi.GPIO as GPIO
-    import fd_q10c
+    from sensor.fd_q10c import FD_Q10C
 else:
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         logging.warning("Using dummy GPIO")
@@ -39,14 +39,17 @@ else:
         def setwarnings(warnings):
             return
 
-    class fd_q10c:
-        def sense(force_power_on=True):
+    class FD_Q10C:
+        def __init__(self, lock_file="DUMMY", timeout=2):
+            pass
+
+        def get_value(self, force_power_on=True):
             if GPIO.state == VALVE_STATE.OPEN.value:
                 return 1.23
             else:
                 return 0
 
-        def stop():
+        def stop(self):
             return
 
 
@@ -85,7 +88,9 @@ valve_lock = None
 def init(pin=GPIO_PIN_DEFAULT):
     global pin_no
     global valve_lock
+    global fd_q10c
 
+    fd_q10c = FD_Q10C()
     pin_no = pin
     valve_lock = threading.Lock()
 
@@ -168,26 +173,32 @@ def get_status():
 
 
 def stop_flow_monitor():
+    global fd_q10c
+
     fd_q10c.stop()
 
 
 def get_flow(force_power_on=True):
+    global fd_q10c
+
     try:
-        flow = fd_q10c.sense(force_power_on)
+        flow = fd_q10c.get_value(force_power_on)
     except:
         logging.error("バグの可能性あり．")
         logging.error(traceback.format_exc())
         flow = None
 
     if flow is not None:
-        logging.debug("Valve flow = {flow:.2f}".format(flow=flow))
+        logging.info("Valve flow = {flow:.2f}".format(flow=flow))
     else:
-        logging.debug("Valve flow = UNKNOWN")
+        logging.info("Valve flow = UNKNOWN")
 
     return flow
 
 
 def stop_sensing():
+    global fd_q10c
+
     logging.info("Stop flow sensing")
 
     try:

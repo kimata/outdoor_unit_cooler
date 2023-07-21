@@ -5,7 +5,7 @@ import logging
 import requests
 import os
 import json
-import sseclient  # つかうのは sseclient-py，sseclient ではない
+import sseclient  # つかうのは sseclient，sseclient-py ではない
 
 from webapp_config import APP_URL_PREFIX
 from flask_util import support_jsonp, gzipped
@@ -46,14 +46,22 @@ def get_log():
 # ここで /api/event をハンドリングする
 @blueprint.route("/api/event", methods=["GET"])
 def api_event():
+    count = request.args.get("count", 0, type=int)
+
     # NOTE: EventStream を中継する
     def event_stream():
         url = "{base_url}{api_endpoint}".format(
             base_url=api_base_url, api_endpoint="/api/event"
         )
         sse = sseclient.SSEClient(url)
+        i = 0
         for event in sse:
+            logging.error(event.data)
             yield "data: {}\n\n".format(event.data)
+            i += 1
+
+            if i == count:
+                return
 
     res = Response(event_stream(), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")

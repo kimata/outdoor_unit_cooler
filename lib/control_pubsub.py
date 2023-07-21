@@ -35,11 +35,14 @@ def start_server(server_port, func, interval_sec, msg_count=0):
                     break
                 i += 1
 
-            sleep_sec = interval_sec - (time.time() - start_time)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
         logging.error(traceback.format_exc())
+
+    socket.close()
+    context.destroy()
 
     logging.info("Stop ZMQ server")
 
@@ -103,6 +106,10 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                     )
                 else:
                     logging.warning("Cache is empty")
+
+    frontend.close()
+    backend.close()
+    context.destroy()
 
     logging.info("Stop ZMQ proxy server")
 

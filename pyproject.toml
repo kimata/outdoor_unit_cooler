@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "rasp-shutter"
+name = "outdoor_unit_cooler"
 version = "0.1.0"
-description = "電動シャッターを自動制御するアプリです．"
+description = "エアコンが動作を開始すると自動的に室外機へのミスト噴射を行うシステムです．"
 authors = ["KIMATA Tetsuya <kimata@green-rabbit.net>"]
 
 [tool.poetry.dependencies]
@@ -19,9 +19,14 @@ coloredlogs = "^15.0.1"
 pytest-html = "^3.2.0"
 playwright = "^1.36.0"
 pytest-playwright = "^0.3.3"
-schedule = "^1.2.0"
+zmq = "^0.0.0"
+fluent-logger = "^0.10.0"
 pytz = "^2023.3"
 psutil = "^5.9.5"
+spidev = "^3.6"
+pyserial = "^3.5"
+"RPi.GPIO" = "^0.7.1"
+sseclient = "^0.0.27"
 
 [tool.poetry.dev-dependencies]
 
