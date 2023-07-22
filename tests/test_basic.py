@@ -934,12 +934,7 @@ def test_webapp(mocker):
     assert "uptime" in response.json
     assert "loadAverage" in response.json
 
-    response = client.get(
-        "/unit_cooler/api/stat",
-        query_string={
-            "cmd": "clear",
-        },
-    )
+    response = client.get("/unit_cooler/api/stat")
     assert response.status_code == 200
     assert "watering" in response.json
     assert "sensor" in response.json
