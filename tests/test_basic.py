@@ -350,16 +350,22 @@ def test_controller_aircon_mode(mocker):
         create_empty=True,
         last=False,
     ):
-        fetch_data_mock.i += 1
-
-        if (fetch_data_mock.i % 4) == 0:
-            return gen_sensor_data([10])
-        elif (fetch_data_mock.i % 4) == 1:
-            return gen_sensor_data([50])
-        elif (fetch_data_mock.i % 4) == 2:
-            return gen_sensor_data([600])
+        if field == "temp":
+            return gen_sensor_data([30])
+        elif field == "power":
+            fetch_data_mock.i += 1
+            if (fetch_data_mock.i % 5) == 0:
+                return gen_sensor_data([0])
+            elif (fetch_data_mock.i % 5) == 1:
+                return gen_sensor_data([10])
+            elif (fetch_data_mock.i % 5) == 2:
+                return gen_sensor_data([50])
+            elif (fetch_data_mock.i % 5) == 3:
+                return gen_sensor_data([600])
+            else:
+                return gen_sensor_data([1100])
         else:
-            return gen_sensor_data([1100])
+            return gen_sensor_data([30])
 
     fetch_data_mock.i = 0
 
@@ -576,7 +582,6 @@ def test_actuator(mocker):
         {
             "config_file": CONFIG_FILE,
             "speedup": 40,
-            "dummy_mode": True,
             "msg_count": 5,
         }
     )
@@ -717,46 +722,46 @@ def test_actuator_notify_hazard(mocker):
 #     cooler_controller.wait_and_term(*control_handle)
 
 
-# def test_actuator_recv_error(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_recv_error(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     import cooler_controller
-#     import unit_cooler
-#     from control_pubsub import start_client as start_client_orig
+    import cooler_controller
+    import unit_cooler
+    from control_pubsub import start_client as start_client_orig
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     def start_client_mock(server_host, server_port, func, msg_count=0):
-#         start_client_orig(server_host, server_port, func, msg_count)
-#         raise RuntimeError()
+    def start_client_mock(server_host, server_port, func, msg_count=0):
+        start_client_orig(server_host, server_port, func, msg_count)
+        raise RuntimeError()
 
-#     mocker.patch("control_pubsub.start_client", side_effect=start_client_mock)
+    mocker.patch("control_pubsub.start_client", side_effect=start_client_mock)
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
-#     time.sleep(3)
+    control_handle = cooler_controller.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 10,
+        }
+    )
+    time.sleep(3)
 
-#     unit_cooler.wait_and_term(*actuator_handle)
-#     cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
 
 
 def test_actuator_iolink_short(mocker):
