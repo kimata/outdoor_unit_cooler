@@ -3,9 +3,10 @@ exclude_lines =
     pragma: no cover
     if __name__ == .__main__.:
 
-    # config.py
-    def get_db_config
+    # 以下，未使用関数
 
+    # config.py
+    def get_db_config  
 
     # logger.py
     class GZipRotator
@@ -21,21 +22,16 @@ exclude_lines =
     # sensor_data.py
     def get_equip_on_minutes
     def get_equip_mode_period
-    def get_day_sum
     def dump_data
 
-    # # notify_slack.py
-    # def info
-    # def error_img
-    # def error_with_image
+    # notify_slack.py
+    def info
+    def error_img
+    def error_with_image
 
-    # # webapp_event.py
-    # def notify_watch_impl
-    # def notify_watch
-    # def stop_watch
 
-    # # webapp_log.py
-    # elif level == APP_LOG_LEVEL.WARN:
+    # webapp_log.py
+    elif level == APP_LOG_LEVEL.WARN:
 
     # flask_util.py
     def remote_host

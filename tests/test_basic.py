@@ -30,6 +30,7 @@ def clear():
         import actuator
         import valve
         import control
+        import notify_slack
         from config import load_config
 
         config = load_config(CONFIG_FILE)
@@ -40,6 +41,7 @@ def clear():
         actuator.clear_hazard(config)
         control.clear_hist()
         valve.clear_stat()
+        notify_slack.clear_interval()
 
         yield fixture
 
