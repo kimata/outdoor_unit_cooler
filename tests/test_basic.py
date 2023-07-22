@@ -180,6 +180,7 @@ def test_controller(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -213,6 +214,7 @@ def test_controller_start_error_1(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -247,6 +249,7 @@ def test_controller_start_error_2(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -291,6 +294,7 @@ def test_controller_aircon_mode(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -325,6 +329,7 @@ def test_controller_aircon_invalid(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -359,6 +364,7 @@ def test_controller_temp_invalid(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -391,6 +397,7 @@ def test_controller_temp_low(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -405,12 +412,13 @@ def test_test_client(mocker):
 
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "dummy_mode": True,
             "speedup": 40,
             "msg_count": 5,
         }
     )
-    cooler_controller.start({"client_mode": True})
+    cooler_controller.start({"config_file": CONFIG_FILE, "client_mode": True})
 
     cooler_controller.wait_and_term(*control_handle)
 
@@ -423,6 +431,7 @@ def test_controller_sensor_error(mocker):
     cooler_controller.wait_and_term(
         *cooler_controller.start(
             {
+                "config_file": CONFIG_FILE,
                 "speedup": 40,
                 "msg_count": 1,
             }
@@ -450,7 +459,14 @@ def test_controller_dummy_error(mocker):
     mocker.patch("control_pubsub.zmq.Socket.send_string", side_effect=send_string_mock)
 
     cooler_controller.wait_and_term(
-        *cooler_controller.start({"speedup": 40, "msg_count": 1, "dummy_mode": True})
+        *cooler_controller.start(
+            {
+                "config_file": CONFIG_FILE,
+                "speedup": 40,
+                "msg_count": 1,
+                "dummy_mode": True,
+            }
+        )
     )
 
 
@@ -459,6 +475,7 @@ def test_controller_view_msg():
 
     cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "view_msg_mode": True,
         }
     )
@@ -483,6 +500,7 @@ def test_actuator(mocker):
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 2,
@@ -491,6 +509,7 @@ def test_actuator(mocker):
 
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 10,
@@ -640,6 +659,7 @@ def test_actuator_iolink_short(mocker):
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 2,
@@ -648,6 +668,7 @@ def test_actuator_iolink_short(mocker):
 
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 10,
@@ -861,6 +882,7 @@ def test_webapp(mocker):
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 5,
@@ -868,6 +890,7 @@ def test_webapp(mocker):
     )
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 15,
