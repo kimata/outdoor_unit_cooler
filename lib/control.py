@@ -32,9 +32,11 @@ def get_error_hist():
     return error_hist
 
 
-def notify_error(config, message):
+def notify_error(config, message, is_logging=True):
     global error_hist
-    logging.error(message)
+
+    if is_logging:
+        logging.error(message)
 
     if ("slack" not in config) or (os.environ.get("DUMMY_MODE", "false") == "true"):
         return

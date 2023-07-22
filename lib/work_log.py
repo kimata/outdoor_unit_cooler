@@ -40,7 +40,7 @@ def work_log(message, level=WORK_LOG_LEVEL.INFO):
     webapp_log.app_log(message, level)
 
     if level == WORK_LOG_LEVEL.ERROR:
-        notify_error(config, message)
+        notify_error(config, message, False)
 
 
 if __name__ == "__main__":

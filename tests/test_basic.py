@@ -123,22 +123,29 @@ def check_healthz(name):
         return None
 
 
-def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense()):
-    import logging
+def mock_fd_q10c(
+    mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00
+):
     import struct
     import sensor.fd_q10c
 
     spidev_mock = mocker.MagicMock()
-    spidev_mock.xfer2.return_value = [0x00, 0x00]
+    spidev_mock.xfer2.return_value = [0x00, spi_read]
     mocker.patch("spidev.SpiDev", return_value=spidev_mock)
 
     def ser_read_mock(length):
+        ser_read_mock.i += 1
+
+        if ser_read_mock.i == count:
+            raise RuntimeError()
         for trans in ser_trans:
             if trans["send"] == ser_read_mock.write_data:
                 return struct.pack("B" * len(trans["recv"]), *trans["recv"])
 
         logging.warning("Unknown serial transfer")
         return None
+
+    ser_read_mock.i = 0
 
     ser_read_mock.write_data = None
 
@@ -556,6 +563,54 @@ def test_actuator(mocker):
     assert control.get_error_hist() == []
 
 
+def test_actuator_notify_hazard(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control
+    from config import load_config
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    hazard_file = pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"])
+    mtime = time.time() - 12 * 60 * 60
+    hazard_file.touch()
+    os.utime(hazard_file, (mtime, mtime))
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
+    assert control.get_error_hist() == []
+
+    pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"]).unlink(
+        missing_ok=True
+    )
+
+
 # def test_actuator_signal(mocker):
 #     import signal
 
@@ -744,6 +799,34 @@ def test_fd_q10c_short(mocker):
     sensor.fd_q10c.FD_Q10C().get_value()
 
 
+def test_fd_q10c_ext(mocker):
+    import sensor.fd_q10c
+
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans.insert(
+        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD1, 0x18]}
+    )
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+    # FIXME: 注入するパケットを valid なものにして asset 追加要
+
+
+def test_fd_q10c_wait(mocker):
+    import sensor.fd_q10c
+
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans.insert(
+        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0x01, 0x3C]}
+    )
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+
 def test_fd_q10c_checksum(mocker):
     import sensor.fd_q10c
 
@@ -752,6 +835,28 @@ def test_fd_q10c_checksum(mocker):
     mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
     sensor.fd_q10c.FD_Q10C().get_value()
+
+    # FIXME: 注入するパケットを valid なものにして asset 追加要
+
+
+def test_fd_q10c_power_on(mocker):
+    import sensor.fd_q10c
+
+    mock_fd_q10c(mocker, spi_read=0x11)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+    # FIXME: 注入するパケットを valid なものにして asset 追加要
+
+
+def test_fd_q10c_unknown_datatype(mocker):
+    import sensor.fd_q10c
+
+    mock_fd_q10c(mocker)
+
+    sensor.fd_q10c.FD_Q10C().read_param(0x94, sensor.fd_q10c.driver.DATA_TYPE_RAW, True)
+
+    # FIXME: 注入するパケットを valid なものにして asset 追加要
 
 
 def test_fd_q10c_header_error(mocker):
@@ -877,6 +982,7 @@ def test_webapp(mocker):
     import requests
     import webapp
     import webapp_event
+    import webapp_log
     import cooler_controller
     import unit_cooler
 
@@ -968,6 +1074,7 @@ def test_webapp(mocker):
 
     # NOTE: カバレッジのため
     webapp_event.stop_watch()
+    webapp_log.term()
 
 
 def test_terminate():

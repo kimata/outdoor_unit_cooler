@@ -107,7 +107,7 @@ def com_status(spi):
 def com_start(spi):
     if not com_status(spi):
         # Power on, CQ OC Timeout = 480us
-        debug("***** Power-On IO-Link ****")
+        info("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
         time.sleep(5)
     else:
@@ -138,7 +138,7 @@ def com_stop(spi, ser=None, is_power_off=False):
 
     if is_power_off:
         # Power off
-        debug("***** Power-Off IO-Link ****")
+        info("***** Power-Off IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x00)
 
 
@@ -230,10 +230,10 @@ def isdu_res_read(spi, ser, flow):
     data = com_read(spi, ser, 4)[2:]
 
     if len(data) < 2:
-        warn("response is too short")
+        error("response is too short")
         return None
     elif data[1] != msq_checksum([data[0]]):
-        warn("checksum unmatch")
+        error("checksum unmatch")
         return None
 
     return data[0]
@@ -265,13 +265,12 @@ def isdu_read(spi, ser, index, data_type):
                 remain = (header & 0x0F) - 1
             break
         elif header == 0x01:
-            debug("WAIT response")
+            warn("WAIT response")
             continue
         elif (header >> 4) == 0x0C:
             error("ERROR reponse")
         else:
-            warn("INVALID response: %s" % pprint.pformat(header))
-            error("INVALID reponse")
+            error("INVALID response: %s" % pprint.pformat(header))
 
     for x in range(remain - 1):
         data = isdu_res_read(spi, ser, flow & 0xF)

@@ -43,7 +43,7 @@ def notify_hazard(config, message):
 
 def check_hazard(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard(config, "水漏れもしくは電磁弁の故障が過去に検出されているので制御を停止しています．")
+        notify_hazard(config, "過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています．")
         return True
     else:
         return False

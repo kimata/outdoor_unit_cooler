@@ -37,8 +37,9 @@ exclude_lines =
     # # webapp_log.py
     # elif level == APP_LOG_LEVEL.WARN:
 
-    # # flask_util.py
-    # def remote_host
+    # flask_util.py
+    def remote_host
+    def auth_user
 
 [html]
 directory = tests/evidence/coverage
