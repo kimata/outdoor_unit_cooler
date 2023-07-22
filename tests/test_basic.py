@@ -242,7 +242,6 @@ def test_controller_start_error_2(mocker):
     thread_mock.i = 0
 
     mocker.patch("threading.Thread", new=thread_mock)
-    # mocker.patch("threading.Thread.__init__", new=thread_mock)
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
@@ -503,7 +502,7 @@ def test_actuator(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
-            "msg_count": 2,
+            "msg_count": 5,
         }
     )
 
@@ -526,6 +525,9 @@ def test_actuator(mocker):
             )
         ),
     )
+
+    time.sleep(3)
+
     res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
