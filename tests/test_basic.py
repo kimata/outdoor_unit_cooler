@@ -198,6 +198,54 @@ def test_controller(mocker):
     assert check_healthz("controller") is not None
 
 
+def test_controller_influxdb_dummy(mocker):
+    import cooler_controller
+    import control
+
+    def value_mock():
+        value_mock.i += 1
+        if value_mock.i == 1:
+            return None
+        else:
+            return 1
+
+    value_mock.i = 0
+
+    table_entry_mock = mocker.MagicMock()
+    record_mock = mocker.MagicMock()
+    query_api_mock = mocker.MagicMock()
+    mocker.patch.object(
+        record_mock,
+        "get_value",
+        side_effect=value_mock,
+    )
+    mocker.patch.object(
+        record_mock,
+        "get_time",
+        return_value=datetime.datetime.now(datetime.timezone.utc),
+    )
+    table_entry_mock.__iter__.return_value = [record_mock, record_mock]
+    type(table_entry_mock).records = table_entry_mock
+    query_api_mock.query.return_value = [table_entry_mock]
+    mocker.patch(
+        "influxdb_client.InfluxDBClient.query_api",
+        return_value=query_api_mock,
+    )
+
+    cooler_controller.wait_and_term(
+        *cooler_controller.start(
+            {
+                "config_file": CONFIG_FILE,
+                "speedup": 40,
+                "msg_count": 1,
+            }
+        )
+    )
+
+    assert control.get_error_hist() == []
+    assert check_healthz("controller") is not None
+
+
 def test_controller_start_error_1(mocker):
     import cooler_controller
     import control
@@ -230,6 +278,26 @@ def test_controller_start_error_1(mocker):
 
     assert control.get_error_hist() == []
     assert check_healthz("controller") is None
+
+
+def test_controller_influxdb_error(mocker):
+    import cooler_controller
+    import control
+
+    mocker.patch("influxdb_client.InfluxDBClient.query_api", side_effect=RuntimeError())
+
+    cooler_controller.wait_and_term(
+        *cooler_controller.start(
+            {
+                "config_file": CONFIG_FILE,
+                "speedup": 40,
+                "msg_count": 1,
+            }
+        )
+    )
+
+    assert control.get_error_hist() == []
+    assert check_healthz("controller") is not None
 
 
 def test_controller_start_error_2(mocker):
