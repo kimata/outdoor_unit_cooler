@@ -881,6 +881,8 @@ def test_webapp(mocker):
     import unit_cooler
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch("unit_cooler_info.fetch_data", return_value=gen_sensor_data())
+    mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
 
     actuator_handle = unit_cooler.start(
         {
@@ -898,6 +900,8 @@ def test_webapp(mocker):
             "msg_count": 15,
         }
     )
+
+    time.sleep(3)
 
     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1})
     client = app.test_client()
