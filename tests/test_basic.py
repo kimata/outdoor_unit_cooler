@@ -511,7 +511,7 @@ def test_actuator(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
 
