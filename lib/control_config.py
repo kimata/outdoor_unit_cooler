@@ -31,9 +31,9 @@ TEMP_THRESHOLD_HIGH_L = 32
 TEMP_THRESHOLD_MID = 29
 
 # 最低でもこの時間は ON にする (テスト時含む)
-ON_SEC_MIN = 10
+ON_SEC_MIN = 5
 # 最低でもこの時間は OFF にする (テスト時含む)
-OFF_SEC_MIN = 10
+OFF_SEC_MIN = 5
 
 
 MESSAGE_LIST = [

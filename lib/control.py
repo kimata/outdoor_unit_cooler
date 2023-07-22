@@ -15,8 +15,25 @@ from control_config import (
 from sensor_data import fetch_data
 import notify_slack
 
+error_hist = []
+
+
+# NOTE: テスト用
+def clear_hist():
+    global error_hist
+
+    error_hist = []
+
+
+# NOTE: テスト用
+def get_error_hist():
+    global error_hist
+
+    return error_hist
+
 
 def notify_error(config, message):
+    global error_hist
     logging.error(message)
 
     if ("slack" not in config) or (os.environ.get("DUMMY_MODE", "false") == "true"):
@@ -29,6 +46,8 @@ def notify_error(config, message):
         message,
         config["slack"]["error"]["interval_min"],
     )
+
+    error_hist.append(message)
 
 
 def get_sense_data(config):

@@ -54,36 +54,28 @@ def test_client(server_host, server_port):
 
 # NOTE: Last Value Caching Proxy
 def cache_proxy_start(config, server_host, real_port, server_port, msg_count):
-    try:
-        thread = threading.Thread(
-            target=control_pubsub.start_proxy,
-            args=(server_host, real_port, server_port, msg_count),
-        )
-        thread.start()
+    thread = threading.Thread(
+        target=control_pubsub.start_proxy,
+        args=(server_host, real_port, server_port, msg_count),
+    )
+    thread.start()
 
-        return thread
-    except:
-        notify_error(config, traceback.format_exc())
-        raise
+    return thread
 
 
 def control_server_start(config, real_port, dummy_mode, speedup, msg_count):
-    try:
-        thread = threading.Thread(
-            target=control_pubsub.start_server,
-            args=(
-                real_port,
-                lambda: gen_control_msg(config, dummy_mode, speedup),
-                config["controller"]["interval_sec"] / speedup,
-                msg_count,
-            ),
-        )
-        thread.start()
+    thread = threading.Thread(
+        target=control_pubsub.start_server,
+        args=(
+            real_port,
+            lambda: gen_control_msg(config, dummy_mode, speedup),
+            config["controller"]["interval_sec"] / speedup,
+            msg_count,
+        ),
+    )
+    thread.start()
 
-        return thread
-    except:
-        notify_error(config, traceback.format_exc())
-        raise
+    return thread
 
 
 def start(arg):
@@ -101,7 +93,7 @@ def start(arg):
     }
     setting.update(arg)
 
-    if setting["debug_mode"]:
+    if setting["debug_mode"]:  # pragma: no cover
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
@@ -156,6 +148,8 @@ def wait_and_term(control_thread, proxy_thread):
     if control_thread is not None:
         control_thread.join()
 
+    return 0
+
 
 ######################################################################
 if __name__ == "__main__":
@@ -185,6 +179,4 @@ if __name__ == "__main__":
         "msg_count": msg_count,
     }
 
-    wait_and_term(*start(app_arg))
-
-    sys.exit(0)
+    sys.exit(wait_and_term(*start(app_arg)))

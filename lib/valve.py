@@ -83,6 +83,7 @@ GPIO_PIN_DEFAULT = 17
 
 pin_no = GPIO_PIN_DEFAULT
 valve_lock = None
+ctrl_hist = []
 
 
 def init(pin=GPIO_PIN_DEFAULT):
@@ -101,11 +102,30 @@ def init(pin=GPIO_PIN_DEFAULT):
     set_state(VALVE_STATE.CLOSE)
 
 
+# NOTE: テスト用
+def clear_stat():
+    global ctrl_hist
+
+    STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
+    STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
+    STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
+    STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
+    ctrl_hist = []
+
+
+# NOTE: テスト用
+def get_hist():
+    global ctrl_hist
+
+    return ctrl_hist
+
+
 # NOTE: 実際にバルブを開きます．
 # 現在のバルブの状態と，バルブが現在の状態になってからの経過時間を返します．
 def set_state(valve_state):
     global pin_no
     global valve_lock
+    global ctrl_hist
 
     with valve_lock:
         curr_state = get_state()
@@ -116,6 +136,7 @@ def set_state(valve_state):
                     curr_state=curr_state.name, valve_state=valve_state.name
                 )
             )
+            ctrl_hist.append(curr_state)
 
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)

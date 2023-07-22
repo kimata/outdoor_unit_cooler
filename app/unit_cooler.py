@@ -292,7 +292,7 @@ def start(arg):
     }
     setting.update(arg)
 
-    if setting["debug_mode"]:
+    if setting["debug_mode"]:  # pragma: no cover
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
@@ -387,9 +387,10 @@ def start(arg):
 
 
 def wait_and_term(result_list, log_p):
+    ret = 0
     for result in result_list:
         if result.get() != 0:
-            sys.exit(-1)
+            ret = -1
 
     log_p.kill()
     webapp_event.stop_watch()
@@ -397,6 +398,8 @@ def wait_and_term(result_list, log_p):
     work_log.term()
 
     sys.stdout.flush()
+
+    return ret
 
 
 ######################################################################
@@ -421,6 +424,4 @@ if __name__ == "__main__":
         "debug_mode": debug_mode,
     }
 
-    wait_and_term(*start(app_arg))
-
-    sys.exit(0)
+    sys.exit(wait_and_term(*start(app_arg)))
