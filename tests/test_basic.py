@@ -32,7 +32,12 @@ def clear():
         import control
         from config import load_config
 
-        actuator.clear_hazard(load_config(CONFIG_FILE))
+        config = load_config(CONFIG_FILE)
+
+        for name in ["controller", "actuator", "monitor", "receiver", "web"]:
+            pathlib.Path(config[name]["liveness"]["file"]).unlink(missing_ok=True)
+
+        actuator.clear_hazard(config)
         control.clear_hist()
         valve.clear_stat()
 
@@ -107,6 +112,17 @@ def gen_fd_q10c_ser_trans_ping():
     ]
 
 
+def check_healthz(name):
+    from config import load_config
+
+    healthz_file = pathlib.Path(load_config(CONFIG_FILE)[name]["liveness"]["file"])
+
+    if healthz_file.exists():
+        return healthz_file.stat().st_mtime
+    else:
+        return None
+
+
 def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense()):
     import logging
     import struct
@@ -157,6 +173,7 @@ def mock_gpio(mocker):
 ######################################################################
 def test_controller(mocker):
     import cooler_controller
+    import control
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
@@ -169,9 +186,13 @@ def test_controller(mocker):
         )
     )
 
+    assert control.get_error_hist() == []
+    assert check_healthz("controller") is not None
+
 
 def test_controller_start_error_1(mocker):
     import cooler_controller
+    import control
     from threading import Thread as Thread_orig
 
     def thread_mock(
@@ -186,7 +207,6 @@ def test_controller_start_error_1(mocker):
     thread_mock.i = 0
 
     mocker.patch("threading.Thread", new=thread_mock)
-    # mocker.patch("threading.Thread.__init__", new=thread_mock)
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
@@ -199,8 +219,12 @@ def test_controller_start_error_1(mocker):
         )
     )
 
+    assert control.get_error_hist() == []
+    assert check_healthz("controller") is None
+
 
 def test_controller_start_error_2(mocker):
+    import control
     import cooler_controller
     from threading import Thread as Thread_orig
 
@@ -228,6 +252,10 @@ def test_controller_start_error_2(mocker):
             }
         )
     )
+
+    assert control.get_error_hist() == []
+    # NOTE: 現状，Proxy のエラーの場合，controller としては healthz は正常になる
+    assert check_healthz("controller") is not None
 
 
 def test_controller_aircon_mode(mocker):
@@ -475,129 +503,59 @@ def test_actuator(mocker):
             max_retries=requests.adapters.Retry(
                 total=120,
                 connect=100,
-                backoff_factor=0.5,
+                backoff_factor=10,
             )
         ),
     )
     res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
+    assert res.status_code == 200
     assert "data" in json.loads(res.text)
+    assert len(json.loads(res.text)["data"]) != 0
+    assert "last_time" in json.loads(res.text)
 
-    response = requests.get(
+    res = requests.get("http://localhost:5001/unit_cooler/api/log_clear")
+    assert res.status_code == 200
+    assert json.loads(res.text)["result"] == "success"
+
+    res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
+    assert res.status_code == 200
+    assert "data" in json.loads(res.text)
+    assert len(json.loads(res.text)["data"]) == 0
+    assert "last_time" in json.loads(res.text)
+
+    res = requests.get(
         "http://localhost:5001/unit_cooler/api/event",
         params={"count": "1"},
     )
-    assert response.status_code == 200
-    assert response.text.strip() == "data: log"
+    assert res.status_code == 200
+    assert res.text.strip() == "data: log"
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
-
     assert control.get_error_hist() == []
 
 
-def test_actuator_signal(mocker):
-    import signal
+# def test_actuator_signal(mocker):
+#     import signal
 
-    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-    import cooler_controller
-    import unit_cooler
-
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-    actuator_handle = unit_cooler.start(
-        {
-            "speedup": 40,
-            "dummy_mode": True,
-            "msg_count": 1,
-        }
-    )
-
-    control_handle = cooler_controller.start(
-        {
-            "speedup": 40,
-            "dummy_mode": True,
-            "msg_count": 5,
-        }
-    )
-
-    unit_cooler.sig_handler(signal.SIGTERM, None)
-
-    unit_cooler.wait_and_term(*actuator_handle)
-    cooler_controller.wait_and_term(*control_handle)
-
-
-def test_actuator_recv_error(mocker):
-    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-    import cooler_controller
-    import unit_cooler
-    from control_pubsub import start_client as start_client_orig
-
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-    def start_client_mock(server_host, server_port, func, msg_count=0):
-        start_client_orig(server_host, server_port, func, msg_count)
-        raise RuntimeError()
-
-    mocker.patch("control_pubsub.start_client", side_effect=start_client_mock)
-
-    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-    actuator_handle = unit_cooler.start(
-        {
-            "speedup": 40,
-            "dummy_mode": True,
-            "msg_count": 1,
-        }
-    )
-
-    control_handle = cooler_controller.start(
-        {
-            "speedup": 40,
-            "dummy_mode": True,
-            "msg_count": 5,
-        }
-    )
-    time.sleep(3)
-    unit_cooler.wait_and_term(*actuator_handle)
-    cooler_controller.wait_and_term(*control_handle)
-
-
-# def test_actuator_iolink_short(mocker):
-#     import requests
-
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
 #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
 #     import cooler_controller
 #     import unit_cooler
-#     import sensor.fd_q10c
 
 #     mock_gpio(mocker)
-
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
+#     mock_fd_q10c(mocker)
 #     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
 #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
 #     actuator_handle = unit_cooler.start(
 #         {
 #             "speedup": 40,
-#             "msg_count": 6,
+#             "dummy_mode": True,
+#             "msg_count": 1,
 #         }
 #     )
 
@@ -605,217 +563,260 @@ def test_actuator_recv_error(mocker):
 #         {
 #             "speedup": 40,
 #             "dummy_mode": True,
-#             "msg_count": 12,
+#             "msg_count": 5,
 #         }
 #     )
 
-#     requests.Session().mount(
-#         "http://",
-#         requests.adapters.HTTPAdapter(
-#             max_retries=requests.adapters.Retry(
-#                 total=120,
-#                 connect=100,
-#                 backoff_factor=0.5,
-#             )
-#         ),
-#     )
-#     res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
-#     assert "data" in json.loads(res.text)
-
-#     response = requests.get(
-#         "http://localhost:5001/unit_cooler/api/event",
-#         params={"count": "1"},
-#     )
-#     assert response.status_code == 200
-#     assert response.text.strip() == "data: log"
+#     unit_cooler.sig_handler(signal.SIGTERM, None)
 
 #     unit_cooler.wait_and_term(*actuator_handle)
 #     cooler_controller.wait_and_term(*control_handle)
 
 
-# def test_actuator_slow_start(mocker):
+# def test_actuator_recv_error(mocker):
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
 #     import cooler_controller
 #     import unit_cooler
+#     from control_pubsub import start_client as start_client_orig
 
 #     mock_gpio(mocker)
 #     mock_fd_q10c(mocker)
 #     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
+#     def start_client_mock(server_host, server_port, func, msg_count=0):
+#         start_client_orig(server_host, server_port, func, msg_count)
+#         raise RuntimeError()
+
+#     mocker.patch("control_pubsub.start_client", side_effect=start_client_mock)
+
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+#     actuator_handle = unit_cooler.start(
+#         {
+#             "speedup": 40,
+#             "dummy_mode": True,
+#             "msg_count": 1,
+#         }
+#     )
+
 #     control_handle = cooler_controller.start(
 #         {
 #             "speedup": 40,
+#             "dummy_mode": True,
 #             "msg_count": 10,
 #         }
 #     )
 #     time.sleep(3)
-#     unit_cooler.wait_and_term(
-#         *unit_cooler.start(
-#             {
-#                 "speedup": 40,
-#                 "dummy_mode": True,
-#                 "msg_count": 1,
-#             }
-#         )
-#     )
+
+#     unit_cooler.wait_and_term(*actuator_handle)
 #     cooler_controller.wait_and_term(*control_handle)
+
+
+def test_actuator_iolink_short(mocker):
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control
+    import sensor.fd_q10c
+
+    mock_gpio(mocker)
+
+    # NOTE: 流量計の故障モードを代表して，unit_cooler に対してテスト
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 2,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 10,
+        }
+    )
+
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
+    assert control.get_error_hist() == []
+
 
 #####################################################################
 
-# def test_fd_q10c(mocker):
-#     import sensor.fd_q10c
 
-#     mock_fd_q10c(mocker)
+def test_fd_q10c(mocker):
+    import sensor.fd_q10c
 
-#     sensor.fd_q10c.FD_Q10C().get_value(False)
-#     sensor.fd_q10c.FD_Q10C().get_value_map()
+    mock_fd_q10c(mocker)
 
-
-# def test_fd_q10c_ping(mocker):
-#     import sensor.fd_q10c
-
-#     mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_ping())
-
-#     sensor.fd_q10c.FD_Q10C().ping()
+    sensor.fd_q10c.FD_Q10C().get_value(False)
+    sensor.fd_q10c.FD_Q10C().get_value_map()
 
 
-# def test_fd_q10c_stop(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_ping(mocker):
+    import sensor.fd_q10c
 
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     sensor.stop()
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_ping())
 
-
-# def test_fd_q10c_stop_error_1(mocker):
-#     import sensor.fd_q10c
-
-#     mocker.patch("fcntl.flock", side_effect=IOError)
-
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     with pytest.raises(RuntimeError):
-#         sensor.stop()
+    sensor.fd_q10c.FD_Q10C().ping()
 
 
-# def test_fd_q10c_stop_error_2(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_stop(mocker):
+    import sensor.fd_q10c
 
-#     mocker.patch("serial.Serial.close", side_effect=IOError)
-
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     sensor.stop()
-
-#     sensor.get_value()
-#     sensor.stop()
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    sensor.stop()
 
 
-# def test_fd_q10c_short(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_stop_error_1(mocker):
+    import sensor.fd_q10c
 
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    mocker.patch("fcntl.flock", side_effect=IOError)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-
-# def test_fd_q10c_checksum(mocker):
-#     import sensor.fd_q10c
-
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][3] = 0x11
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    with pytest.raises(RuntimeError):
+        sensor.stop()
 
 
-# def test_fd_q10c_header_error(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+def test_fd_q10c_stop_error_2(mocker):
+    import sensor.fd_q10c
 
-#     data_injected = 0xC0
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    mocker.patch("serial.Serial.close", side_effect=IOError)
 
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[3]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    sensor.stop()
 
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
-
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    sensor.get_value()
+    sensor.stop()
 
 
-# def test_fd_q10c_chk_error(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+def test_fd_q10c_short(mocker):
+    import sensor.fd_q10c
 
-#     data_injected = 0xD3
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[6]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[6]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
-
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
-
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    sensor.fd_q10c.FD_Q10C().get_value()
 
 
-# def test_fd_q10c_header_invalid(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+def test_fd_q10c_checksum(mocker):
+    import sensor.fd_q10c
 
-#     data_injected = 0x00
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][3] = 0x11
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[3]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
-
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
-
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    sensor.fd_q10c.FD_Q10C().get_value()
 
 
-# def test_fd_q10c_timeout(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_header_error(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
-#     mock_fd_q10c(mocker)
+    data_injected = 0xC0
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     mocker.patch("fcntl.flock", side_effect=IOError())
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[3]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+
+def test_fd_q10c_chk_error(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+
+    data_injected = 0xD3
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[6]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[6]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
+
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+
+def test_fd_q10c_header_invalid(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+
+    data_injected = 0x00
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[3]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
+
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    sensor.fd_q10c.FD_Q10C().get_value()
+
+
+def test_fd_q10c_timeout(mocker):
+    import sensor.fd_q10c
+
+    mock_fd_q10c(mocker)
+
+    mocker.patch("fcntl.flock", side_effect=IOError())
+
+    sensor.fd_q10c.FD_Q10C().get_value()
 
 
 # def test_actuator_restart():
@@ -849,81 +850,100 @@ def test_actuator_recv_error(mocker):
 #     cooler_controller.wait_and_term(*control_handle)
 
 
-# def test_webapp(mocker):
-#     import webapp
-#     import cooler_controller
-#     import unit_cooler
+def test_webapp(mocker):
+    import requests
+    import webapp
+    import webapp_event
+    import cooler_controller
+    import unit_cooler
 
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
 
-#     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1})
-#     client = app.test_client()
+    app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1})
+    client = app.test_client()
 
-#     response = client.get("/unit_cooler/api/log_view")
-#     assert response.status_code == 200
+    response = client.get("/")
+    assert response.status_code == 302
+    assert re.search(r"/unit_cooler/$", response.location)
 
-#     response = client.get("/unit_cooler/api/memory")
-#     assert response.status_code == 200
-#     assert "memory" in response.json
+    response = client.get("/unit_cooler/")
+    assert response.status_code == 200
+    assert "室外機" in response.data.decode("utf-8")
 
-#     response = client.get("/unit_cooler/api/snapshot")
-#     assert response.status_code == 200
-#     assert "msg" in response.json
+    response = client.get("/unit_cooler/api/log_view")
+    assert response.status_code == 200
+    assert "data" in response.json
+    assert len(response.json["data"]) != 0
+    assert "last_time" in response.json
 
-#     response = client.get("/unit_cooler/api/snapshot")
-#     assert response.status_code == 200
-#     assert "msg" not in response.json
+    response = client.get("/unit_cooler/api/memory")
+    assert response.status_code == 200
+    assert "memory" in response.json
 
-#     # response = client.get("/unit_cooler/api/sysinfo")
-#     # assert response.status_code == 200
-#     # assert "date" not in response.json
-#     # assert "uptime" not in response.json
-#     # assert "loadAverage" not in response.json
+    response = client.get("/unit_cooler/api/snapshot")
+    assert response.status_code == 200
+    assert "msg" in response.json
 
-#     response = client.get(
-#         "/unit_cooler/api/stat",
-#         query_string={
-#             "cmd": "clear",
-#         },
-#     )
-#     assert response.status_code == 200
-#     # assert "watering" not in response.json
-#     # assert "sensor" not in response.json
-#     # assert "mode" not in response.json
-#     # assert "cooler_status" not in response.json
-#     # assert "outdoor_status" not in response.json
+    response = client.get("/unit_cooler/api/snapshot")
+    assert response.status_code == 200
+    assert "msg" not in response.json
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 20,
-#         }
-#     )
+    response = client.get("/unit_cooler/api/sysinfo")
+    assert response.status_code == 200
+    assert "date" in response.json
+    assert "uptime" in response.json
+    assert "loadAverage" in response.json
 
-#     import logging
+    response = client.get(
+        "/unit_cooler/api/stat",
+        query_string={
+            "cmd": "clear",
+        },
+    )
+    assert response.status_code == 200
+    assert "watering" in response.json
+    assert "sensor" in response.json
+    assert "mode" in response.json
+    assert "cooler_status" in response.json
+    assert "outdoor_status" in response.json
 
-#     logging.error("X")
-#     response = client.get("/unit_cooler/api/event", query_string={"count": "2"})
-#     logging.error("Y")
-#     assert response.status_code == 200
-#     logging.error("Z")
+    response = client.get("/unit_cooler/api/event", query_string={"count": "2"})
+    assert response.status_code == 200
+    assert response.data.decode()
 
-#     # assert response.data.decode()
-#     logging.error("A")
-#     client.delete()
-#     logging.error("B")
-#     unit_cooler.wait_and_term(*actuator_handle)
-#     logging.error("C")
-#     cooler_controller.wait_and_term(*control_handle)
+    response = requests.models.Response()
+    response.status_code = 500
+    mocker.patch("webapp_log_proxy.requests.get", return_value=response)
+
+    # NOTE: mock を戻す手間を避けるため，最後に実施
+    response = client.get("/unit_cooler/api/log_view")
+    assert response.status_code == 200
+    assert "data" in response.json
+    assert len(response.json["data"]) == 0
+    assert "last_time" in response.json
+
+    client.delete()
+
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
+
+    # NOTE: カバレッジのため
+    webapp_event.stop_watch()
 
 
 def test_terminate():

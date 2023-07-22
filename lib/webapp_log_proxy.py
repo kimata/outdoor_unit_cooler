@@ -3,6 +3,7 @@
 from flask import jsonify, Blueprint, request, Response, g
 import logging
 import requests
+import time
 import os
 import json
 import sseclient  # つかうのは sseclient，sseclient-py ではない
@@ -34,12 +35,13 @@ def get_log():
 
         # NOTE: 簡易リバースプロキシ
         res = requests.get(url, params={"stop_day": stop_day})
+        res.raise_for_status()
 
         # NOTE: どのみち，また JSON 文字列に戻すけど...
         return json.loads(res.text)
     except:
         logging.error("Unable to fetch log from {url}".format(url=url))
-        return []
+        return {"data": [], "last_time": time.time()}
 
 
 # NOTE: リバースプロキシの場合は，webapp_event ではなく，
@@ -56,12 +58,12 @@ def api_event():
         sse = sseclient.SSEClient(url)
         i = 0
         for event in sse:
-            logging.error(event.data)
             yield "data: {}\n\n".format(event.data)
             i += 1
 
             if i == count:
                 return
+        pass  # pragma: no cover
 
     res = Response(event_stream(), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")

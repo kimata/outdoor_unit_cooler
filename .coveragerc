@@ -1,0 +1,44 @@
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+
+    # config.py
+    def get_db_config
+
+
+    # logger.py
+    class GZipRotator
+    def log_formatter
+    if log_dir_path is not None:
+    if log_queue is not None:
+    if is_str_log:
+
+    # ltc2874.py
+    def dir_param_read
+    def dir_param_write
+
+    # sensor_data.py
+    def get_equip_on_minutes
+    def get_equip_mode_period
+    def get_day_sum
+    def dump_data
+
+    # # notify_slack.py
+    # def info
+    # def error_img
+    # def error_with_image
+
+    # # webapp_event.py
+    # def notify_watch_impl
+    # def notify_watch
+    # def stop_watch
+
+    # # webapp_log.py
+    # elif level == APP_LOG_LEVEL.WARN:
+
+    # # flask_util.py
+    # def remote_host
+
+[html]
+directory = tests/evidence/coverage

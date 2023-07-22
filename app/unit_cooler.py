@@ -24,8 +24,10 @@ import sys
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Queue, Process
 
+import threading
 from flask import Flask
 from flask_cors import CORS
+import werkzeug.serving
 
 import socket
 import time
@@ -34,7 +36,6 @@ import math
 import signal
 import pathlib
 import logging
-import atexit
 
 import fluent.sender
 
@@ -65,15 +66,6 @@ DUMMY_MODE_SPEEDUP = 12.0
 
 recv_cooling_mode = None
 should_terminate = False
-
-
-def sig_handler(num, frame):
-    global should_terminate
-
-    logging.warning("receive signal {num}".format(num=num))
-
-    if num == signal.SIGTERM:
-        should_terminate = True
 
 
 def queue_put(config, cmd_queue, message):
@@ -253,7 +245,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     return ret
 
 
-def log_server_start(config, queue):
+def log_server_app(config, queue):
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
@@ -271,16 +263,12 @@ def log_server_start(config, queue):
     webapp_event.notify_watch(queue)
 
     # app.debug = True
-    # NOTE: Flask 主体ではないので，自動リロードは OFF にする．
-    app.run(
-        host="0.0.0.0",
-        port=LOG_SERVER_PORT,
-        threaded=True,
-        use_reloader=False,
-    )
+
+    return app
 
 
 def start(arg):
+    global log_server_handle
     setting = {
         "config_file": "config.yaml",
         "control_host": "localhost",
@@ -324,7 +312,6 @@ def start(arg):
             )
             time.sleep(1)
 
-    signal.signal(signal.SIGTERM, sig_handler)
     cmd_queue = Queue()
     log_event_queue = Queue()
 
@@ -369,33 +356,56 @@ def start(arg):
     )
     pool.close()
 
-    # NOTE: 他のスレッドが終了したら，メインスレッドを終了させたいので，
-    # Flask は別のプロセスで実行
-    log_p = Process(target=log_server_start, args=(config, log_event_queue))
-    log_p.start()
+    # NOTE: Flask は別のプロセスで実行
+    log_server_server = werkzeug.serving.make_server(
+        "0.0.0.0",
+        LOG_SERVER_PORT,
+        log_server_app(config, log_event_queue),
+        threaded=True,
+    )
+    log_server_thread = threading.Thread(target=log_server_server.serve_forever)
 
-    def terminate_log_server():
-        log_p.kill()
-        webapp_event.stop_watch()
-        webapp_log.term()
-        work_log.term()
+    logging.info("Start log server")
 
-    # NOTE: 終了した場合に，Web サーバも終了するようにしておく
-    atexit.register(terminate_log_server)
+    log_server_thread.start()
 
-    return (result_list, log_p)
+    log_server_handle = {
+        "server": log_server_server,
+        "thread": log_server_thread,
+    }
+
+    signal.signal(signal.SIGTERM, sig_handler)
+
+    return (result_list, log_server_handle)
 
 
-def wait_and_term(result_list, log_p):
+def sig_handler(num, frame):
+    global should_terminate
+
+    logging.warning("receive signal {num}".format(num=num))
+
+    if num == signal.SIGTERM:
+        should_terminate = True
+
+
+def terminate_log_server(log_server_handle):
+    logging.info("Stop log server")
+
+    webapp_event.stop_watch()
+    webapp_log.term()
+    work_log.term()
+
+    log_server_handle["server"].shutdown()
+    log_server_handle["thread"].join()
+
+
+def wait_and_term(result_list, log_server_handle):
     ret = 0
     for result in result_list:
         if result.get() != 0:
             ret = -1
 
-    log_p.kill()
-    webapp_event.stop_watch()
-    webapp_log.term()
-    work_log.term()
+    terminate_log_server(log_server_handle)
 
     sys.stdout.flush()
 
