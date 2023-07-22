@@ -80,6 +80,10 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
   を指定します．<code>config.yaml</code> の controller.watering.hostname の設定と合わせる必要があります．</dd>
 </dl>
 
+## テスト結果
+
+-   https://kimata.github.io/outdoor_unit_cooler/
+-   https://kimata.github.io/outdoor_unit_cooler/coverage/
 
 
 
