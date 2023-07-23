@@ -247,6 +247,7 @@ def get_cooler_status(sense_data):
                 "status": condition["status"],
                 "message": condition["message"],
             }
+    raise AssertionError("This should never be reached.")  # pragma: no cover
 
 
 # NOTE: 外部環境の状況を評価する．

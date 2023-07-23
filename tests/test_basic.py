@@ -1586,7 +1586,7 @@ def test_webapp_day_sum(mocker):
     time.sleep(3)
 
     app = webapp.create_app(
-        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False}
+        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True}
     )
     client = app.test_client()
 

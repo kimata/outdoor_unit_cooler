@@ -231,10 +231,8 @@ def isdu_res_read(spi, ser, flow):
 
     if len(data) < 2:
         error("response is too short")
-        return None
     elif data[1] != msq_checksum([data[0]]):
         error("checksum unmatch")
-        return None
 
     return data[0]
 

@@ -106,6 +106,8 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                     )
                 else:
                     logging.warning("Cache is empty")
+            else:  # pragma: no cover
+                pass
 
     frontend.close()
     backend.close()
