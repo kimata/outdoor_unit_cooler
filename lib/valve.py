@@ -6,6 +6,7 @@ import time
 import logging
 import threading
 import traceback
+import datetime
 from valve_state import VALVE_STATE, COOLING_STATE
 from work_log import work_log
 
@@ -147,12 +148,12 @@ def set_state(valve_state):
             STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
             if not STAT_PATH_VALVE_OPEN.exists():
                 STAT_PATH_VALVE_OPEN.parent.mkdir(parents=True, exist_ok=True)
-                STAT_PATH_VALVE_OPEN.touch()
+                set_start_time(STAT_PATH_VALVE_OPEN)
         else:
             STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
             if not STAT_PATH_VALVE_CLOSE.exists():
                 STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
-                STAT_PATH_VALVE_CLOSE.touch()
+                set_start_time(STAT_PATH_VALVE_CLOSE)
 
     return get_status()
 
@@ -171,6 +172,19 @@ def get_state():
         return VALVE_STATE.CLOSE
 
 
+def get_duration(stat_file):
+    with open(stat_file, "r") as f:
+        start = datetime.datetime.fromtimestamp(int(f.read()))
+        now = datetime.datetime.now()
+
+        return int((start - now).total_seconds())
+
+
+def set_start_time(stat_file):
+    with open(stat_file, "w") as f:
+        f.write(str(int(datetime.datetime.now().timestamp())))
+
+
 # NOTE: 実際のバルブの状態と，その状態になってからの経過時間を返します
 def get_status():
     global valve_lock
@@ -179,15 +193,17 @@ def get_status():
         valve_state = get_state()
 
         if valve_state == VALVE_STATE.OPEN:
+            assert STAT_PATH_VALVE_OPEN.exists()
+
             return {
                 "state": valve_state,
-                "duration": time.time() - STAT_PATH_VALVE_OPEN.stat().st_mtime,
+                "duration": get_duration(STAT_PATH_VALVE_OPEN),
             }
         else:
             if STAT_PATH_VALVE_CLOSE.exists():
                 return {
                     "state": valve_state,
-                    "duration": time.time() - STAT_PATH_VALVE_CLOSE.stat().st_mtime,
+                    "duration": get_duration(STAT_PATH_VALVE_CLOSE),
                 }
             else:
                 return {"state": valve_state, "duration": 0}

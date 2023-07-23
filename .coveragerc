@@ -20,6 +20,7 @@ exclude_lines =
     def dir_param_write
 
     # sensor_data.py
+    if create_empty and not last:
     def get_equip_on_minutes
     def get_equip_mode_period
     def dump_data
@@ -29,6 +30,9 @@ exclude_lines =
     def error_img
     def error_with_image
 
+    # webapp_event.py
+    if event_type == EVENT_TYPE.CONTROL:
+    elif event_type == EVENT_TYPE.SCHEDULE: 
 
     # webapp_log.py
     elif level == APP_LOG_LEVEL.WARN:

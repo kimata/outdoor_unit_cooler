@@ -109,6 +109,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
     receive_time = datetime.datetime.now()
     mode_index_prev = -1
     receive_count = 0
+    ret = 0
     try:
         while True:
             start_time = time.time()
@@ -155,13 +156,12 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
-
-        logging.info("Stop valve control worker")
-        return 0
     except:
-        logging.error("Stop valve control worker")
         notify_error(config, traceback.format_exc())
-        return -1
+        ret = -1
+
+    logging.info("Stop valve control worker")
+    return ret
 
 
 # NOTE: バルブの状態をモニタするワーカ
@@ -361,7 +361,8 @@ def start(arg):
         "0.0.0.0",
         LOG_SERVER_PORT,
         log_server_app(config, log_event_queue),
-        threaded=True,
+        # NOTE: threaded にするとカバレッジが上手く撮れないので，テスト時は False にする
+        threaded=os.environ.get("TEST", "false") != "true",
     )
     log_server_thread = threading.Thread(target=log_server_server.serve_forever)
 

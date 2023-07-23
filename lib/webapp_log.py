@@ -86,17 +86,16 @@ def app_log_impl(message, level):
     global sqlite
 
     with log_lock:
-        if sqlite is None:
-            logging.warning("SQLite is closed.")
-        else:
-            sqlite.execute(
-                'INSERT INTO log VALUES (NULL, DATETIME("now", "localtime"), ?)',
-                [message],
-            )
-            sqlite.execute(
-                'DELETE FROM log WHERE date <= DATETIME("now", "localtime", "-60 days")'
-            )
-            sqlite.commit()
+        assert sqlite is not None
+
+        sqlite.execute(
+            'INSERT INTO log VALUES (NULL, DATETIME("now", "localtime"), ?)',
+            [message],
+        )
+        sqlite.execute(
+            'DELETE FROM log WHERE date <= DATETIME("now", "localtime", "-60 days")'
+        )
+        sqlite.commit()
 
         notify_event(EVENT_TYPE.LOG)
 
@@ -158,8 +157,9 @@ def app_log(message, level=APP_LOG_LEVEL.INFO):
 def get_log(stop_day):
     global sqlite
 
-    # NOTE: stop_day 日前までののログしか出さない
+    assert sqlite is not None
 
+    # NOTE: stop_day 日前までののログしか出さない
     cur = sqlite.cursor()
     cur.execute(
         'SELECT * FROM log WHERE date <= DATETIME("now", "localtime", ?) ORDER BY id DESC LIMIT 500',

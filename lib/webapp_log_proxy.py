@@ -6,6 +6,7 @@ import requests
 import time
 import os
 import json
+import traceback
 import sseclient  # つかうのは sseclient，sseclient-py ではない
 
 from webapp_config import APP_URL_PREFIX
@@ -41,6 +42,7 @@ def get_log():
         return json.loads(res.text)
     except:
         logging.error("Unable to fetch log from {url}".format(url=url))
+        logging.error(traceback.format_exc())
         return {"data": [], "last_time": time.time()}
 
 

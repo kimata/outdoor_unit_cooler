@@ -67,6 +67,10 @@ def fluent_mock():
         yield fixture
 
 
+def time_test(offset_min=0):
+    return datetime.datetime.now().replace(hour=0, minute=0 + offset_min, second=0)
+
+
 def gen_sensor_data(value=[30, 34, 25], valid=True):
     sensor_data = {
         "value": value,
@@ -610,7 +614,10 @@ def test_actuator(mocker):
 
     time.sleep(3)
 
-    res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
+    res = requests.get(
+        "http://localhost:5001/unit_cooler/api/log_view",
+        headers={"Accept-Encoding": "gzip"},
+    )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
     assert len(json.loads(res.text)["data"]) != 0
@@ -627,6 +634,16 @@ def test_actuator(mocker):
     assert "last_time" in json.loads(res.text)
 
     res = requests.get(
+        "http://localhost:5001/unit_cooler/api/log_view",
+        headers={"Accept-Encoding": "gzip"},
+        params={
+            "callback": "TEST",
+        },
+    )
+    assert res.status_code == 200
+    assert res.text.find("TEST(") == 0
+
+    res = requests.get(
         "http://localhost:5001/unit_cooler/api/event",
         params={"count": "1"},
     )
@@ -636,6 +653,134 @@ def test_actuator(mocker):
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
     assert control.get_error_hist() == []
+
+
+# def test_actuator_open(mocker, freezer):
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+#     import cooler_controller
+#     import unit_cooler
+#     import control
+
+#     mock_gpio(mocker)
+#     mock_fd_q10c(mocker)
+#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+#     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+#     actuator_handle = unit_cooler.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "msg_count": 5,
+#         }
+#     )
+
+#     control_handle = cooler_controller.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "dummy_mode": True,
+#             "msg_count": 15,
+#         }
+#     )
+
+#     freezer.move_to(time_test(0))
+#     time.sleep(1)
+#     freezer.move_to(time_test(10))
+
+#     unit_cooler.wait_and_term(*actuator_handle)
+#     cooler_controller.wait_and_term(*control_handle)
+#     print(control.get_error_hist())
+
+
+# def test_actuator_close(mocker, freezer):
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+#     import cooler_controller
+#     import unit_cooler
+#     import control_config
+#     import control
+
+#     mock_gpio(mocker)
+
+#     mocker.patch("valve.get_flow", return_value=0)
+#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+#     mocker.patch(
+#         "control.dummy_control_mode",
+#         return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+#     )
+
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+#     actuator_handle = unit_cooler.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "msg_count": 5,
+#         }
+#     )
+
+#     control_handle = cooler_controller.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "dummy_mode": True,
+#             "msg_count": 15,
+#         }
+#     )
+
+#     freezer.move_to(time_test(0))
+#     time.sleep(1)
+#     freezer.move_to(time_test(10))
+
+#     unit_cooler.wait_and_term(*actuator_handle)
+#     cooler_controller.wait_and_term(*control_handle)
+#     assert control.get_error_hist() == []
+
+
+# def test_actuator_send_condition_fail(mocker):
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+#     import cooler_controller
+#     import unit_cooler
+#     import control
+
+#     mock_gpio(mocker)
+#     mock_fd_q10c(mocker)
+#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+#     actuator_handle = unit_cooler.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "msg_count": 5,
+#         }
+#     )
+
+#     control_handle = cooler_controller.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 40,
+#             "dummy_mode": True,
+#             "msg_count": 15,
+#         }
+#     )
+
+#     unit_cooler.wait_and_term(*actuator_handle)
+#     cooler_controller.wait_and_term(*control_handle)
+#     assert control.get_error_hist() == []
 
 
 def test_actuator_notify_hazard(mocker):
@@ -722,6 +867,43 @@ def test_actuator_notify_hazard(mocker):
 
 #     unit_cooler.wait_and_term(*actuator_handle)
 #     cooler_controller.wait_and_term(*control_handle)
+
+
+def test_actuator_ctrl_error(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    from control_pubsub import start_client as start_client_orig
+    from config import load_config
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch("unit_cooler.set_cooling_state", side_effect=RuntimeError())
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 3,
+        }
+    )
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
 
 
 def test_actuator_recv_error(mocker):
@@ -1060,9 +1242,9 @@ def test_webapp(mocker):
     import webapp_log
     import cooler_controller
     import unit_cooler
+    import gzip
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-    mocker.patch("unit_cooler_info.fetch_data", return_value=gen_sensor_data())
     mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
 
     actuator_handle = unit_cooler.start(
@@ -1094,6 +1276,13 @@ def test_webapp(mocker):
     response = client.get("/unit_cooler/")
     assert response.status_code == 200
     assert "室外機" in response.data.decode("utf-8")
+
+    response = client.get(
+        "/unit_cooler/",
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert response.status_code == 200
+    assert "室外機" in gzip.decompress(response.data).decode("utf-8")
 
     response = client.get("/unit_cooler/api/log_view")
     assert response.status_code == 200
@@ -1152,6 +1341,190 @@ def test_webapp(mocker):
     webapp_log.term()
 
 
-def test_terminate():
-    # webapp.term()
-    pass
+def test_webapp_dummy_mode(mocker):
+    import webapp
+    import webapp_event
+    import webapp_log
+    import cooler_controller
+    import unit_cooler
+
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    time.sleep(3)
+
+    app = webapp.create_app(
+        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True}
+    )
+    client = app.test_client()
+
+    response = client.get("/unit_cooler/api/stat")
+    assert response.status_code == 200
+    assert "watering" in response.json
+    assert "sensor" in response.json
+    assert "mode" in response.json
+    assert "cooler_status" in response.json
+    assert "outdoor_status" in response.json
+
+    mocker.patch(
+        "flask.wrappers.Response.status_code",
+        return_value=301,
+        new_callable=mocker.PropertyMock,
+    )
+
+    response = client.get("/unit_cooler/", headers={"Accept-Encoding": "gzip"})
+    assert response.status_code == 301
+
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    client.delete()
+
+    cooler_controller.wait_and_term(*control_handle)
+
+    # NOTE: カバレッジのため
+    webapp_event.stop_watch()
+    webapp_log.term()
+
+
+def test_webapp_queue_overflow(mocker):
+    import webapp
+    import webapp_event
+    import webapp_log
+    import cooler_controller
+    import unit_cooler
+    from config import load_config
+
+    sensor_data = gen_sensor_data()
+    sensor_data["valid"] = False
+    mocker.patch("control.fetch_data", return_value=sensor_data)
+    mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    time.sleep(3)
+
+    app = webapp.create_app(
+        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False}
+    )
+    client = app.test_client()
+
+    # NOTE: カバレッジ用にキューを溢れさせる
+    for _ in range(100):
+        webapp.queuing_message(
+            load_config(CONFIG_FILE), app.config["MESSAGE_QUEUE"], "TEST"
+        )
+
+    response = client.get("/unit_cooler/api/stat")
+    assert response.status_code == 200
+    assert "watering" in response.json
+    assert "sensor" in response.json
+    assert "mode" in response.json
+    assert "cooler_status" in response.json
+    assert "outdoor_status" in response.json
+
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    client.delete()
+
+    cooler_controller.wait_and_term(*control_handle)
+
+    # NOTE: カバレッジのため
+    webapp_event.stop_watch()
+    webapp_log.term()
+
+
+def test_webapp_day_sum(mocker):
+    import webapp
+    import webapp_event
+    import webapp_log
+    import cooler_controller
+    import unit_cooler
+
+    fetch_data_mock = mocker.MagicMock()
+    fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]
+
+    mocker.patch("sensor_data.fetch_data_impl", return_value=fetch_data_mock)
+
+    sensor_data = gen_sensor_data()
+    sensor_data["valid"] = False
+    mocker.patch("control.fetch_data", return_value=sensor_data)
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    time.sleep(3)
+
+    app = webapp.create_app(
+        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False}
+    )
+    client = app.test_client()
+
+    response = client.get("/unit_cooler/api/stat")
+    assert response.status_code == 200
+    assert "watering" in response.json
+    assert "sensor" in response.json
+    assert "mode" in response.json
+    assert "cooler_status" in response.json
+    assert "outdoor_status" in response.json
+
+    response = client.get("/unit_cooler/api/stat")
+    assert response.status_code == 200
+
+    response = client.get("/unit_cooler/api/stat")
+    assert response.status_code == 200
+
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    client.delete()
+
+    cooler_controller.wait_and_term(*control_handle)
+
+    # NOTE: カバレッジのため
+    webapp_event.stop_watch()
+    webapp_log.term()

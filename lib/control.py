@@ -4,7 +4,7 @@ import logging
 
 import os
 import pathlib
-import sys
+import pytz
 from control_config import (
     MESSAGE_LIST,
     ON_SEC_MIN,
@@ -53,6 +53,8 @@ def notify_error(config, message, is_logging=True):
 
 
 def get_sense_data(config):
+    timezone = pytz.timezone("Asia/Tokyo")
+
     if os.environ.get("DUMMY_MODE", "false") == "true":
         start = "-169h"
         stop = "-168h"
@@ -74,7 +76,16 @@ def get_sense_data(config):
                 last=True,
             )
             if data["valid"]:
-                kind_data.append({"name": sensor["name"], "value": data["value"][0]})
+                kind_data.append(
+                    {
+                        "name": sensor["name"],
+                        # NOTE: タイムゾーン情報を削除しておく．
+                        "time": timezone.localize(
+                            (data["time"][0].replace(tzinfo=None))
+                        ),
+                        "value": data["value"][0],
+                    }
+                )
             else:
                 notify_error(
                     config, "{name} のデータを取得できませんでした．".format(name=sensor["name"])
@@ -92,7 +103,7 @@ def dummy_control_mode():
 
     logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
 
-    return control_mode
+    return {"control_mode": control_mode}
 
 
 dummy_control_mode.prev_mode = 0
@@ -133,16 +144,21 @@ def judge_control_mode(config):
         )
     )
 
-    return control_mode
+    return {
+        "control_mode": control_mode,
+        "cooler_status": cooler_status,
+        "outdoor_status": outdoor_status,
+        "sense_data": sense_data,
+    }
 
 
 def gen_control_msg(config, dummy_mode=False, speedup=1):
     if dummy_mode:
-        control_mode = dummy_control_mode()
+        mode = dummy_control_mode()
     else:
-        control_mode = judge_control_mode(config)
+        mode = judge_control_mode(config)
 
-    mode_index = min(control_mode, len(MESSAGE_LIST) - 1)
+    mode_index = min(mode["control_mode"], len(MESSAGE_LIST) - 1)
     control_msg = MESSAGE_LIST[mode_index]
 
     # NOTE: 参考として，どのモードかも通知する

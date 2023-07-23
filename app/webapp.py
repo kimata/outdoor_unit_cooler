@@ -43,23 +43,6 @@ from config import load_config
 watch_thread = None
 
 
-def nslookup(hostname):
-    try:
-        addrinfolist = getaddrinfo(hostname, None, 0, 0, 0, 0)
-    except:
-        return None
-
-    for family, kind, proto, canonical, sockaddr in addrinfolist:
-        if family != AF_INET:
-            continue
-
-        if kind != SOCK_STREAM:
-            continue
-
-        return sockaddr[0]
-    return None
-
-
 def queuing_message(config, message_queue, message):
     if message_queue.full():
         message_queue.get()
@@ -99,16 +82,12 @@ def create_app(arg):
     }
     setting.update(arg)
 
-    control_host = nslookup(setting["control_host"])
-    actuator_host = nslookup(setting["actuator_host"])
-
     logger.init("hems.unit_cooler", level=logging.INFO)
 
     logging.info(
-        "Using ZMQ server of {control_host}:{control_port} (hostname: {hostname})".format(
+        "Using ZMQ server of {control_host}:{control_port}".format(
             control_host=setting["control_host"],
             control_port=setting["pub_port"],
-            hostname=control_host,
         )
     )
     config = load_config(setting["config_file"])
@@ -119,7 +98,7 @@ def create_app(arg):
     else:
         os.environ["DUMMY_MODE"] = "false"
 
-    message_queue = Queue()
+    message_queue = Queue(10)
     watch_thread = threading.Thread(
         target=watch_client,
         args=(
@@ -138,6 +117,8 @@ def create_app(arg):
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         if setting["dummy_mode"]:
             logging.warning("Set dummy mode")
+    else:  # pragma: no cover
+        pass
 
     app = Flask("unit_cooler")
 
