@@ -31,7 +31,6 @@ log_lock = None
 log_queue = None
 config = None
 should_terminate = False
-import inspect
 
 
 def init(config_, is_read_only=False):
@@ -77,6 +76,7 @@ def term(is_read_only=False):
             return
         should_terminate = True
 
+        log_queue.close()
         log_thread.join()
         log_thread = None
 
@@ -135,6 +135,12 @@ def app_log_worker(log_queue):
             # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
             logging.debug(traceback.format_exc())
             pass
+        except ValueError:  # pragma: no cover
+            # NOTE: 終了時，queue が close された後に empty() や get() を呼ぶとこの例外が
+            # 発生する．
+            logging.warning(traceback.format_exc())
+            pass
+
         time.sleep(sleep_sec)
 
 

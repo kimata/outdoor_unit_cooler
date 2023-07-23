@@ -22,7 +22,7 @@ import os
 import sys
 
 from multiprocessing.pool import ThreadPool
-from multiprocessing import Queue, Process
+from multiprocessing import Queue
 
 import threading
 from flask import Flask
@@ -80,6 +80,7 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
             host=control_host, port=pub_port
         )
     )
+    ret = 0
     try:
         control_pubsub.start_client(
             control_host,
@@ -87,17 +88,17 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
             lambda message: queue_put(config, cmd_queue, message),
             msg_count,
         )
-        logging.info("Stop receive worker")
-        return 0
+        cmd_queue.close()
     except:
-        logging.error("Stop receive worker")
         notify_error(config, traceback.format_exc())
-        return -1
+        ret = -1
+    logging.info("Stop receive worker")
 
 
 # NOTE: バルブを制御するワーカ
 def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=0):
     global recv_cooling_mode
+    global should_terminate
 
     logging.info("Start valve control worker")
 
@@ -113,25 +114,35 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
     try:
         while True:
             start_time = time.time()
+            if should_terminate:
+                logging.info("Terminate control worker")
+                break
 
-            if not cmd_queue.empty():
-                while not cmd_queue.empty():
-                    cooling_mode = cmd_queue.get()
-                    receive_count += 1
+            try:
+                if not cmd_queue.empty():
+                    while not cmd_queue.empty():
+                        cooling_mode = cmd_queue.get()
+                        receive_count += 1
 
-                recv_cooling_mode = cooling_mode
-                receive_time = datetime.datetime.now()
-                logging.info(
-                    "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
-                )
-                if mode_index_prev != cooling_mode["mode_index"]:
-                    work_log.work_log(
-                        "冷却モードが変更されました．({prev} → {cur})".format(
-                            prev="init" if mode_index_prev == -1 else mode_index_prev,
-                            cur=cooling_mode["mode_index"],
-                        )
+                    recv_cooling_mode = cooling_mode
+                    receive_time = datetime.datetime.now()
+                    logging.info(
+                        "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
                     )
-                mode_index_prev = cooling_mode["mode_index"]
+                    if mode_index_prev != cooling_mode["mode_index"]:
+                        work_log.work_log(
+                            "冷却モードが変更されました．({prev} → {cur})".format(
+                                prev="init"
+                                if mode_index_prev == -1
+                                else mode_index_prev,
+                                cur=cooling_mode["mode_index"],
+                            )
+                        )
+                    mode_index_prev = cooling_mode["mode_index"]
+            except OverflowError:  # pragma: no cover
+                # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
+                logging.debug(traceback.format_exc())
+                pass
 
             if check_hazard(config):
                 cooling_mode = {"state": COOLING_STATE.IDLE}
@@ -149,10 +160,6 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
             ]["interval_sec"] * 10:
                 notify_error(config, "Unable to receive command.")
 
-            if should_terminate:
-                logging.info("Terminate control worker")
-                break
-
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
@@ -167,6 +174,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
 # NOTE: バルブの状態をモニタするワーカ
 def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     global recv_cooling_mode
+    global should_terminate
 
     logging.info("Start monitor worker")
 
@@ -192,6 +200,11 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     try:
         while True:
             start_time = time.time()
+
+            if should_terminate:
+                logging.info("Terminate monitor worker")
+                break
+
             valve_status = get_valve_status()
             valve_condition = check_valve_condition(config, valve_status)
 
@@ -230,10 +243,6 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
                 logging.warn("流量計が応答しないので一旦，リセットします．")
                 stop_valve_monitor()
 
-            if should_terminate:
-                logging.error("Terminate monitor worker")
-                break
-
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
@@ -268,7 +277,11 @@ def log_server_app(config, queue):
 
 
 def start(arg):
+    global should_terminate
     global log_server_handle
+
+    should_terminate = False
+
     setting = {
         "config_file": "config.yaml",
         "control_host": "localhost",
@@ -324,35 +337,49 @@ def start(arg):
 
     result_list = []
     result_list.append(
-        pool.apply_async(
-            cmd_receive_worker,
-            (
-                config,
-                setting["control_host"],
-                setting["pub_port"],
-                cmd_queue,
-                setting["msg_count"],
+        {
+            "name": "cmd_receive_worker",
+            "thread": pool.apply_async(
+                cmd_receive_worker,
+                (
+                    config,
+                    setting["control_host"],
+                    setting["pub_port"],
+                    cmd_queue,
+                    setting["msg_count"],
+                ),
             ),
-        )
+        }
     )
 
     result_list.append(
-        pool.apply_async(
-            valve_ctrl_worker,
-            (
-                config,
-                cmd_queue,
-                setting["dummy_mode"],
-                setting["speedup"],
-                setting["msg_count"],
+        {
+            "name": "valve_ctrl_worker",
+            "thread": pool.apply_async(
+                valve_ctrl_worker,
+                (
+                    config,
+                    cmd_queue,
+                    setting["dummy_mode"],
+                    setting["speedup"],
+                    setting["msg_count"],
+                ),
             ),
-        )
+        }
     )
     result_list.append(
-        pool.apply_async(
-            valve_monitor_worker,
-            (config, setting["dummy_mode"], setting["speedup"], setting["msg_count"]),
-        )
+        {
+            "name": "valve_monitor_worker",
+            "thread": pool.apply_async(
+                valve_monitor_worker,
+                (
+                    config,
+                    setting["dummy_mode"],
+                    setting["speedup"],
+                    setting["msg_count"],
+                ),
+            ),
+        }
     )
     pool.close()
 
@@ -392,18 +419,23 @@ def sig_handler(num, frame):
 def terminate_log_server(log_server_handle):
     logging.info("Stop log server")
 
-    webapp_event.stop_watch()
     webapp_log.term()
     work_log.term()
+    webapp_event.stop_watch()
 
     log_server_handle["server"].shutdown()
     log_server_handle["thread"].join()
 
 
 def wait_and_term(result_list, log_server_handle):
+    global should_terminate
+
+    should_terminate = True
+
     ret = 0
     for result in result_list:
-        if result.get() != 0:
+        logging.info("Wait {name}".format(name=result["name"]))
+        if result["thread"].get() != 0:
             ret = -1
 
     terminate_log_server(log_server_handle)

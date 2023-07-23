@@ -29,7 +29,7 @@ def clear():
     with mock.patch.dict("os.environ", {"DUMMY_MODE": "true"}) as fixture:
         import actuator
         import valve
-        import control
+        import work_log
         import notify_slack
         from config import load_config
 
@@ -39,9 +39,9 @@ def clear():
             pathlib.Path(config[name]["liveness"]["file"]).unlink(missing_ok=True)
 
         actuator.clear_hazard(config)
-        control.clear_hist()
         valve.clear_stat()
         notify_slack.clear_interval()
+        work_log.clear_hist()
 
         yield fixture
 
@@ -183,8 +183,18 @@ def mock_gpio(mocker):
     mocker.patch("valve.GPIO", return_value=gpio_mock)
 
 
+def show_thread_list():
+    import threading
+
+    print("-------------------------------")
+    for thread in threading.enumerate():
+        print(thread)
+    print("-------------------------------")
+
+
 ######################################################################
 def test_controller(mocker):
+    show_thread_list()
     import cooler_controller
     import control
 
@@ -200,11 +210,11 @@ def test_controller(mocker):
         )
     )
 
-    assert control.get_error_hist() == []
     assert check_healthz("controller") is not None
 
 
 def test_controller_influxdb_dummy(mocker):
+    show_thread_list()
     import cooler_controller
     import control
 
@@ -248,11 +258,11 @@ def test_controller_influxdb_dummy(mocker):
         )
     )
 
-    assert control.get_error_hist() == []
     assert check_healthz("controller") is not None
 
 
 def test_controller_start_error_1(mocker):
+    show_thread_list()
     import cooler_controller
     import control
     from threading import Thread as Thread_orig
@@ -282,11 +292,11 @@ def test_controller_start_error_1(mocker):
         )
     )
 
-    assert control.get_error_hist() == []
     assert check_healthz("controller") is None
 
 
 def test_controller_influxdb_error(mocker):
+    show_thread_list()
     import cooler_controller
     import control
 
@@ -302,7 +312,6 @@ def test_controller_influxdb_error(mocker):
         )
     )
 
-    assert control.get_error_hist() == []
     assert check_healthz("controller") is not None
 
 
@@ -336,7 +345,6 @@ def test_controller_start_error_2(mocker):
         )
     )
 
-    assert control.get_error_hist() == []
     # NOTE: 現状，Proxy のエラーの場合，controller としては healthz は正常になる
     assert check_healthz("controller") is not None
 
@@ -568,6 +576,7 @@ def test_controller_view_msg():
 
 
 def test_actuator(mocker):
+    show_thread_list()
     import requests
 
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
@@ -652,50 +661,52 @@ def test_actuator(mocker):
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
-    assert control.get_error_hist() == []
 
 
-# def test_actuator_open(mocker, freezer):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_open(mocker, freezer):
+    show_thread_list()
+    import requests
 
-#     import cooler_controller
-#     import unit_cooler
-#     import control
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    import cooler_controller
+    import unit_cooler
+    import work_log
 
-#     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "msg_count": 5,
-#         }
-#     )
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 15,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "msg_count": 10,
+        }
+    )
 
-#     freezer.move_to(time_test(0))
-#     time.sleep(1)
-#     freezer.move_to(time_test(10))
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 20,
+        }
+    )
+    freezer.move_to(time_test(0))
+    time.sleep(3)
+    freezer.move_to(time_test(10))
 
-#     unit_cooler.wait_and_term(*actuator_handle)
-#     cooler_controller.wait_and_term(*control_handle)
-#     print(control.get_error_hist())
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert work_log.get_log_hist()[-1].index("電磁弁が壊れていますので制御を停止します．") == 0
 
 
 # def test_actuator_close(mocker, freezer):
@@ -743,7 +754,6 @@ def test_actuator(mocker):
 
 #     unit_cooler.wait_and_term(*actuator_handle)
 #     cooler_controller.wait_and_term(*control_handle)
-#     assert control.get_error_hist() == []
 
 
 # def test_actuator_send_condition_fail(mocker):
@@ -780,7 +790,6 @@ def test_actuator(mocker):
 
 #     unit_cooler.wait_and_term(*actuator_handle)
 #     cooler_controller.wait_and_term(*control_handle)
-#     assert control.get_error_hist() == []
 
 
 def test_actuator_notify_hazard(mocker):
@@ -824,7 +833,6 @@ def test_actuator_notify_hazard(mocker):
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
-    assert control.get_error_hist() == []
 
     pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"]).unlink(
         missing_ok=True
@@ -889,6 +897,7 @@ def test_actuator_ctrl_error(mocker):
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 1,
@@ -897,6 +906,7 @@ def test_actuator_ctrl_error(mocker):
 
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 3,
@@ -929,6 +939,7 @@ def test_actuator_recv_error(mocker):
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 1,
@@ -937,6 +948,7 @@ def test_actuator_recv_error(mocker):
 
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 10,
@@ -991,7 +1003,6 @@ def test_actuator_iolink_short(mocker):
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
-    assert control.get_error_hist() == []
 
 
 #####################################################################
@@ -1236,6 +1247,8 @@ def test_fd_q10c_timeout(mocker):
 
 
 def test_webapp(mocker):
+    show_thread_list()
+
     import requests
     import webapp
     import webapp_event

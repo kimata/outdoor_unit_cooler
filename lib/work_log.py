@@ -18,6 +18,8 @@ class WORK_LOG_LEVEL(IntEnum):
 config = None
 queue = None
 
+log_hist = []
+
 
 def init(config_, queue_):
     global config
@@ -30,14 +32,33 @@ def init(config_, queue_):
 
 
 def term():
+    global queue
+    queue.close()
     webapp_log.term()
 
 
+# NOTE: テスト用
+def clear_hist():
+    global log_hist
+
+    log_hist = []
+
+
+# NOTE: テスト用
+def get_log_hist():
+    global log_hist
+
+    return log_hist
+
+
 def work_log(message, level=WORK_LOG_LEVEL.INFO):
+    global log_hist
     global queue
 
     queue.put(webapp_event.EVENT_TYPE.LOG)
     webapp_log.app_log(message, level)
+
+    log_hist.append(message)
 
     if level == WORK_LOG_LEVEL.ERROR:
         notify_error(config, message, False)
