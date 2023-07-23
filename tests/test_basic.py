@@ -1293,6 +1293,7 @@ def test_actuator_restart():
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 1,
@@ -1300,6 +1301,7 @@ def test_actuator_restart():
     )
     control_handle = cooler_controller.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "msg_count": 6,
         }
@@ -1309,6 +1311,7 @@ def test_actuator_restart():
 
     actuator_handle = unit_cooler.start(
         {
+            "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
             "msg_count": 1,
