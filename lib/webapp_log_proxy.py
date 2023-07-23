@@ -61,8 +61,8 @@ def api_event():
         i = 0
         for event in sse:
             yield "data: {}\n\n".format(event.data)
-            i += 1
 
+            i += 1
             if i == count:
                 return
         pass  # pragma: no cover

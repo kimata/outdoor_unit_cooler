@@ -21,9 +21,8 @@ from docopt import docopt
 import os
 import sys
 
-from multiprocessing.pool import ThreadPool
 from multiprocessing import Queue
-
+import concurrent.futures
 import threading
 from flask import Flask
 from flask_cors import CORS
@@ -92,7 +91,7 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
     except:
         notify_error(config, traceback.format_exc())
         ret = -1
-    logging.info("Stop receive worker")
+    logging.warning("Stop receive worker")
 
 
 # NOTE: バルブを制御するワーカ
@@ -167,7 +166,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
         notify_error(config, traceback.format_exc())
         ret = -1
 
-    logging.info("Stop valve control worker")
+    logging.warning("Stop valve control worker")
     return ret
 
 
@@ -250,7 +249,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
         notify_error(config, traceback.format_exc())
         ret = -1
 
-    logging.info("Stop monitor worker")
+    logging.warning("Stop monitor worker")
     return ret
 
 
@@ -332,64 +331,55 @@ def start(arg):
     work_log.init(config, log_event_queue)
     init_actuator(config["actuator"]["valve"]["pin_no"])
 
-    # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
-    pool = ThreadPool(processes=3)
-
-    result_list = []
-    result_list.append(
+    worker_def = [
         {
             "name": "cmd_receive_worker",
-            "thread": pool.apply_async(
+            "param": [
                 cmd_receive_worker,
-                (
-                    config,
-                    setting["control_host"],
-                    setting["pub_port"],
-                    cmd_queue,
-                    setting["msg_count"],
-                ),
-            ),
-        }
-    )
-
-    result_list.append(
+                config,
+                setting["control_host"],
+                setting["pub_port"],
+                cmd_queue,
+                setting["msg_count"],
+            ],
+        },
         {
             "name": "valve_ctrl_worker",
-            "thread": pool.apply_async(
+            "param": [
                 valve_ctrl_worker,
-                (
-                    config,
-                    cmd_queue,
-                    setting["dummy_mode"],
-                    setting["speedup"],
-                    setting["msg_count"],
-                ),
-            ),
-        }
-    )
-    result_list.append(
+                config,
+                cmd_queue,
+                setting["dummy_mode"],
+                setting["speedup"],
+                setting["msg_count"],
+            ],
+        },
         {
             "name": "valve_monitor_worker",
-            "thread": pool.apply_async(
+            "param": [
                 valve_monitor_worker,
-                (
-                    config,
-                    setting["dummy_mode"],
-                    setting["speedup"],
-                    setting["msg_count"],
-                ),
-            ),
-        }
-    )
-    pool.close()
+                config,
+                setting["dummy_mode"],
+                setting["speedup"],
+                setting["msg_count"],
+            ],
+        },
+    ]
+
+    thread_list = []
+    # NOTE: テストしたいので，threading.Thread ではなく multiprocessing.pool.ThreadPool を使う
+    executor = concurrent.futures.ThreadPoolExecutor()
+
+    for worker_info in worker_def:
+        future = executor.submit(*worker_info["param"])
+        thread_list.append({"name": worker_info["name"], "future": future})
 
     # NOTE: Flask は別のプロセスで実行
     log_server_server = werkzeug.serving.make_server(
         "0.0.0.0",
         LOG_SERVER_PORT,
         log_server_app(config, log_event_queue),
-        # NOTE: threaded にするとカバレッジが上手く撮れないので，テスト時は False にする
-        threaded=os.environ.get("TEST", "false") != "true",
+        threaded=True,
     )
     log_server_thread = threading.Thread(target=log_server_server.serve_forever)
 
@@ -404,7 +394,7 @@ def start(arg):
 
     signal.signal(signal.SIGTERM, sig_handler)
 
-    return (result_list, log_server_handle)
+    return (executor, thread_list, log_server_handle)
 
 
 def sig_handler(num, frame):
@@ -417,30 +407,34 @@ def sig_handler(num, frame):
 
 
 def terminate_log_server(log_server_handle):
-    logging.info("Stop log server")
+    logging.warning("Stop log server")
 
     webapp_log.term()
     work_log.term()
     webapp_event.stop_watch()
 
     log_server_handle["server"].shutdown()
+    log_server_handle["server"].server_close()
     log_server_handle["thread"].join()
 
 
-def wait_and_term(result_list, log_server_handle):
+def wait_and_term(executor, thread_list, log_server_handle):
     global should_terminate
 
     should_terminate = True
 
     ret = 0
-    for result in result_list:
-        logging.info("Wait {name}".format(name=result["name"]))
-        if result["thread"].get() != 0:
+    for thread_info in thread_list:
+        logging.info("Wait {name} finish".format(name=thread_info["name"]))
+
+        if thread_info["future"].result() != 0:
+            logging.warning("Error occurred in {name}".format(name=thread_info["name"]))
             ret = -1
 
-    terminate_log_server(log_server_handle)
+    logging.info("Shutdown executor")
+    executor.shutdown()
 
-    sys.stdout.flush()
+    terminate_log_server(log_server_handle)
 
     return ret
 

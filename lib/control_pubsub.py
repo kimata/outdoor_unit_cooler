@@ -44,7 +44,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):
     socket.close()
     context.destroy()
 
-    logging.info("Stop ZMQ server")
+    logging.warning("Stop ZMQ server")
 
 
 # NOTE: Last Value Caching Proxy
@@ -111,7 +111,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
     backend.close()
     context.destroy()
 
-    logging.info("Stop ZMQ proxy server")
+    logging.warning("Stop ZMQ proxy server")
 
 
 def start_client(server_host, server_port, func, msg_count=0):
@@ -137,7 +137,7 @@ def start_client(server_host, server_port, func, msg_count=0):
             if i == msg_count:
                 break
 
-    logging.info("Stop ZMQ client")
+    logging.warning("Stop ZMQ client")
 
     socket.disconnect(target)
     socket.close()

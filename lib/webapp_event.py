@@ -42,8 +42,13 @@ def notify_watch_impl(queue):
             # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
             logging.debug(traceback.format_exc())
             pass
+        except ValueError:  # pragma: no cover
+            # NOTE: 終了時，queue が close された後に empty() や get() を呼ぶとこの例外が
+            # 発生する．
+            logging.warning(traceback.format_exc())
+            pass
 
-    logging.info("Stop notify watch thread")
+    logging.warning("Stop notify watch thread")
 
 
 def notify_watch(queue):

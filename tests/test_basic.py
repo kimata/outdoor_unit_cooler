@@ -183,18 +183,8 @@ def mock_gpio(mocker):
     mocker.patch("valve.GPIO", return_value=gpio_mock)
 
 
-def show_thread_list():
-    import threading
-
-    print("-------------------------------")
-    for thread in threading.enumerate():
-        print(thread)
-    print("-------------------------------")
-
-
 ######################################################################
 def test_controller(mocker):
-    show_thread_list()
     import cooler_controller
     import control
 
@@ -214,7 +204,6 @@ def test_controller(mocker):
 
 
 def test_controller_influxdb_dummy(mocker):
-    show_thread_list()
     import cooler_controller
     import control
 
@@ -262,9 +251,7 @@ def test_controller_influxdb_dummy(mocker):
 
 
 def test_controller_start_error_1(mocker):
-    show_thread_list()
     import cooler_controller
-    import control
     from threading import Thread as Thread_orig
 
     def thread_mock(
@@ -296,9 +283,7 @@ def test_controller_start_error_1(mocker):
 
 
 def test_controller_influxdb_error(mocker):
-    show_thread_list()
     import cooler_controller
-    import control
 
     mocker.patch("influxdb_client.InfluxDBClient.query_api", side_effect=RuntimeError())
 
@@ -316,7 +301,6 @@ def test_controller_influxdb_error(mocker):
 
 
 def test_controller_start_error_2(mocker):
-    import control
     import cooler_controller
     from threading import Thread as Thread_orig
 
@@ -347,6 +331,45 @@ def test_controller_start_error_2(mocker):
 
     # NOTE: 現状，Proxy のエラーの場合，controller としては healthz は正常になる
     assert check_healthz("controller") is not None
+
+
+def test_controller_outdoor_normal(mocker):
+    import cooler_controller
+
+    def fetch_data_mock(
+        db_config,
+        measure,
+        hostname,
+        field,
+        start="-30h",
+        stop="now()",
+        every_min=1,
+        window_min=3,
+        create_empty=True,
+        last=False,
+    ):
+        if field == "temp":
+            return gen_sensor_data([25])
+        elif field == "power":
+            return gen_sensor_data([100])
+        elif field == "lux":
+            return gen_sensor_data([500])
+        elif field == "solar_rad":
+            return gen_sensor_data([300])
+        else:
+            return gen_sensor_data([30])
+
+    mocker.patch("control.fetch_data", side_effect=fetch_data_mock)
+
+    cooler_controller.wait_and_term(
+        *cooler_controller.start(
+            {
+                "config_file": CONFIG_FILE,
+                "speedup": 40,
+                "msg_count": 1,
+            }
+        )
+    )
 
 
 def test_controller_aircon_mode(mocker):
@@ -576,7 +599,6 @@ def test_controller_view_msg():
 
 
 def test_actuator(mocker):
-    show_thread_list()
     import requests
 
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
@@ -584,7 +606,6 @@ def test_actuator(mocker):
 
     import cooler_controller
     import unit_cooler
-    import control
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
@@ -663,10 +684,51 @@ def test_actuator(mocker):
     cooler_controller.wait_and_term(*control_handle)
 
 
-def test_actuator_open(mocker, freezer):
-    show_thread_list()
-    import requests
+def test_actuator_no_test(mocker):
+    import signal
 
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch.dict("os.environ", {"TEST": "false"})
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    time.sleep(3)
+
+    # NOTE: signal のテストもついでにやっておく
+    unit_cooler.sig_handler(signal.SIGTERM, None)
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+
+def test_actuator_open(mocker, freezer):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
@@ -687,7 +749,7 @@ def test_actuator_open(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 40,
-            "msg_count": 10,
+            "msg_count": 5,
         }
     )
 
@@ -696,9 +758,61 @@ def test_actuator_open(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 40,
             "dummy_mode": True,
-            "msg_count": 20,
+            "msg_count": 15,
         }
     )
+
+    freezer.move_to(time_test(0))
+    time.sleep(3)
+    freezer.move_to(time_test(10))
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert work_log.get_log_hist()[-1].index("電磁弁が壊れていますので制御を停止します．") == 0
+
+
+def test_actuator_slack_error(mocker, freezer):
+    import slack_sdk
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import work_log
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch(
+        "notify_slack.slack_sdk.WebClient",
+        side_effect=slack_sdk.errors.SlackClientError(),
+    )
+
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
     freezer.move_to(time_test(0))
     time.sleep(3)
     freezer.move_to(time_test(10))
@@ -798,7 +912,6 @@ def test_actuator_notify_hazard(mocker):
 
     import cooler_controller
     import unit_cooler
-    import control
     from config import load_config
 
     mock_gpio(mocker)
@@ -839,52 +952,12 @@ def test_actuator_notify_hazard(mocker):
     )
 
 
-# def test_actuator_signal(mocker):
-#     import signal
-
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-
-#     unit_cooler.sig_handler(signal.SIGTERM, None)
-
-#     unit_cooler.wait_and_term(*actuator_handle)
-#     cooler_controller.wait_and_term(*control_handle)
-
-
 def test_actuator_ctrl_error(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
     import cooler_controller
     import unit_cooler
-    from control_pubsub import start_client as start_client_orig
-    from config import load_config
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
@@ -961,7 +1034,6 @@ def test_actuator_recv_error(mocker):
 
 
 def test_actuator_iolink_short(mocker):
-
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
@@ -1215,40 +1287,38 @@ def test_fd_q10c_timeout(mocker):
     sensor.fd_q10c.FD_Q10C().get_value()
 
 
-# def test_actuator_restart():
-#     import cooler_controller
-#     import unit_cooler
+def test_actuator_restart():
+    import cooler_controller
+    import unit_cooler
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
-#     control_handle = cooler_controller.start(
-#         {
-#             "speedup": 40,
-#             "msg_count": 6,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "speedup": 40,
+            "msg_count": 6,
+        }
+    )
 
-#     unit_cooler.wait_and_term(*actuator_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
-#     unit_cooler.wait_and_term(*actuator_handle)
-#     cooler_controller.wait_and_term(*control_handle)
+    actuator_handle = unit_cooler.start(
+        {
+            "speedup": 40,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+    unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
 
 
 def test_webapp(mocker):
-    show_thread_list()
-
     import requests
     import webapp
     import webapp_event
@@ -1303,6 +1373,10 @@ def test_webapp(mocker):
     assert len(response.json["data"]) != 0
     assert "last_time" in response.json
 
+    response = client.get("/unit_cooler/api/event", query_string={"count": "2"})
+    assert response.status_code == 200
+    assert response.data.decode()
+
     response = client.get("/unit_cooler/api/memory")
     assert response.status_code == 200
     assert "memory" in response.json
@@ -1328,10 +1402,6 @@ def test_webapp(mocker):
     assert "mode" in response.json
     assert "cooler_status" in response.json
     assert "outdoor_status" in response.json
-
-    response = client.get("/unit_cooler/api/event", query_string={"count": "2"})
-    assert response.status_code == 200
-    assert response.data.decode()
 
     response = requests.models.Response()
     response.status_code = 500
@@ -1484,6 +1554,8 @@ def test_webapp_day_sum(mocker):
     import webapp_log
     import cooler_controller
     import unit_cooler
+
+    mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
 
     fetch_data_mock = mocker.MagicMock()
     fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]

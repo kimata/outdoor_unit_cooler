@@ -236,7 +236,7 @@ def get_flow(force_power_on=True):
 def stop_sensing():
     global fd_q10c
 
-    logging.info("Stop flow sensing")
+    logging.info("Stop[ flow sensing")
 
     try:
         fd_q10c.stop()
