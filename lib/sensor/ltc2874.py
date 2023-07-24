@@ -105,13 +105,13 @@ def com_status(spi):
 
 
 def com_start(spi):
-    if not com_status(spi):
+    if com_status(spi):
+        debug("IO-Link is already Powered-ON")
+    else:
         # Power on, CQ OC Timeout = 480us
         info("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
         time.sleep(5)
-    else:
-        debug("IO-Link is already Powered-ON")
 
     # Wakeup
     ltc2874_reg_write(spi, 0x0D, 0x10)

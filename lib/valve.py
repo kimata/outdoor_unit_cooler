@@ -10,13 +10,10 @@ import datetime
 from valve_state import VALVE_STATE, COOLING_STATE
 from work_log import work_log
 
-if os.environ.get("DUMMY_MODE", "false") != "true":
+if os.environ.get("DUMMY_MODE", "false") != "true":  # pragma: no cover
     import RPi.GPIO as GPIO
     from sensor.fd_q10c import FD_Q10C
 else:
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        logging.warning("Using dummy GPIO")
-
     # NOTE: 本物の GPIO のように振る舞うダミーのライブラリ
     class GPIO:
         IS_DUMMY = True
@@ -49,6 +46,9 @@ else:
                 return 1.23
             else:
                 return 0
+
+        def get_state(self):
+            return True
 
         def stop(self):
             return
@@ -177,7 +177,7 @@ def get_duration(stat_file):
         start = datetime.datetime.fromtimestamp(int(f.read()))
         now = datetime.datetime.now()
 
-        return int((start - now).total_seconds())
+        return int((now - start).total_seconds())
 
 
 def set_start_time(stat_file):
@@ -215,6 +215,12 @@ def stop_flow_monitor():
     fd_q10c.stop()
 
 
+def get_power_state():
+    global fd_q10c
+
+    return fd_q10c.get_state()
+
+
 def get_flow(force_power_on=True):
     global fd_q10c
 
@@ -236,12 +242,12 @@ def get_flow(force_power_on=True):
 def stop_sensing():
     global fd_q10c
 
-    logging.info("Stop[ flow sensing")
+    logging.info("Stop flow sensing")
 
     try:
         fd_q10c.stop()
     except RuntimeError as e:
-        logging.error(e.name)
+        logging.error(str(e))
 
 
 # NOTE: バルブを動作状態にします．
@@ -264,6 +270,8 @@ def set_cooling_working(duty_info):
         return set_state(VALVE_STATE.OPEN)
 
     status = get_status()
+
+    logging.info([status["duration"], duty_info["on_sec"]])
 
     if status["state"] == VALVE_STATE.OPEN:
         # NOTE: 現在バルブが開かれている

@@ -91,11 +91,14 @@ def check_valve_condition(config, valve_status):
                 duration=valve_status["duration"]
             )
         )
+
         if (
             valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]
         ) and (check_valve_condition.last_flow == 0):
             # バルブが閉じてから長い時間が経っていて流量も 0 の場合，センサーを停止する
             flow = 0.0
+            if actuator_valve.get_power_state():
+                work_log("長い間バルブが閉じられていますので，流量計の電源を OFF します．")
             actuator_valve.stop_sensing()
         else:
             flow = actuator_valve.get_flow()

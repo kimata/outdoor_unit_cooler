@@ -48,6 +48,15 @@ class FD_Q10C:
             logging.warning(traceback.format_exc())
             return None
 
+    def get_state(self):
+        # NOTE: 電源 ON なら True
+        try:
+            spi = driver.com_open()
+            return driver.com_status(spi)
+        except:
+            driver.com_close(spi)
+            return False
+
     def read_param(self, index, data_type, force_power_on=True):
         if not self._acquire():
             raise RuntimeError("Unable to acquire the lock.")

@@ -87,7 +87,6 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
             lambda message: queue_put(config, cmd_queue, message),
             msg_count,
         )
-        cmd_queue.close()
     except:
         notify_error(config, traceback.format_exc())
         ret = -1
@@ -116,7 +115,6 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
             if should_terminate:
                 logging.info("Terminate control worker")
                 break
-
             try:
                 if not cmd_queue.empty():
                     while not cmd_queue.empty():
@@ -142,22 +140,25 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                 # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
                 logging.debug(traceback.format_exc())
                 pass
-
             if check_hazard(config):
                 cooling_mode = {"state": COOLING_STATE.IDLE}
-
             set_cooling_state(config, cooling_mode)
 
             pathlib.Path(config["actuator"]["liveness"]["file"]).touch()
 
             if msg_count != 0:
+                logging.warning(
+                    "(receive_count, msg_count) = ({receive_count}, {msg_count})".format(
+                        receive_count=receive_count, msg_count=msg_count
+                    )
+                )
                 if receive_count >= msg_count:
                     break
 
             if (datetime.datetime.now() - receive_time).total_seconds() > config[
                 "controller"
             ]["interval_sec"] * 10:
-                notify_error(config, "Unable to receive command.")
+                work_log.work_log("冷却モードの指示を受信できません．", work_log.WORK_LOG_LEVEL.INFO)
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
@@ -167,6 +168,8 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
         ret = -1
 
     logging.warning("Stop valve control worker")
+    cmd_queue.close()
+
     return ret
 
 
@@ -178,6 +181,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     logging.info("Start monitor worker")
 
     sender = None
+    hostname = "unit_cooler"
     try:
         sender = fluent.sender.FluentSender(
             "sensor", host=config["monitor"]["fluent"]["host"]
@@ -187,10 +191,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
         notify_error(config, "Failed to initialize monitor worker")
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
-    if interval_sec < 60:
-        log_period = math.ceil(60 / interval_sec)
-    else:
-        log_period = 1
+    log_period = max(math.ceil(60 / interval_sec), 1)
 
     i = 0
     flow_unknown = 0
@@ -232,14 +233,20 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
             if msg_count != 0:
+                logging.warning(
+                    "(monitor_count, msg_count) = ({monitor_count}, {msg_count})".format(
+                        monitor_count=monitor_count, msg_count=msg_count
+                    )
+                )
                 if monitor_count >= msg_count:
                     break
 
             if flow_unknown > config["monitor"]["sense"]["giveup"]:
-                notify_hazard(config, "流量計が使えません．")
+                work_log.work_log("流量計が使えません．", work_log.WORK_LOG_LEVEL.ERROR)
+
                 break
             elif flow_unknown > (config["monitor"]["sense"]["giveup"] / 2):
-                logging.warn("流量計が応答しないので一旦，リセットします．")
+                logging.warning("流量計が応答しないので一旦，リセットします．")
                 stop_valve_monitor()
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 1)
@@ -409,18 +416,18 @@ def sig_handler(num, frame):
 def terminate_log_server(log_server_handle):
     logging.warning("Stop log server")
 
-    webapp_log.term()
-    work_log.term()
-    webapp_event.stop_watch()
-
     log_server_handle["server"].shutdown()
     log_server_handle["server"].server_close()
     log_server_handle["thread"].join()
+
+    webapp_log.term(is_read_only=True)
+    webapp_event.stop_watch()
 
 
 def wait_and_term(executor, thread_list, log_server_handle):
     global should_terminate
 
+    logging.warning("Terminate unit_cooler")
     should_terminate = True
 
     ret = 0
@@ -433,6 +440,8 @@ def wait_and_term(executor, thread_list, log_server_handle):
 
     logging.info("Shutdown executor")
     executor.shutdown()
+
+    work_log.term()
 
     terminate_log_server(log_server_handle)
 

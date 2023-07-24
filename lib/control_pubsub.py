@@ -127,7 +127,7 @@ def start_client(server_host, server_port, func, msg_count=0):
 
     logging.info("Client initialize done.")
 
-    i = 0
+    receive_count = 0
     while True:
         ch, json_str = socket.recv_string().split(" ", 1)
         json_data = json.loads(json_str)
@@ -135,8 +135,13 @@ def start_client(server_host, server_port, func, msg_count=0):
         func(json_data)
 
         if msg_count != 0:
-            i += 1
-            if i == msg_count:
+            receive_count += 1
+            logging.warning(
+                "(receive_count, msg_count) = ({receive_count}, {msg_count})".format(
+                    receive_count=receive_count, msg_count=msg_count
+                )
+            )
+            if receive_count == msg_count:
                 break
 
     logging.warning("Stop ZMQ client")

@@ -143,6 +143,8 @@ def start(arg):
 
 
 def wait_and_term(control_thread, proxy_thread):
+    logging.warning("Terminate cooler_controller")
+
     if proxy_thread is not None:
         proxy_thread.join()
     if control_thread is not None:

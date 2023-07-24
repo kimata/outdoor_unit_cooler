@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import copy
 import os
 import pathlib
 import pytz
@@ -139,7 +140,7 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
         mode = judge_control_mode(config)
 
     mode_index = min(mode["control_mode"], len(MESSAGE_LIST) - 1)
-    control_msg = MESSAGE_LIST[mode_index]
+    control_msg = copy.deepcopy(MESSAGE_LIST[mode_index])
 
     # NOTE: 参考として，どのモードかも通知する
     control_msg["mode_index"] = mode_index
