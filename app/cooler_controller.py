@@ -88,6 +88,7 @@ def start(arg):
         "view_msg_mode": False,
         "dummy_mode": False,
         "debug_mode": False,
+        "disable_proxy": False,
         "speedup": 1,
         "msg_count": 0,
     }
@@ -128,13 +129,14 @@ def start(arg):
             setting["speedup"],
             setting["msg_count"],
         )
-        proxy_thread = cache_proxy_start(
-            config,
-            setting["server_host"],
-            setting["real_port"],
-            setting["server_port"],
-            setting["msg_count"],
-        )
+        if not setting["disable_proxy"]:
+            proxy_thread = cache_proxy_start(
+                config,
+                setting["server_host"],
+                setting["real_port"],
+                setting["server_port"],
+                setting["msg_count"],
+            )
     except:
         notify_error(config, traceback.format_exc())
         pass
@@ -143,12 +145,12 @@ def start(arg):
 
 
 def wait_and_term(control_thread, proxy_thread):
-    logging.warning("Terminate cooler_controller")
-
     if proxy_thread is not None:
         proxy_thread.join()
     if control_thread is not None:
         control_thread.join()
+
+    logging.warning("Terminate cooler_controller")
 
     return 0
 

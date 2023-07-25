@@ -21,7 +21,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):
 
     logging.info("Server initialize done.")
 
-    i = 0
+    send_count = 0
     try:
         while True:
             start_time = time.time()
@@ -30,12 +30,17 @@ def start_server(server_port, func, interval_sec, msg_count=0):
             )
 
             if msg_count != 0:
+                logging.debug(
+                    "(send_count, msg_count) = ({send_count}, {msg_count})".format(
+                        send_count=send_count, msg_count=msg_count
+                    )
+                )
                 # NOTE: Proxy が間に入るので，1回多く回す
-                if i == msg_count:
+                if send_count == msg_count:
                     break
-                i += 1
+                send_count += 1
 
-            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
@@ -71,10 +76,11 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
     poller.register(frontend, zmq.POLLIN)
     poller.register(backend, zmq.POLLIN)
 
-    i = 0
+    subscribed = False  # NOTE: テスト用
+    proxy_count = 0
     while True:
         try:
-            events = dict(poller.poll(1000))
+            events = dict(poller.poll(100))
         except KeyboardInterrupt:  # pragma: no cover
             break
 
@@ -85,11 +91,8 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
             cache[ch] = json_str
 
             backend.send_string(recv_data)
-
-        if msg_count != 0:
-            i += 1
-            if i == msg_count:
-                break
+            if subscribed:
+                proxy_count += 1
 
         if backend in events:
             logging.debug("Backend event")
@@ -98,16 +101,27 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                 logging.debug("Unsubscribed")
             elif event[0] == 1:
                 logging.debug("Subscribed")
+                subscribed = True
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
                     logging.debug("Send cache")
                     backend.send_string(
                         "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
                     )
+                    proxy_count += 1
                 else:
                     logging.warning("Cache is empty")
             else:  # pragma: no cover
                 pass
+
+        if msg_count != 0:
+            logging.debug(
+                "(proxy_count, msg_count) = ({proxy_count}, {msg_count})".format(
+                    proxy_count=proxy_count, msg_count=msg_count
+                )
+            )
+            if proxy_count == msg_count:
+                break
 
     frontend.close()
     backend.close()
@@ -136,7 +150,7 @@ def start_client(server_host, server_port, func, msg_count=0):
 
         if msg_count != 0:
             receive_count += 1
-            logging.warning(
+            logging.debug(
                 "(receive_count, msg_count) = ({receive_count}, {msg_count})".format(
                     receive_count=receive_count, msg_count=msg_count
                 )

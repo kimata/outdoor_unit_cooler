@@ -96,7 +96,7 @@ def judge_control_mode(config):
     sense_data = get_sense_data(config)
 
     try:
-        cooler_status = get_cooler_status(sense_data)
+        cooler_status = get_cooler_status(config, sense_data)
     except RuntimeError as e:
         notify_error(config, e.args[0])
         cooler_status = {"status": 0, "message": None}

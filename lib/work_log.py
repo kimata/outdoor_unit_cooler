@@ -45,7 +45,7 @@ def clear_hist():
 
 
 # NOTE: テスト用
-def get_log_hist():
+def get_hist():
     global log_hist
 
     return log_hist

@@ -38,6 +38,7 @@ def notify_watch_impl(queue):
             if not queue.empty():
                 notify_event(queue.get())
             time.sleep(0.1)
+
         except OverflowError:  # pragma: no cover
             # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
             logging.debug(traceback.format_exc())
@@ -67,7 +68,8 @@ def stop_watch():
 
     if watch_thread is not None:
         is_stop_watch = True
-        watch_thread.join()
+        # NOTE: pytest で freezer 使うと下記で固まるので join を見送る
+        # watch_thread.join()
         watch_thread = None
 
 
@@ -101,7 +103,7 @@ def api_event():
 
         i = 0
         while True:
-            time.sleep(1)
+            time.sleep(0.5)
             for name, event_type in EVENT_TYPE.__members__.items():
                 index = event_index(event_type)
 

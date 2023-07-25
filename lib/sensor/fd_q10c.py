@@ -87,15 +87,17 @@ class FD_Q10C:
         if not self._acquire():
             raise RuntimeError("Unable to acquire the lock.")
 
+        spi = None
         try:
             spi = driver.com_open()
             driver.com_stop(spi, is_power_off=True)
             driver.com_close(spi)
             self._release()
         except:
-            driver.com_close(spi)
-            self._release()
-            raise
+            if spi is not None:
+                driver.com_close(spi)
+                self._release()
+                raise
 
     def _acquire(self):
         self.lock_fd = os.open(self.lock_file, os.O_RDWR | os.O_CREAT | os.O_TRUNC)
@@ -108,7 +110,7 @@ class FD_Q10C:
                 pass
             else:
                 return True
-            time.sleep(1)
+            time.sleep(0.5)
         os.close(self.lock_fd)
         self.lock_fd = None
 

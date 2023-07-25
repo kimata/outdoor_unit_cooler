@@ -228,7 +228,7 @@ COOLER_CONDITION = [
 
 # NOTE: クーラーの稼働状況を評価する．
 # (数字が大きいほど稼働状況が活発)
-def get_cooler_status(sense_data):
+def get_cooler_status(config, sense_data):
     mode_map = {}
 
     for mode in aircon.MODE:

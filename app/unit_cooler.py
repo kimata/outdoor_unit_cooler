@@ -120,6 +120,10 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                     while not cmd_queue.empty():
                         cooling_mode = cmd_queue.get()
                         receive_count += 1
+                        if os.environ.get("TEST", "false") == "true":
+                            # NOTE: テスト時は，コマンドの数を整合させたいので，
+                            # 1 回に1個のコマンドの未処理する．
+                            break
 
                     recv_cooling_mode = cooling_mode
                     receive_time = datetime.datetime.now()
@@ -147,7 +151,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
             pathlib.Path(config["actuator"]["liveness"]["file"]).touch()
 
             if msg_count != 0:
-                logging.warning(
+                logging.debug(
                     "(receive_count, msg_count) = ({receive_count}, {msg_count})".format(
                         receive_count=receive_count, msg_count=msg_count
                     )
@@ -158,9 +162,9 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
             if (datetime.datetime.now() - receive_time).total_seconds() > config[
                 "controller"
             ]["interval_sec"] * 10:
-                work_log.work_log("冷却モードの指示を受信できません．", work_log.WORK_LOG_LEVEL.INFO)
+                work_log.work_log("冷却モードの指示を受信できません．", work_log.WORK_LOG_LEVEL.ERROR)
 
-            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
@@ -188,7 +192,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
         )
         hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
     except:
-        notify_error(config, "Failed to initialize monitor worker")
+        work_log.work_log("流量のロギングを開始できません．", work_log.WORK_LOG_LEVEL.ERROR)
+        return -1
 
     interval_sec = config["monitor"]["interval_sec"] / speedup
     log_period = max(math.ceil(60 / interval_sec), 1)
@@ -249,7 +254,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
                 logging.warning("流量計が応答しないので一旦，リセットします．")
                 stop_valve_monitor()
 
-            sleep_sec = max(interval_sec - (time.time() - start_time), 1)
+            sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))
             time.sleep(sleep_sec)
     except:
@@ -416,18 +421,19 @@ def sig_handler(num, frame):
 def terminate_log_server(log_server_handle):
     logging.warning("Stop log server")
 
+    webapp_event.stop_watch()
+
     log_server_handle["server"].shutdown()
     log_server_handle["server"].server_close()
     log_server_handle["thread"].join()
 
     webapp_log.term(is_read_only=True)
-    webapp_event.stop_watch()
+    work_log.term()
 
 
 def wait_and_term(executor, thread_list, log_server_handle):
     global should_terminate
 
-    logging.warning("Terminate unit_cooler")
     should_terminate = True
 
     ret = 0
@@ -441,9 +447,9 @@ def wait_and_term(executor, thread_list, log_server_handle):
     logging.info("Shutdown executor")
     executor.shutdown()
 
-    work_log.term()
-
     terminate_log_server(log_server_handle)
+
+    logging.warning("Terminate unit_cooler")
 
     return ret
 
