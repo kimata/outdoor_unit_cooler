@@ -1018,7 +1018,7 @@ def test_actuator_power_off_2(mocker, freezer):
         }
     )
 
-    time.sleep(4)
+    time.sleep(2)
     freezer.move_to(time_test(5))
     time.sleep(1)
     freezer.move_to(time_test(10))
@@ -1037,365 +1037,365 @@ def test_actuator_power_off_2(mocker, freezer):
     assert work_log.get_hist()[-1].find("長い間バルブが閉じられていますので，流量計の電源を OFF します．") == 0
 
 
-# def test_actuator_no_test(mocker):
-#     import signal
-
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
+def test_actuator_no_test(mocker):
+    import signal
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     mocker.patch.dict("os.environ", {"TEST": "false"})
+    mocker.patch.dict("os.environ", {"TEST": "false"})
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 2,
-#         }
-#     )
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 2,
-#         }
-#     )
-
-#     time.sleep(1)
-
-#     # NOTE: signal のテストもついでにやっておく
-#     unit_cooler.sig_handler(signal.SIGKILL, None)
-#     unit_cooler.sig_handler(signal.SIGTERM, None)
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     # NOTE: 正常終了すれば OK
-
-
-# def test_actuator_unable_to_receive(mocker, freezer):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=0)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     freezer.move_to(time_test(0))
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 1,
-#         }
-#     )
-
-#     time.sleep(2)
-#     freezer.move_to(time_test(20))
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     assert notify_slack.get_hist()[0].find("冷却モードの指示を受信できません．") == 0
-
-
-# def test_actuator_open(mocker, freezer):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-#     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     freezer.move_to(time_test(0))
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 5,
-#         }
-#     )
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-#     time.sleep(2)
-#     freezer.move_to(time_test(10))
-#     time.sleep(2)
-#     freezer.move_to(time_test(20))
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     assert notify_slack.get_hist()[-1].find("電磁弁が壊れていますので制御を停止します．") == 0
-
-
-# def test_actuator_flow_unknown_1(mocker):
-#     import copy
-
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-#     import control_config
-#     import control
-#     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
-
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=None)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-#     mocker.patch(
-#         "control.dummy_control_mode",
-#         return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
-#     )
-
-#     message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
-#     message_list_orig[-1]["duty"]["on_sec"] = 100000
-#     mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 15,
-#         }
-#     )
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 15,
-#         }
-#     )
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     assert notify_slack.get_hist()[-1].find("流量計が使えません．") == 0
-
-
-# def test_actuator_flow_unknown_2(mocker):
-#     import copy
-
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-#     import control_config
-#     import control
-#     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
-
-#     mock_gpio(mocker)
-#     mocker.patch("valve.FD_Q10C.get_value", side_effect=RuntimeError)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-#     mocker.patch(
-#         "control.dummy_control_mode",
-#         return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
-#     )
-
-#     message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
-#     message_list_orig[-1]["duty"]["on_sec"] = 100000
-#     mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 15,
-#         }
-#     )
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 15,
-#         }
-#     )
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     assert notify_slack.get_hist()[-1].find("流量計が使えません．") == 0
-
-
-# def test_actuator_leak(mocker, freezer):
-#     import copy
-
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-#     import control_config
-#     import control
-#     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
-
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=10)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-#     mocker.patch(
-#         "control.dummy_control_mode",
-#         return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
-#     )
-
-#     message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
-#     message_list_orig[-1]["duty"]["on_sec"] = 1000000
-#     mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     freezer.move_to(time_test(0))
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 10,
-#         }
-#     )
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
-
-#     time.sleep(2)
-#     freezer.move_to(time_test(1))
-#     time.sleep(2)
-#     freezer.move_to(time_test(2))
-#     time.sleep(2)
-#     freezer.move_to(time_test(3))
-#     time.sleep(2)
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     assert (
-#         notify_slack.get_hist()[-1].find("水漏れしています．") == 0
-#         or notify_slack.get_hist()[-2].find("水漏れしています．") == 0
-#     )
-
-
-# def test_actuator_speedup(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-#     import cooler_controller
-#     import unit_cooler
-
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=None)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 5,
-#         }
-#     )
-
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
-
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
-#     # NOTE: 正常終了すれば OK
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 2,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 2,
+        }
+    )
+
+    time.sleep(1)
+
+    # NOTE: signal のテストもついでにやっておく
+    unit_cooler.sig_handler(signal.SIGKILL, None)
+    unit_cooler.sig_handler(signal.SIGTERM, None)
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    # NOTE: 正常終了すれば OK
+
+
+def test_actuator_unable_to_receive(mocker, freezer):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+
+    mock_gpio(mocker)
+    mocker.patch("valve.get_flow", return_value=0)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    freezer.move_to(time_test(0))
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 1,
+        }
+    )
+
+    time.sleep(2)
+    freezer.move_to(time_test(20))
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[0].find("冷却モードの指示を受信できません．") == 0
+
+
+def test_actuator_open(mocker, freezer):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    freezer.move_to(time_test(0))
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+    time.sleep(2)
+    freezer.move_to(time_test(10))
+    time.sleep(2)
+    freezer.move_to(time_test(20))
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[-1].find("電磁弁が壊れていますので制御を停止します．") == 0
+
+
+def test_actuator_flow_unknown_1(mocker):
+    import copy
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control_config
+    import control
+    from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
+
+    mock_gpio(mocker)
+    mocker.patch("valve.get_flow", return_value=None)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch(
+        "control.dummy_control_mode",
+        return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+    )
+
+    message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
+    message_list_orig[-1]["duty"]["on_sec"] = 100000
+    mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 15,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[-1].find("流量計が使えません．") == 0
+
+
+def test_actuator_flow_unknown_2(mocker):
+    import copy
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control_config
+    import control
+    from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
+
+    mock_gpio(mocker)
+    mocker.patch("valve.FD_Q10C.get_value", side_effect=RuntimeError)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch(
+        "control.dummy_control_mode",
+        return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+    )
+
+    message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
+    message_list_orig[-1]["duty"]["on_sec"] = 100000
+    mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 15,
+        }
+    )
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 15,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[-1].find("流量計が使えません．") == 0
+
+
+def test_actuator_leak(mocker, freezer):
+    import copy
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control_config
+    import control
+    from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
+
+    mock_gpio(mocker)
+    mocker.patch("valve.get_flow", return_value=10)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch(
+        "control.dummy_control_mode",
+        return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+    )
+
+    message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
+    message_list_orig[-1]["duty"]["on_sec"] = 1000000
+    mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    freezer.move_to(time_test(0))
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 10,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+        }
+    )
+
+    time.sleep(2)
+    freezer.move_to(time_test(1))
+    time.sleep(2)
+    freezer.move_to(time_test(2))
+    time.sleep(2)
+    freezer.move_to(time_test(3))
+    time.sleep(2)
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert (
+        notify_slack.get_hist()[-1].find("水漏れしています．") == 0
+        or notify_slack.get_hist()[-2].find("水漏れしています．") == 0
+    )
+
+
+def test_actuator_speedup(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+
+    mock_gpio(mocker)
+    mocker.patch("valve.get_flow", return_value=None)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    # NOTE: 正常終了すれば OK
 
 
 # def test_actuator_monitor_error(mocker):
