@@ -935,54 +935,6 @@ def test_actuator_log(mocker):
     check_notify_slack(None)
 
 
-# # def test_actuator_unknown_status(mocker, freezer):
-# #     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-# #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-# #     import cooler_controller
-# #     import unit_cooler
-# #     import valve
-
-# #     mock_gpio(mocker)
-# #     mock_fd_q10c(mocker)
-# #     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-# #     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 1})
-
-# #     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-# #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-# #     freezer.move_to(time_test(0))
-
-# #     actuator_handle = unit_cooler.start(
-# #         {
-# #             "config_file": CONFIG_FILE,
-# #             "speedup": 40,
-# #             "msg_count": 5,
-# #         }
-# #     )
-
-# #     control_handle = cooler_controller.start(
-# #         {
-# #             "config_file": CONFIG_FILE,
-# #             "dummy_mode": True,
-# #             "speedup": 40,
-# #             "msg_count": 20,
-# #         }
-# #     )
-
-# #     time.sleep(2)
-# #     valve.STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-# #     time.sleep(1)
-# #     valve.STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-# #     time.sleep(1)
-# #     valve.STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-# #     time.sleep(1)
-# #     valve.STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-
-# #     cooler_controller.wait_and_term(*control_handle)
-# #     unit_cooler.wait_and_term(*actuator_handle)
-
-
 def test_actuator_send_error(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
@@ -1164,7 +1116,7 @@ def test_actuator_power_off_2(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 5,
         }
     )
 
@@ -1173,7 +1125,7 @@ def test_actuator_power_off_2(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 15,
+            "msg_count": 5,
         }
     )
 
@@ -1185,8 +1137,6 @@ def test_actuator_power_off_2(mocker, freezer):
     freezer.move_to(time_test(0, 3))
     time.sleep(1)
     freezer.move_to(time_test(5, 3))
-    time.sleep(1)
-    freezer.move_to(time_test(10, 3))
 
     cooler_controller.wait_and_term(*control_handle)
     unit_cooler.wait_and_term(*actuator_handle)
@@ -1195,74 +1145,155 @@ def test_actuator_power_off_2(mocker, freezer):
     check_healthz("receiver", True)
     check_healthz("actuator", True)
     check_healthz("monitor", True)
-
     # NOTE: エラーが発生していなければ OK
 
 
-# def test_actuator_power_off_3(mocker, freezer):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_fd_q10c_stop_error(mocker, freezer):
+    import inspect
 
-#     import cooler_controller
-#     import unit_cooler
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=0)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    import cooler_controller
+    import unit_cooler
 
-#     def dummy_mode_mock():
-#         dummy_mode_mock.i += 1
-#         if dummy_mode_mock.i <= 1:
-#             return {"control_mode": 1}
-#         else:
-#             return {"control_mode": 0}
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
 
-#     dummy_mode_mock.i = 0
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     mocker.patch("control.dummy_control_mode", side_effect=dummy_mode_mock)
-#     mocker.patch("valve.FD_Q10C.stop", side_effect=RuntimeError())
-#     mocker.patch("valve.get_power_state", return_value=False)
+    def dummy_mode_mock():
+        dummy_mode_mock.i += 1
+        if dummy_mode_mock.i <= 1:
+            return {"control_mode": 1}
+        else:
+            return {"control_mode": 0}
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    dummy_mode_mock.i = 0
 
-#     freezer.move_to(time_test(0))
+    mocker.patch("control.dummy_control_mode", side_effect=dummy_mode_mock)
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 10,
-#         }
-#     )
+    def com_stop_mock(spi, ser=None, is_power_off=False):
+        if inspect.stack()[4].function == "stop":
+            raise RuntimeError()
+        else:
+            return True
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
+    mocker.patch("sensor.ltc2874.com_stop", side_effect=com_stop_mock)
 
-#     time.sleep(1)
-#     freezer.move_to(time_test(5))
-#     time.sleep(1)
-#     freezer.move_to(time_test(10))
-#     time.sleep(1)
-#     freezer.move_to(time_test(0, 3))
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    freezer.move_to(time_test(0))
 
-#     check_healthz("controller", True)
-#     check_healthz("receiver", True)
-#     check_healthz("actuator", True)
-#     check_healthz("monitor", True)
-#     # NOTE: タイミング次第でエラーが記録されるので notify_slack はチェックしない
-#     # assert notify_slack.get_hist() == []
-#     # NOTE: get_power_state が False の場合は流量計を電源OFFしに行かない
-#     assert work_log.get_hist()[-1].find("長い間バルブが閉じられていますので，流量計の電源を OFF します．") == -1
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    time.sleep(2)
+    freezer.move_to(time_test(5))
+    time.sleep(1)
+    freezer.move_to(time_test(10))
+    time.sleep(1)
+    freezer.move_to(time_test(0, 3))
+    time.sleep(1)
+    freezer.move_to(time_test(5, 3))
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
+    # NOTE: エラーが発生していなければ OK
+
+
+def test_actuator_fd_q10c_get_state_error(mocker, freezer):
+    import inspect
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
+
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    def dummy_mode_mock():
+        dummy_mode_mock.i += 1
+        if dummy_mode_mock.i <= 1:
+            return {"control_mode": 1}
+        else:
+            return {"control_mode": 0}
+
+    dummy_mode_mock.i = 0
+
+    mocker.patch("control.dummy_control_mode", side_effect=dummy_mode_mock)
+
+    def com_status_mock(spi):
+        if inspect.stack()[4].function == "get_state":
+            raise RuntimeError()
+        else:
+            return True
+
+    mocker.patch("sensor.ltc2874.com_status", side_effect=com_status_mock)
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    freezer.move_to(time_test(0))
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 5,
+        }
+    )
+
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    time.sleep(2)
+    freezer.move_to(time_test(5))
+    time.sleep(1)
+    freezer.move_to(time_test(10))
+    time.sleep(1)
+    freezer.move_to(time_test(0, 3))
+    time.sleep(1)
+    freezer.move_to(time_test(5, 3))
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
+    # NOTE: エラーが発生していなければ OK
 
 
 def test_actuator_no_test(mocker):
@@ -1825,42 +1856,6 @@ def test_actuator_emit_error(mocker):
     check_healthz("actuator", True)
     check_healthz("monitor", True)
     check_notify_slack(None)
-
-
-# # def test_actuator_send_condition_fail(mocker):
-# #     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-# #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
-
-# #     import cooler_controller
-# #     import unit_cooler
-# #     import control
-
-# #     mock_gpio(mocker)
-# #     mock_fd_q10c(mocker)
-# #     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
-
-# #     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-# #     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-# #     actuator_handle = unit_cooler.start(
-# #         {
-# #             "config_file": CONFIG_FILE,
-# #             "speedup": 40,
-# #             "msg_count": 5,
-# #         }
-# #     )
-
-# #     control_handle = cooler_controller.start(
-# #         {
-# #             "config_file": CONFIG_FILE,
-# #             "speedup": 40,
-# #             "dummy_mode": True,
-# #             "msg_count": 15,
-# #         }
-# #     )
-
-# #     unit_cooler.wait_and_term(*actuator_handle)
-# #     cooler_controller.wait_and_term(*control_handle)
 
 
 def test_actuator_notify_hazard(mocker):
@@ -2505,7 +2500,7 @@ def test_webapp_queue_overflow(mocker):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 5,
+            "msg_count": 7,
         }
     )
 

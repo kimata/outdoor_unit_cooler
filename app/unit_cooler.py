@@ -238,7 +238,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
             pathlib.Path(config["monitor"]["liveness"]["file"]).touch()
 
             if msg_count != 0:
-                logging.warning(
+                logging.debug(
                     "(monitor_count, msg_count) = ({monitor_count}, {msg_count})".format(
                         monitor_count=monitor_count, msg_count=msg_count
                     )
