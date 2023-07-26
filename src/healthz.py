@@ -106,7 +106,7 @@ if watch_mode == "CTRL":
 elif watch_mode == "WEB":
     name_list = ["web"]
 else:
-    name_list = ["actuator", "monitor", "receiver"]
+    name_list = ["receiver", "actuator", "monitor"]
     port = None
 
 target_list = []
