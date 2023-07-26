@@ -8,11 +8,11 @@ Usage:
   webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-n COUNT] [-D]
 
 Options:
-  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します． [default: config.yaml]
   -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
   -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
   -a ACTUATOR_HOST  : アクチュエータのホスト名を指定します． [default: localhost]
-  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし．[default: 0]
+  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし． [default: 0]
   -D                : ダミーモードで実行します．
 """
 

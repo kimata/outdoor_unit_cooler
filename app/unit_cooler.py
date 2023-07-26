@@ -7,10 +7,10 @@ Usage:
   unit_cooler.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-n COUNT] [-D] [-t SPEEDUP] [-d]
 
 Options:
-  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します． [default: config.yaml]
   -s CONTROL_HOST   : コントローラのホスト名を指定します． [default: localhost]
   -p PUB_PORT       : ZeroMQ の Pub サーバーを動作させるポートを指定します． [default: 2222]
-  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし．[default: 0]
+  -n COUNT          : n 回制御メッセージを受信したら終了します．0 は制限なし． [default: 0]
   -D                : ダミーモードで実行します．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．

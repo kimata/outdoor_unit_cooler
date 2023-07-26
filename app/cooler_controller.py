@@ -9,10 +9,10 @@ Usage:
   cooler_controller.py -V
 
 Options:
-  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します．[default: config.yaml]
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します． [default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
   -r REAL_PORT      : ZeroMQ の 本当のサーバーを動作させるポートを指定します． [default: 2200]
-  -n COUNT          : n 回制御メッセージを生成したら終了します．0 は制限なし．[default: 0]
+  -n COUNT          : n 回制御メッセージを生成したら終了します．0 は制限なし． [default: 0]
   -D                : 冷却モードをランダムに生成するモードで動作すします．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
