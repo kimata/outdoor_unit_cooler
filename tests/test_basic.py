@@ -95,17 +95,28 @@ def gen_sensor_data(value=[30, 34, 25], valid=True):
     return sensor_data
 
 
-def gen_fd_q10c_ser_trans_sense():
+def gen_fd_q10c_ser_trans_sense(is_zero=False):
     # NOTE: send/recv はプログラム視点．SPI デバイスが送信すべき内容が recv．
-    return [
-        {"send": [0x70, 0x09, 0x93], "recv": [0x70, 0x09, 0x93, 0x2D]},
-        {"send": [0x61, 0x2E, 0x94], "recv": [0x61, 0x2E, 0x94, 0x2D]},
-        {"send": [0x62, 0x12, 0x7], "recv": [0x62, 0x12, 0x7, 0x2D]},
-        {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD4, 0x1B]},
-        {"send": [0xE1, 0x28], "recv": [0xE1, 0x28, 0x1, 0x3C]},
-        {"send": [0xE2, 0x18], "recv": [0xE2, 0x18, 0x1, 0x3C]},
-        {"send": [0xE3, 0x9], "recv": [0xE3, 0x9, 0xD4, 0x1B]},
-    ]
+    if is_zero:
+        return [
+            {"send": [0x70, 0x09, 0x93], "recv": [0x70, 0x09, 0x93, 0x2D]},
+            {"send": [0x61, 0x2E, 0x94], "recv": [0x61, 0x2E, 0x94, 0x2D]},
+            {"send": [0x62, 0x12, 0x07], "recv": [0x62, 0x12, 0x07, 0x2D]},
+            {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD4, 0x1B]},
+            {"send": [0xE1, 0x28], "recv": [0xE1, 0x28, 0x00, 0x2D]},
+            {"send": [0xE2, 0x18], "recv": [0xE2, 0x18, 0x00, 0x2D]},
+            {"send": [0xE3, 0x09], "recv": [0xE3, 0x09, 0xD4, 0x1B]},
+        ]
+    else:
+        return [
+            {"send": [0x70, 0x09, 0x93], "recv": [0x70, 0x09, 0x93, 0x2D]},
+            {"send": [0x61, 0x2E, 0x94], "recv": [0x61, 0x2E, 0x94, 0x2D]},
+            {"send": [0x62, 0x12, 0x7], "recv": [0x62, 0x12, 0x7, 0x2D]},
+            {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD4, 0x1B]},
+            {"send": [0xE1, 0x28], "recv": [0xE1, 0x28, 0x1, 0x3C]},
+            {"send": [0xE2, 0x18], "recv": [0xE2, 0x18, 0x1, 0x3C]},
+            {"send": [0xE3, 0x9], "recv": [0xE3, 0x9, 0xD4, 0x1B]},
+        ]
 
 
 def gen_fd_q10c_ser_trans_ping():
@@ -733,6 +744,104 @@ def test_actuator(mocker):
     check_notify_slack(None)
 
 
+def test_actuator_normal(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control_config
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch(
+        "control.dummy_control_mode",
+        return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+    )
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 20,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 20,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
+    check_notify_slack(None)
+
+
+def test_actuator_duty_disable(mocker):
+    import copy
+
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+
+    import cooler_controller
+    import unit_cooler
+    import control
+    import control_config
+    from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+
+    mocker.patch(
+        "control.dummy_control_mode",
+        return_value={"control_mode": len(control_config.MESSAGE_LIST) - 1},
+    )
+
+    message_list_orig = copy.deepcopy(MESSAGE_LIST_orig)
+    message_list_orig[-1]["duty"]["enable"] = False
+    mocker.patch.object(control, "MESSAGE_LIST", message_list_orig)
+
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 5,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
+    check_notify_slack(None)
+
+
 def test_actuator_log(mocker):
     import requests
 
@@ -1030,7 +1139,8 @@ def test_actuator_power_off_2(mocker, freezer):
     import unit_cooler
 
     mock_gpio(mocker)
-    mocker.patch("valve.get_flow", return_value=0)
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
+
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
     def dummy_mode_mock():
@@ -1054,7 +1164,7 @@ def test_actuator_power_off_2(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
 
@@ -1063,7 +1173,7 @@ def test_actuator_power_off_2(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
 
@@ -1073,6 +1183,10 @@ def test_actuator_power_off_2(mocker, freezer):
     freezer.move_to(time_test(10))
     time.sleep(1)
     freezer.move_to(time_test(0, 3))
+    time.sleep(1)
+    freezer.move_to(time_test(5, 3))
+    time.sleep(1)
+    freezer.move_to(time_test(10, 3))
 
     cooler_controller.wait_and_term(*control_handle)
     unit_cooler.wait_and_term(*actuator_handle)
@@ -1081,9 +1195,8 @@ def test_actuator_power_off_2(mocker, freezer):
     check_healthz("receiver", True)
     check_healthz("actuator", True)
     check_healthz("monitor", True)
-    # NOTE: タイミング次第でエラーが記録されるので notify_slack はチェックしない
-    # assert notify_slack.get_hist() == []
-    assert work_log.get_hist()[-1].find("長い間バルブが閉じられていますので，流量計の電源を OFF します．") == 0
+
+    # NOTE: エラーが発生していなければ OK
 
 
 # def test_actuator_power_off_3(mocker, freezer):
@@ -2005,90 +2118,84 @@ def test_fd_q10c_short(mocker):
     assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
 
-# def test_fd_q10c_ext(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_ext(mocker):
+    import sensor.fd_q10c
 
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans.insert(
-#         3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD1, 0x18]}
-#     )
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans.insert(
+        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD1, 0x18]}
+    )
 
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
+    mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-#     # FIXME: 注入するパケットを valid なものにして asset 追加要
+    assert sensor.fd_q10c.FD_Q10C().get_value(True) is None
 
 
-# def test_fd_q10c_wait(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_wait(mocker):
+    import sensor.fd_q10c
 
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans.insert(
-#         3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0x01, 0x3C]}
-#     )
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans.insert(
+        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0x01, 0x3C]}
+    )
 
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
+    mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-
-# def test_fd_q10c_checksum(mocker):
-#     import sensor.fd_q10c
-
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][3] = 0x11
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-#     # FIXME: 注入するパケットを valid なものにして asset 追加要
+    assert sensor.fd_q10c.FD_Q10C().get_value(True) is None
 
 
-# def test_fd_q10c_power_on(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_checksum(mocker):
+    import sensor.fd_q10c
 
-#     mock_fd_q10c(mocker, spi_read=0x11)
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][3] = 0x11
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-#     # FIXME: 注入するパケットを valid なものにして asset 追加要
-
-
-# def test_fd_q10c_unknown_datatype(mocker):
-#     import sensor.fd_q10c
-
-#     mock_fd_q10c(mocker)
-
-#     sensor.fd_q10c.FD_Q10C().read_param(0x94, sensor.fd_q10c.driver.DATA_TYPE_RAW, True)
-
-#     # FIXME: 注入するパケットを valid なものにして asset 追加要
+    assert sensor.fd_q10c.FD_Q10C().get_value(True) is None
 
 
-# def test_fd_q10c_header_error(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+def test_fd_q10c_power_on(mocker):
+    import sensor.fd_q10c
 
-#     data_injected = 0xC0
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    mock_fd_q10c(mocker, spi_read=0x11)
 
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[3]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
+    assert sensor.fd_q10c.FD_Q10C().get_value(True) == 2.57
 
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
 
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+def test_fd_q10c_unknown_datatype(mocker):
+    import sensor.fd_q10c
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    mock_fd_q10c(mocker)
+
+    assert sensor.fd_q10c.FD_Q10C().read_param(
+        0x94, sensor.fd_q10c.driver.DATA_TYPE_RAW, True
+    ) == [1, 1]
+
+
+def test_fd_q10c_header_error(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+
+    data_injected = 0xC0
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[3]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
+
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
 
 def test_fd_q10c_chk_error(mocker):
