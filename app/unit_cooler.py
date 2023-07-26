@@ -92,6 +92,8 @@ def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
         ret = -1
     logging.warning("Stop receive worker")
 
+    return ret
+
 
 # NOTE: バルブを制御するワーカ
 def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=0):
