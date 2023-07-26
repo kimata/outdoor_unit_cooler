@@ -85,5 +85,7 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
 -   https://kimata.github.io/outdoor_unit_cooler/
 -   https://kimata.github.io/outdoor_unit_cooler/coverage/
 
+## TODO
+- 当初つける予定が無かった Web UI (デモモード有)をつけるにあたって，場当たり的な対応をしているので再設計要
 
 
