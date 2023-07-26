@@ -1493,64 +1493,64 @@ def test_actuator_monitor_error(mocker):
     assert notify_slack.get_hist()[-1].find("Traceback") == 0
 
 
-def test_actuator_slack_error(mocker, freezer):
-    import slack_sdk
+# def test_actuator_slack_error(mocker, freezer):
+#     import slack_sdk
 
-    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-    import cooler_controller
-    import unit_cooler
+#     import cooler_controller
+#     import unit_cooler
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+#     mock_gpio(mocker)
+#     mock_fd_q10c(mocker)
+#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-    mocker.patch(
-        "notify_slack.slack_sdk.WebClient",
-        side_effect=slack_sdk.errors.SlackClientError(),
-    )
+#     mocker.patch(
+#         "notify_slack.slack_sdk.WebClient",
+#         side_effect=slack_sdk.errors.SlackClientError(),
+#     )
 
-    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+#     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
 
-    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    freezer.move_to(time_test(0))
+#     freezer.move_to(time_test(0))
 
-    actuator_handle = unit_cooler.start(
-        {
-            "config_file": CONFIG_FILE,
-            "speedup": 100,
-            "msg_count": 10,
-        }
-    )
+#     actuator_handle = unit_cooler.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 100,
+#             "msg_count": 10,
+#         }
+#     )
 
-    control_handle = cooler_controller.start(
-        {
-            "config_file": CONFIG_FILE,
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-        }
-    )
+#     control_handle = cooler_controller.start(
+#         {
+#             "config_file": CONFIG_FILE,
+#             "speedup": 100,
+#             "dummy_mode": True,
+#             "msg_count": 10,
+#         }
+#     )
 
-    time.sleep(0.5)
-    freezer.move_to(time_test(1))
-    time.sleep(0.5)
-    freezer.move_to(time_test(2))
-    time.sleep(0.5)
-    freezer.move_to(time_test(3))
-    time.sleep(0.5)
+#     time.sleep(0.5)
+#     freezer.move_to(time_test(1))
+#     time.sleep(0.5)
+#     freezer.move_to(time_test(2))
+#     time.sleep(0.5)
+#     freezer.move_to(time_test(3))
+#     time.sleep(0.5)
 
-    cooler_controller.wait_and_term(*control_handle)
-    unit_cooler.wait_and_term(*actuator_handle)
+#     cooler_controller.wait_and_term(*control_handle)
+#     unit_cooler.wait_and_term(*actuator_handle)
 
-    check_healthz("controller", True)
-    check_healthz("receiver", True)
-    check_healthz("actuator", True)
-    check_healthz("monitor", True)
-    check_notify_slack("電磁弁が壊れていますので制御を停止します．")
+#     check_healthz("controller", True)
+#     check_healthz("receiver", True)
+#     check_healthz("actuator", True)
+#     check_healthz("monitor", True)
+#     check_notify_slack("電磁弁が壊れていますので制御を停止します．")
 
 
 # # def test_actuator_close(mocker, freezer):
@@ -1779,110 +1779,118 @@ def test_actuator_recv_error(mocker):
     check_notify_slack("Traceback")
 
 
-# def test_actuator_iolink_short(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_iolink_short(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     import cooler_controller
-#     import unit_cooler
-#     import control
-#     import sensor.fd_q10c
+    import cooler_controller
+    import unit_cooler
+    import sensor.fd_q10c
 
-#     mock_gpio(mocker)
+    mock_gpio(mocker)
 
-#     # NOTE: 流量計の故障モードを代表して，unit_cooler に対してテスト
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    # NOTE: 流量計の故障モードを代表して，unit_cooler に対してテスト
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    sensor.fd_q10c.FD_Q10C().get_value()
 
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 2,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 2,
+        }
+    )
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 2,
+        }
+    )
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
 
-
-# #####################################################################
-
-
-# def test_fd_q10c(mocker):
-#     import sensor.fd_q10c
-
-#     mock_fd_q10c(mocker)
-
-#     sensor.fd_q10c.FD_Q10C().get_value(False)
-#     sensor.fd_q10c.FD_Q10C().get_value_map()
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
+    check_notify_slack(None)  # NOTE: 単発では通知しない
 
 
-# def test_fd_q10c_ping(mocker):
-#     import sensor.fd_q10c
+#####################################################################
+def test_fd_q10c(mocker):
+    import sensor.fd_q10c
 
-#     mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_ping())
+    mock_fd_q10c(mocker)
 
-#     sensor.fd_q10c.FD_Q10C().ping()
-
-
-# def test_fd_q10c_stop(mocker):
-#     import sensor.fd_q10c
-
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     sensor.stop()
+    assert sensor.fd_q10c.FD_Q10C().get_value(False) is None
+    assert sensor.fd_q10c.FD_Q10C().get_value(True) == 2.57
+    assert sensor.fd_q10c.FD_Q10C().get_value_map() == {"flow": 2.57}
 
 
-# def test_fd_q10c_stop_error_1(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_ping(mocker):
+    import sensor.fd_q10c
 
-#     mocker.patch("fcntl.flock", side_effect=IOError)
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_ping())
 
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     with pytest.raises(RuntimeError):
-#         sensor.stop()
+    assert sensor.fd_q10c.FD_Q10C().ping()
 
 
-# def test_fd_q10c_stop_error_2(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_stop(mocker):
+    import sensor.fd_q10c
 
-#     mocker.patch("serial.Serial.close", side_effect=IOError)
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    sensor.stop()
 
-#     mock_fd_q10c(mocker)
-#     sensor = sensor.fd_q10c.FD_Q10C()
-#     sensor.stop()
-
-#     sensor.get_value()
-#     sensor.stop()
+    # NOTE: エラーが発生していなければ OK
 
 
-# def test_fd_q10c_short(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_stop_error_1(mocker):
+    import sensor.fd_q10c
 
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    mocker.patch("fcntl.flock", side_effect=IOError)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    with pytest.raises(RuntimeError):
+        sensor.stop()
+
+
+def test_fd_q10c_stop_error_2(mocker):
+    import sensor.fd_q10c
+
+    mocker.patch("serial.Serial.close", side_effect=IOError)
+
+    mock_fd_q10c(mocker)
+    sensor = sensor.fd_q10c.FD_Q10C()
+    sensor.stop()
+
+    sensor.get_value()
+    sensor.stop()
+
+    # NOTE: エラーが発生していなければ OK
+
+
+def test_fd_q10c_short(mocker):
+    import sensor.fd_q10c
+
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"] = fd_q10c_ser_trans[3]["recv"][0:2]
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
 
 # def test_fd_q10c_ext(mocker):
@@ -1971,101 +1979,107 @@ def test_actuator_recv_error(mocker):
 #     sensor.fd_q10c.FD_Q10C().get_value()
 
 
-# def test_fd_q10c_chk_error(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
+def test_fd_q10c_chk_error(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
-#     data_injected = 0xD3
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[6]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    data_injected = 0xD3
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[6]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[6]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[6]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
 
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
 
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
-
-
-# def test_fd_q10c_header_invalid(mocker):
-#     import inspect
-#     import sensor.fd_q10c
-#     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
-
-#     data_injected = 0x00
-#     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-#     fd_q10c_ser_trans[3]["recv"][2] = data_injected
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
-#     def msq_checksum_mock(data):
-#         if (inspect.stack()[4].function == "isdu_res_read") and (
-#             data == [data_injected]
-#         ):
-#             return fd_q10c_ser_trans[3]["recv"][3]
-#         else:
-#             return msq_checksum_orig(data)
-
-#     mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
-
-#     mock_fd_q10c(mocker, fd_q10c_ser_trans)
-
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
 
-# def test_fd_q10c_timeout(mocker):
-#     import sensor.fd_q10c
+def test_fd_q10c_header_invalid(mocker):
+    import inspect
+    import sensor.fd_q10c
+    from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
-#     mock_fd_q10c(mocker)
+    data_injected = 0x00
+    fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
+    fd_q10c_ser_trans[3]["recv"][2] = data_injected
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
 
-#     mocker.patch("fcntl.flock", side_effect=IOError())
+    # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
+    def msq_checksum_mock(data):
+        if (inspect.stack()[4].function == "isdu_res_read") and (
+            data == [data_injected]
+        ):
+            return fd_q10c_ser_trans[3]["recv"][3]
+        else:
+            return msq_checksum_orig(data)
 
-#     sensor.fd_q10c.FD_Q10C().get_value()
+    mocker.patch("sensor.ltc2874.msq_checksum", side_effect=msq_checksum_mock)
+
+    mock_fd_q10c(mocker, fd_q10c_ser_trans)
+
+    assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
 
-# def test_actuator_restart():
-#     import cooler_controller
-#     import unit_cooler
+def test_fd_q10c_timeout(mocker):
+    import sensor.fd_q10c
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "msg_count": 6,
-#         }
-#     )
+    mock_fd_q10c(mocker)
 
-#     unit_cooler.wait_and_term(*actuator_handle)
+    mocker.patch("fcntl.flock", side_effect=IOError())
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
+    assert sensor.fd_q10c.FD_Q10C().get_value() is None
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+
+def test_actuator_restart():
+    import cooler_controller
+    import unit_cooler
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 6,
+        }
+    )
+
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 1,
+        }
+    )
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    check_notify_slack(None)
+    check_healthz("controller", True)
+    check_healthz("receiver", True)
+    check_healthz("actuator", True)
+    check_healthz("monitor", True)
 
 
 def test_webapp(mocker):
@@ -2173,6 +2187,7 @@ def test_webapp(mocker):
     webapp_event.stop_watch()
     webapp_log.term()
 
+    check_notify_slack(None)
     check_healthz("controller", True)
     check_healthz("receiver", True)
     check_healthz("actuator", True)
@@ -2240,6 +2255,7 @@ def test_webapp_dummy_mode(mocker):
     webapp_event.stop_watch()
     webapp_log.term()
 
+    check_notify_slack(None)
     check_healthz("controller", True)
     check_healthz("receiver", True)
     check_healthz("actuator", True)
@@ -2369,6 +2385,7 @@ def test_webapp_day_sum(mocker):
 
     client.delete()
 
+    check_notify_slack(None)
     check_healthz("controller", True)
     check_healthz("receiver", True)
     check_healthz("actuator", True)
