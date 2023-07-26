@@ -480,4 +480,4 @@ if __name__ == "__main__":
         "debug_mode": debug_mode,
     }
 
-    sys.exit(wait_and_term(*start(app_arg)), terminate=False)
+    sys.exit(wait_and_term(*start(app_arg), terminate=False))
