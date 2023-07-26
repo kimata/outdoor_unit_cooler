@@ -202,6 +202,9 @@ def test_controller(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -251,6 +254,9 @@ def test_controller_influxdb_dummy(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -285,6 +291,9 @@ def test_controller_start_error_1(mocker):
     )
 
     assert check_healthz("controller") is None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     # NOTE: エラー発生を通知
     assert notify_slack.get_hist()[-1].find("Traceback") == 0
 
@@ -321,6 +330,9 @@ def test_controller_start_error_2(mocker):
 
     # NOTE: 現状，Proxy のエラーの場合，controller としては healthz は正常になる
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     # NOTE: エラー発生を通知
     assert notify_slack.get_hist()[-1].find("Traceback") == 0
 
@@ -342,6 +354,9 @@ def test_controller_influxdb_error(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     # NOTE: エラー発生を通知
     assert notify_slack.get_hist()[0].index("データを取得できませんでした．") != -1
     assert notify_slack.get_hist()[-1].index("エアコン動作モードを判断できません．") != -1
@@ -387,6 +402,9 @@ def test_controller_outdoor_normal(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -438,6 +456,9 @@ def test_controller_aircon_mode(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -477,6 +498,9 @@ def test_controller_aircon_invalid(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     # NOTE: エラー発生を通知
     assert notify_slack.get_hist()[-1].find("データを取得できませんでした．") != -1
 
@@ -517,6 +541,9 @@ def test_controller_temp_invalid(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist()[-1] == "外気温が不明のため，エアコン動作モードを判断できません．"
 
 
@@ -554,6 +581,9 @@ def test_controller_temp_low(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -575,6 +605,9 @@ def test_test_client(mocker):
     cooler_controller.wait_and_term(*control_handle)
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     # NOTE: 正常終了すれば OK
 
 
@@ -595,6 +628,9 @@ def test_controller_sensor_error(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist()[-1].find("外気温が不明のため，エアコン動作モードを判断できません．") != -1
 
 
@@ -630,6 +666,9 @@ def test_controller_dummy_error(mocker):
     )
 
     assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is None
     assert notify_slack.get_hist() == []
 
 
@@ -1398,97 +1437,110 @@ def test_actuator_speedup(mocker):
     # NOTE: 正常終了すれば OK
 
 
-# def test_actuator_monitor_error(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_monitor_error(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     import cooler_controller
-#     import unit_cooler
+    import cooler_controller
+    import unit_cooler
 
-#     mock_gpio(mocker)
-#     mocker.patch("valve.get_flow", return_value=None)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mock_gpio(mocker)
+    mocker.patch("valve.get_flow", return_value=None)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     mocker.patch("unit_cooler.send_valve_condition", side_effect=RuntimeError())
+    mocker.patch("unit_cooler.send_valve_condition", side_effect=RuntimeError())
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 10,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": False,
+            "msg_count": 2,
+        }
+    )
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#         }
-#     )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": False,
+            "msg_count": 2,
+        }
+    )
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    time.sleep(2)
 
-#     assert check_healthz("controller") is not None
-#     assert check_healthz("actuator") is not None
-#     assert check_healthz("monitor") is not None
-#     assert check_healthz("receiver") is not None
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
 
-#     print(notify_slack.get_hist())
-#     # FIXME
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[-1].find("Traceback") == 0
 
 
-# def test_actuator_slack_error(mocker, freezer):
-#     import slack_sdk
+def test_actuator_slack_error(mocker, freezer):
+    import slack_sdk
 
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     import cooler_controller
-#     import unit_cooler
+    import cooler_controller
+    import unit_cooler
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     mocker.patch(
-#         "notify_slack.slack_sdk.WebClient",
-#         side_effect=slack_sdk.errors.SlackClientError(),
-#     )
+    mocker.patch(
+        "notify_slack.slack_sdk.WebClient",
+        side_effect=slack_sdk.errors.SlackClientError(),
+    )
 
-#     mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "msg_count": 5,
-#         }
-#     )
+    freezer.move_to(time_test(0))
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 15,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "msg_count": 10,
+        }
+    )
 
-#     freezer.move_to(time_test(0))
-#     time.sleep(3)
-#     freezer.move_to(time_test(10))
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+        }
+    )
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    time.sleep(0.5)
+    freezer.move_to(time_test(1))
+    time.sleep(0.5)
+    freezer.move_to(time_test(2))
+    time.sleep(0.5)
+    freezer.move_to(time_test(3))
+    time.sleep(0.5)
+
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert notify_slack.get_hist()[-1].find("電磁弁が壊れていますので制御を停止します．") == 0
 
 
 # # def test_actuator_close(mocker, freezer):
@@ -1574,88 +1626,100 @@ def test_actuator_speedup(mocker):
 # #     cooler_controller.wait_and_term(*control_handle)
 
 
-# def test_actuator_notify_hazard(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_notify_hazard(mocker):
+    import os
 
-#     import cooler_controller
-#     import unit_cooler
-#     from config import load_config
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    import cooler_controller
+    import unit_cooler
+    from config import load_config
 
-#     hazard_file = pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"])
-#     mtime = time.time() - 12 * 60 * 60
-#     hazard_file.touch()
-#     os.utime(hazard_file, (mtime, mtime))
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    hazard_file = pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"])
+    mtime = time.time() - 12 * 60 * 60
+    hazard_file.touch()
+    os.utime(hazard_file, (mtime, mtime))
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 15,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
 
-#     pathlib.Path(load_config(CONFIG_FILE)["actuator"]["hazard"]["file"]).unlink(
-#         missing_ok=True
-#     )
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is not None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    assert (
+        notify_slack.get_hist()[-1].find("過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています．") == 0
+    )
 
 
-# def test_actuator_ctrl_error(mocker):
-#     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
+def test_actuator_ctrl_error(mocker):
+    # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-#     import cooler_controller
-#     import unit_cooler
+    import cooler_controller
+    import unit_cooler
 
-#     mock_gpio(mocker)
-#     mock_fd_q10c(mocker)
-#     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-#     mocker.patch("unit_cooler.set_cooling_state", side_effect=RuntimeError())
+    mocker.patch("unit_cooler.set_cooling_state", side_effect=RuntimeError())
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = unit_cooler.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 1,
-#         }
-#     )
+    actuator_handle = unit_cooler.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
 
-#     control_handle = cooler_controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 40,
-#             "dummy_mode": True,
-#             "msg_count": 3,
-#         }
-#     )
+    control_handle = cooler_controller.start(
+        {
+            "config_file": CONFIG_FILE,
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        }
+    )
 
-#     cooler_controller.wait_and_term(*control_handle)
-#     unit_cooler.wait_and_term(*actuator_handle)
+    cooler_controller.wait_and_term(*control_handle)
+    unit_cooler.wait_and_term(*actuator_handle)
+
+    assert check_healthz("controller") is not None
+    assert check_healthz("actuator") is None
+    assert check_healthz("monitor") is not None
+    assert check_healthz("receiver") is not None
+    print(notify_slack.get_hist())
 
 
 # def test_actuator_recv_error(mocker):
