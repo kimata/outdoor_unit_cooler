@@ -172,7 +172,9 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
         ret = -1
 
     logging.warning("Stop valve control worker")
-    cmd_queue.close()
+    # NOTE: Queue を close した後に put されると ValueError が発生するので，
+    # 明示的に閉じるのをやめた．
+    # cmd_queue.close()
 
     return ret
 
