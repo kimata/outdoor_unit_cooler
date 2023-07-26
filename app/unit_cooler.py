@@ -435,10 +435,10 @@ def terminate_log_server(log_server_handle):
     work_log.term()
 
 
-def wait_and_term(executor, thread_list, log_server_handle):
+def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
     global should_terminate
 
-    should_terminate = True
+    should_terminate = terminate
 
     ret = 0
     for thread_info in thread_list:
@@ -480,4 +480,4 @@ if __name__ == "__main__":
         "debug_mode": debug_mode,
     }
 
-    sys.exit(wait_and_term(*start(app_arg)))
+    sys.exit(wait_and_term(*start(app_arg)), terminate=False)
