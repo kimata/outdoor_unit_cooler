@@ -4,7 +4,7 @@
 エアコン室外機の冷却モードの指示を出します．
 
 Usage:
-  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-r REAL_PORT] [-n COUNT] [-D] [-t SPEEDUP] [-d]
+  cooler_controller.py [-c CONFIG] [-p SERVER_PORT] [-r REAL_PORT] [-N] [-n COUNT] [-D] [-t SPEEDUP] [-d]
   cooler_controller.py -C [-c CONFIG] [-s SERVER_HOST] [-p SERVER_PORT] [-P PROXY_PORT] [-d]
   cooler_controller.py -V
 
@@ -12,8 +12,9 @@ Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します． [default: config.yaml]
   -p SERVER_PORT    : ZeroMQ の サーバーを動作させるポートを指定します． [default: 2222]
   -r REAL_PORT      : ZeroMQ の 本当のサーバーを動作させるポートを指定します． [default: 2200]
+  -N                : プロキシの動作を行わないようにします．
   -n COUNT          : n 回制御メッセージを生成したら終了します．0 は制限なし． [default: 0]
-  -D                : 冷却モードをランダムに生成するモードで動作すします．
+  -D                : 冷却モードをランダムに生成するモードで動作します．
   -t SPEEDUP        : 時短モード．演算間隔を SPEEDUP 分の一にします． [default: 1]
   -d                : デバッグモードで動作します．
   -V                : 制御メッセージの一覧を表示します．
@@ -162,6 +163,7 @@ if __name__ == "__main__":
     config_file = args["-c"]
     server_port = int(os.environ.get("HEMS_SERVER_PORT", args["-p"]))
     real_port = int(args["-r"])
+    disable_proxy = args["-N"]
     dummy_mode = args["-D"]
     speedup = int(args["-t"])
     debug_mode = args["-d"]
@@ -179,6 +181,7 @@ if __name__ == "__main__":
         "view_msg_mode": view_msg_mode,
         "dummy_mode": dummy_mode,
         "debug_mode": debug_mode,
+        "disable_proxy": disable_proxy,
         "speedup": speedup,
         "msg_count": msg_count,
     }
