@@ -21,7 +21,13 @@ import work_log
 
 @pytest.fixture(scope="function", autouse=True)
 def env_mock():
-    with mock.patch.dict("os.environ", {"TEST": "true"}) as fixture:
+    with mock.patch.dict(
+        "os.environ",
+        {
+            "TEST": "true",
+            "NO_COLORED_LOGS": "true",
+        },
+    ) as fixture:
         yield fixture
 
 
@@ -1210,11 +1216,11 @@ def test_actuator_open(mocker, freezer):
             "msg_count": 10,
         }
     )
-    time.sleep(2)
+    time.sleep(1)
     freezer.move_to(time_test(10))
-    time.sleep(2)
+    time.sleep(1)
     freezer.move_to(time_test(20))
-    time.sleep(2)
+    time.sleep(1)
     freezer.move_to(time_test(30))
 
     cooler_controller.wait_and_term(*control_handle)
