@@ -1,9 +1,9 @@
-import { ApiResponse } from '../lib/ApiResponse'
+import { ApiResponse } from "../lib/ApiResponse";
 
 type Props = {
-    isReady: boolean,
-    stat: ApiResponse.Stat
-}
+    isReady: boolean;
+    stat: ApiResponse.Stat;
+};
 
 const CoolingMode = ({ isReady, stat }: Props) => {
     const dutyInfo = (mode: ApiResponse.Mode) => {

@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
 
-export const valueText = (value: number|null, digits=1) => {
+export const valueText = (value: number | null, digits = 1) => {
     if (value == null) {
         return "?";
     } else {
@@ -8,7 +8,7 @@ export const valueText = (value: number|null, digits=1) => {
     }
 };
 
-export const dateText = (date: dayjs.Dayjs|null) => {
+export const dateText = (date: dayjs.Dayjs | null) => {
     if (date == null) {
         return "?";
     } else {

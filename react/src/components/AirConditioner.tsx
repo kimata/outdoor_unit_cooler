@@ -1,16 +1,16 @@
-import 'dayjs/locale/ja';
-import dayjs, { locale, extend } from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-locale('ja');
+import "dayjs/locale/ja";
+import dayjs, { locale, extend } from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+locale("ja");
 extend(relativeTime);
 
 import { valueText, dateText } from "../lib/Util";
-import { ApiResponse } from '../lib/ApiResponse'
+import { ApiResponse } from "../lib/ApiResponse";
 
 type Props = {
-    isReady: boolean,
-    stat: ApiResponse.Stat
-}
+    isReady: boolean;
+    stat: ApiResponse.Stat;
+};
 
 const AirConditioner = ({ isReady, stat }: Props) => {
     const loading = () => {
@@ -25,8 +25,8 @@ const AirConditioner = ({ isReady, stat }: Props) => {
         if (value == null) {
             return 0;
         }
-        
-        if (typeof value === 'string') {
+
+        if (typeof value === "string") {
             return parseInt(value);
         } else {
             return value;
@@ -53,7 +53,7 @@ const AirConditioner = ({ isReady, stat }: Props) => {
                             ></div>
                         </div>
                         <div className="progress-label digit">
-                            <b>{valueText(props.airconData.value,0)}</b>
+                            <b>{valueText(props.airconData.value, 0)}</b>
                             <small className="ms-2">W</small>
                         </div>
                     </div>

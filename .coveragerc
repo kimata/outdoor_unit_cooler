@@ -6,7 +6,7 @@ exclude_lines =
     # 以下，未使用関数
 
     # config.py
-    def get_db_config  
+    def get_db_config
 
     # logger.py
     class GZipRotator
@@ -32,7 +32,7 @@ exclude_lines =
 
     # webapp_event.py
     if event_type == EVENT_TYPE.CONTROL:
-    elif event_type == EVENT_TYPE.SCHEDULE: 
+    elif event_type == EVENT_TYPE.SCHEDULE:
 
     # webapp_log.py
     elif level == APP_LOG_LEVEL.WARN:

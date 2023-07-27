@@ -9,7 +9,7 @@ stages:
 
 build-react:
     stage: build-webapp
-    
+
     image: node:20.5
     script:
         - cd react
@@ -26,7 +26,7 @@ build-react:
 build-image:
     stage: build-image
     needs: ["build-react"]
-    
+
     image: registry.green-rabbit.net:5000/kimata/ubuntu-docker-build:d386d462
 
     variables:
@@ -50,12 +50,12 @@ build-image:
 test-controller-sample:
     stage: test
     needs: ["build-image"]
-    
+
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 |
           while read id; do docker stop -t 5 $id; done || true
-      
+
         - docker pull ${CI_REGISTRY_IMAGE}
         - docker run --rm --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
@@ -80,7 +80,7 @@ test-actuator-sample:
 
     variables:
         CONTROL_HOST: 192.168.0.20
-        CURL_IMAGE: curlimages/curl:8.1.2 
+        CURL_IMAGE: curlimages/curl:8.1.2
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
@@ -97,41 +97,40 @@ test-actuator-sample:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -n 1 -D -c config.example.yaml
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        
+
         - sleep 10
 
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        
+
         - docker run --rm ${CURL_IMAGE} --head
           http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
 
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
 
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
-        
+
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
-        
+
     artifacts:
         when: always
         paths:
             - controller_log.txt
             - actuator_log.txt
 
-        
 test-actuator-regular:
     stage: test
     needs: ["build-image"]
-    
+
     variables:
-        CURL_IMAGE: curlimages/curl:8.1.2 
-        
+        CURL_IMAGE: curlimages/curl:8.1.2
+
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 |
           while read id; do docker stop -t 5 $id; done || true
-      
+
         - docker pull ${CI_REGISTRY_IMAGE}
 
         - docker run --rm --detach=true --tty=true
@@ -147,16 +146,16 @@ test-actuator-regular:
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        
+
         - docker run --rm ${CURL_IMAGE} --head
-          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view         
-          
+          http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
 
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
-        
+
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
-        
+
     artifacts:
         when: always
         paths:
@@ -166,16 +165,16 @@ test-actuator-regular:
 test-webapp-docker:
     stage: test
     needs: ["build-image"]
-    
+
     image: registry.green-rabbit.net:5000/kimata/local_playwright:230715C
 
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 |
           while read id; do docker stop -t 5 $id; done || true
-        
+
         - docker pull ${CI_REGISTRY_IMAGE}
-        
+
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py -D
@@ -184,7 +183,7 @@ test-webapp-docker:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -D
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-          
+
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/webapp.py
@@ -215,7 +214,7 @@ test-webapp-docker:
             - actuator_log.txt
             - webapp_log.txt
             - tests/evidence/**
-            
+
 test-healthz-docker:
     stage: test
     needs: ["build-image"]
@@ -224,7 +223,7 @@ test-healthz-docker:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 |
           while read id; do docker stop -t 5 $id; done || true
-        
+
         - docker pull ${CI_REGISTRY_IMAGE}
 
         - docker run --rm --detach=true --tty=true
@@ -235,7 +234,7 @@ test-healthz-docker:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -D
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-          
+
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/webapp.py
@@ -248,7 +247,7 @@ test-healthz-docker:
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webapp_log.txt
-        
+
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-1 ./src/healthz.py -m CTRL
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-2 ./src/healthz.py -m ACT
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-3 ./src/healthz.py -m WEB
@@ -259,18 +258,18 @@ test-healthz-docker:
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-2
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
-        
+
     artifacts:
         when: always
         paths:
             - controller_log.txt
             - actuator_log.txt
             - webapp_log.txt
-            
+
 deploy-controller:
     stage: deploy
     needs: ["test-controller-regular", "test-healthz-docker"]
-    
+
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -298,7 +297,7 @@ deploy-controller:
 deploy-actuator:
     stage: deploy
     needs: ["test-actuator-regular", "test-healthz-docker"]
-    
+
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -336,7 +335,7 @@ deploy-actuator:
 deploy-webapp:
     stage: deploy
     needs: ["test-webapp-docker", "test-healthz-docker"]
-    
+
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -356,7 +355,7 @@ deploy-webapp:
 deploy-webapp-demo:
     stage: deploy
     needs: ["test-webapp-docker", "test-healthz-docker"]
-    
+
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -372,7 +371,7 @@ deploy-webapp-demo:
               - react/**/*
               - app/webapp.py
               - lib/*
-              
+
 renovate:
     stage: renovate
     image:

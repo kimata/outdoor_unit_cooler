@@ -1,11 +1,11 @@
 import watering_icon from "../assets/watering.png";
 
-import { ApiResponse } from '../lib/ApiResponse'
+import { ApiResponse } from "../lib/ApiResponse";
 
 type Props = {
-    isReady: boolean,
-    stat: ApiResponse.Stat
-}
+    isReady: boolean;
+    stat: ApiResponse.Stat;
+};
 
 const Watering = ({ isReady, stat }: Props) => {
     const amount = (watering: ApiResponse.Watering) => {

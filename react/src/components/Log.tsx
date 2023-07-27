@@ -1,23 +1,23 @@
-import { useState  } from "react";
-import { PaginationControl } from 'react-bootstrap-pagination-control';
-import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill  } from 'react-bootstrap-icons';
+import { useState } from "react";
+import { PaginationControl } from "react-bootstrap-pagination-control";
+import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from "react-bootstrap-icons";
 
-import 'dayjs/locale/ja';
-import dayjs, { locale, extend } from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-locale('ja');
+import "dayjs/locale/ja";
+import dayjs, { locale, extend } from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+locale("ja");
 extend(relativeTime);
 
-import { ApiResponse } from '../lib/ApiResponse'
+import { ApiResponse } from "../lib/ApiResponse";
 
 type Props = {
-    isReady: boolean,
-    log: ApiResponse.Log
-}
+    isReady: boolean;
+    log: ApiResponse.Log;
+};
 
 const Log = ({ isReady, log }: Props) => {
-    const [page, setPage] = useState(1)
-    const size = 5
+    const [page, setPage] = useState(1);
+    const size = 5;
 
     const loading = () => {
         return (
@@ -27,48 +27,47 @@ const Log = ({ isReady, log }: Props) => {
         );
     };
 
-    const messageIcon  = (message: string) => {
+    const messageIcon = (message: string) => {
         if (message.match(/開始/)) {
             return (
                 <span className="me-2 text-danger">
                     <SunriseFill />
                 </span>
-            )
+            );
         } else if (message.match(/停止/)) {
             return (
                 <span className="me-2 text-warning">
                     <SunsetFill />
                 </span>
-            )
+            );
         } else if (message.match(/ON Duty/)) {
             return (
                 <span className="me-2 text-success">
                     <ToggleOn />
                 </span>
-                    
-            )
+            );
         } else if (message.match(/OFF Duty/)) {
             return (
                 <span className="me-2 text-secondary">
                     <ToggleOff />
                 </span>
-            )
+            );
         } else if (message.match(/変更/)) {
             return (
                 <span className="me-2 text-success">
                     <Speedometer />
                 </span>
-            )
+            );
         }
-    }
-    
-    const formatMessage  = (message: string) => {
+    };
+
+    const formatMessage = (message: string) => {
         return (
             <span>
                 {messageIcon(message)}
                 {message}
             </span>
-        )
+        );
     };
 
     const logData = (log: ApiResponse.LogEntry[]) => {
@@ -76,35 +75,31 @@ const Log = ({ isReady, log }: Props) => {
             return (
                 <div>
                     <div className="container text-start mb-3" data-testid="log">
-                        <div className="row">
-                            ログがありません．
-                        </div>
+                        <div className="row">ログがありません．</div>
                     </div>
                 </div>
-            )
+            );
         }
 
         return (
             <div>
                 <div className="container text-start mb-3" data-testid="log">
-                    {
-                        log.slice((page - 1) * size, page * size).map((entry: ApiResponse.LogEntry) => {
-                            let date = dayjs(entry.date)
-                            let log_date = date.format("M月D日(ddd) HH:mm");
-                            let log_fromNow = date.fromNow();
-                                
-                            return (
-                                <div className="row" key={entry.id}>
-                                    <div className="col-12 font-weight-bold">
-                                        { log_date }
-                                        <small className="text-muted">({ log_fromNow })</small>
-                                    </div>
-                                    <div className="col-12 log-message mb-1">{formatMessage(entry.message)}</div>
-                                    <hr className="dashed" />
+                    {log.slice((page - 1) * size, page * size).map((entry: ApiResponse.LogEntry) => {
+                        let date = dayjs(entry.date);
+                        let log_date = date.format("M月D日(ddd) HH:mm");
+                        let log_fromNow = date.fromNow();
+
+                        return (
+                            <div className="row" key={entry.id}>
+                                <div className="col-12 font-weight-bold">
+                                    {log_date}
+                                    <small className="text-muted">({log_fromNow})</small>
                                 </div>
-                                )
-                            })
-                    }
+                                <div className="col-12 log-message mb-1">{formatMessage(entry.message)}</div>
+                                <hr className="dashed" />
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <div className="position-absolute bottom-0 start-50 translate-middle-x">
@@ -114,13 +109,13 @@ const Log = ({ isReady, log }: Props) => {
                         total={log.length}
                         limit={size}
                         changePage={(page) => {
-                            setPage(page); 
+                            setPage(page);
                         }}
                         ellipsis={1}
                     />
                 </div>
             </div>
-        )
+        );
     };
 
     return (
@@ -138,4 +133,3 @@ const Log = ({ isReady, log }: Props) => {
 };
 
 export { Log };
-

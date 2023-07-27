@@ -18,7 +18,7 @@ export namespace ApiResponse {
             enable: boolean;
             off_sec: number;
             on_sec: number;
-        }
+        };
         mode_index: number;
         state: number;
     }
@@ -47,6 +47,6 @@ export namespace ApiResponse {
             solar_rad: SensorData[];
             power: SensorData[];
         };
-        watering: Watering
+        watering: Watering;
     }
 }

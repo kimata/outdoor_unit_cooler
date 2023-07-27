@@ -1,18 +1,18 @@
-import 'dayjs/locale/ja';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-dayjs.locale('ja');
+import "dayjs/locale/ja";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.locale("ja");
 dayjs.extend(relativeTime);
 
-import reactStringReplace from 'react-string-replace';
+import reactStringReplace from "react-string-replace";
 
 import { valueText, dateText } from "../lib/Util";
-import { ApiResponse } from '../lib/ApiResponse'
+import { ApiResponse } from "../lib/ApiResponse";
 
 type Props = {
-    isReady: boolean,
-    stat: ApiResponse.Stat
-}
+    isReady: boolean;
+    stat: ApiResponse.Stat;
+};
 
 const Sensor = ({ isReady, stat }: Props) => {
     const loading = () => {
@@ -24,7 +24,6 @@ const Sensor = ({ isReady, stat }: Props) => {
     };
 
     const sensorRow = (label: string, sensorData: ApiResponse.SensorData, unit: JSX.Element) => {
-
         let date = dayjs(sensorData.time);
 
         return (
@@ -48,11 +47,13 @@ const Sensor = ({ isReady, stat }: Props) => {
         if (stat.outdoor_status.message == null) {
             return;
         }
-        
-        let message = reactStringReplace(stat.outdoor_status.message, 'm^2', () => (
-                <span>m<sup>2</sup></span>
+
+        let message = reactStringReplace(stat.outdoor_status.message, "m^2", () => (
+            <span>
+                m<sup>2</sup>
+            </span>
         ));
-        
+
         return <div>{message}</div>;
     };
 
@@ -63,15 +64,25 @@ const Sensor = ({ isReady, stat }: Props) => {
                     <thead>
                         <tr className="row">
                             <th className="col-3">センサー</th>
-                            <th colSpan={2} className="col-4">値</th>
-                            <th colSpan={2} className="col-5">最新更新日時</th>
+                            <th colSpan={2} className="col-4">
+                                値
+                            </th>
+                            <th colSpan={2} className="col-5">
+                                最新更新日時
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {sensorRow("temp", stat.sensor.temp[0], <span>℃</span>)}
                         {sensorRow("humi", stat.sensor.humi[0], <span>%</span>)}
                         {sensorRow("lux", stat.sensor.lux[0], <span>lx</span>)}
-                        {sensorRow("solar_rad", stat.sensor.solar_rad[0], <span>W/m<sup>2</sup></span>)}
+                        {sensorRow(
+                            "solar_rad",
+                            stat.sensor.solar_rad[0],
+                            <span>
+                                W/m<sup>2</sup>
+                            </span>
+                        )}
                     </tbody>
                 </table>
                 <div className="text-start">{outdoorStatus(stat)}</div>

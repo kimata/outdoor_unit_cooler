@@ -54,7 +54,7 @@ Slack を使っていない場合は，Slack の設定をコメントアウト�
 
 ## 実行
 
-`docker build` でイメージを構築し，`app/cooler_controller.py` と `app/unit_cooler.py` 
+`docker build` でイメージを構築し，`app/cooler_controller.py` と `app/unit_cooler.py`
 を動かします．Web インターフェースが欲しい場合は，`app/webapp.py` も動かします．
 
 Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に入っていますので，
@@ -68,13 +68,13 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
 
   <dt>external-dns.alpha.kubernetes.io/hostname</dt>
   <dd>ExternalDNS で設定するホスト名を指定します．環境に合わせて変更いただくか，不要であれば削除します．</dd>
-  
+
   <dt>image</dt>
   <dd>ビルドしたイメージを登録してあるコンテナリポジトリに書き換えます．</dd>
-  
+
   <dt>nodeSelector</dt>
   <dd>Pod を配置したいノード名に変更します．</dd>
-  
+
   <dt>NODE_HOSTNAME</dt>
   <dd>散布量を InfluxDB に登録する際のホスト名
   を指定します．<code>config.yaml</code> の controller.watering.hostname の設定と合わせる必要があります．</dd>
@@ -86,6 +86,5 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
 -   https://kimata.github.io/outdoor_unit_cooler/coverage/
 
 ## TODO
-- 当初つける予定が無かった Web UI (デモモード有)をつけるにあたって，場当たり的な対応をしているので再設計要
 
-
+-   当初つける予定が無かった Web UI (デモモード有)をつけるにあたって，場当たり的な対応をしているので再設計要

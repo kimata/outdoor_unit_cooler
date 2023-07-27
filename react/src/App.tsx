@@ -1,27 +1,27 @@
-import { useState,useEffect } from 'react'
-import './App.css'
+import { useState, useEffect } from "react";
+import "./App.css";
 
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Github } from 'react-bootstrap-icons';
+import { Github } from "react-bootstrap-icons";
 
-import 'dayjs/locale/ja';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import localizedFormat from 'dayjs/plugin/localizedFormat'
+import "dayjs/locale/ja";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import localizedFormat from "dayjs/plugin/localizedFormat";
 
-dayjs.locale('ja');
+dayjs.locale("ja");
 dayjs.extend(relativeTime);
-dayjs.extend(localizedFormat)
+dayjs.extend(localizedFormat);
 
-import preval from 'preval.macro'
+import preval from "preval.macro";
 
-import { ApiResponse } from './lib/ApiResponse'
+import { ApiResponse } from "./lib/ApiResponse";
 
-import { Watering } from './components/Watering'
-import { CoolingMode } from './components/CoolingMode'
-import { AirConditioner } from './components/AirConditioner'
-import { Sensor } from './components/Sensor'
-import { Log } from './components/Log'
+import { Watering } from "./components/Watering";
+import { CoolingMode } from "./components/CoolingMode";
+import { AirConditioner } from "./components/AirConditioner";
+import { Sensor } from "./components/Sensor";
+import { Log } from "./components/Log";
 
 function App() {
     const API_ENDPOINT = "/unit_cooler/api";
@@ -54,22 +54,22 @@ function App() {
         watering: {
             amount: 0,
             price: 0,
-        }
-    }
+        },
+    };
     const emptyLog: ApiResponse.Log = {
         data: [],
         last_time: 0,
-    }
-    
+    };
+
     const [isStatReady, setStatReady] = useState(false);
     const [isLogReady, setLogReady] = useState(false);
     const [stat, setStat] = useState<ApiResponse.Stat>(emptyStat);
     const [log, setLog] = useState<ApiResponse.Log>(emptyLog);
     const [updateTime, setUpdateTime] = useState("Unknown");
     const [error, setError] = useState(false);
-    const buildDate = dayjs(preval`module.exports = new Date().toUTCString();`).format('LLL');
+    const buildDate = dayjs(preval`module.exports = new Date().toUTCString();`).format("LLL");
     const buildDateFrom = dayjs(preval`module.exports = new Date().toUTCString();`).fromNow();
-    
+
     const fetchData = (url: string) => {
         return new Promise((resolve) => {
             fetch(url)
@@ -102,26 +102,25 @@ function App() {
 
     useEffect(() => {
         const loadStat = async () => {
-            let res: ApiResponse.Stat  = await fetchData(API_ENDPOINT + '/stat') as ApiResponse.Stat;
+            let res: ApiResponse.Stat = (await fetchData(API_ENDPOINT + "/stat")) as ApiResponse.Stat;
             setError(false);
             setStat(res);
             setStatReady(true);
-            setUpdateTime(dayjs().format('LLL'));
+            setUpdateTime(dayjs().format("LLL"));
         };
 
-        
         const loadLog = async () => {
-            let res: ApiResponse.Log = await fetchData(API_ENDPOINT + '/log_view') as ApiResponse.Log;
-            setLog(res)
+            let res: ApiResponse.Log = (await fetchData(API_ENDPOINT + "/log_view")) as ApiResponse.Log;
+            setLog(res);
             setLogReady(true);
             setError(false);
-            setUpdateTime(dayjs().format('llll'));
+            setUpdateTime(dayjs().format("llll"));
         };
 
-        let eventSource:EventSource;
+        let eventSource: EventSource;
         const watchEvent = async () => {
             loadLog();
-            eventSource = new EventSource(API_ENDPOINT + '/event');
+            eventSource = new EventSource(API_ENDPOINT + "/event");
             eventSource.addEventListener("message", (e) => {
                 if (e.data === "log") {
                     loadLog();
@@ -149,42 +148,43 @@ function App() {
     }, []);
 
     return (
-    <>
-        <div className="App">
-            <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-                <h1 className="display-6 my-0 mr-md-auto font-weight-normal">室外機自動冷却システム</h1>
-            </div>
-            {showError(error)}
-            <div>
-                <div className="container">
-                    <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3">
-                        <Watering isReady={isStatReady} stat={stat} />
-                        <CoolingMode isReady={isStatReady} stat={stat} />
-                        <AirConditioner isReady={isStatReady} stat={stat} />
-                        <Sensor isReady={isStatReady} stat={stat} />
-                        <Log isReady={isLogReady} log={log} />
+        <>
+            <div className="App">
+                <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+                    <h1 className="display-6 my-0 mr-md-auto font-weight-normal">室外機自動冷却システム</h1>
+                </div>
+                {showError(error)}
+                <div>
+                    <div className="container">
+                        <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3">
+                            <Watering isReady={isStatReady} stat={stat} />
+                            <CoolingMode isReady={isStatReady} stat={stat} />
+                            <AirConditioner isReady={isStatReady} stat={stat} />
+                            <Sensor isReady={isStatReady} stat={stat} />
+                            <Log isReady={isLogReady} log={log} />
+                        </div>
                     </div>
                 </div>
+                <div className="p-1 float-end text-end m-2 mt-4">
+                    <small>
+                        <p className="text-muted m-0">
+                            <small>更新日時: {updateTime}</small>
+                        </p>
+                        <p className="text-muted m-0">
+                            <small>
+                                ビルド日時: {buildDate} [{buildDateFrom}]
+                            </small>
+                        </p>
+                        <p className="display-6">
+                            <a href="https://github.com/kimata/e-ink_weather_panel/" className="text-secondary">
+                                <Github />
+                            </a>
+                        </p>
+                    </small>
+                </div>
             </div>
-            <div className="p-1 float-end text-end m-2 mt-4">
-                <small>
-                    <p className="text-muted m-0">
-                        <small>更新日時: {updateTime}</small>
-                    </p>
-                    <p className="text-muted m-0">
-                        <small>ビルド日時: { buildDate } [{ buildDateFrom }]</small>
-                    </p>
-                    <p className="display-6">
-                        <a href="https://github.com/kimata/e-ink_weather_panel/" className="text-secondary">
-                            <Github />
-                        </a>
-                    </p>
-                </small>
-            </div>
-        </div>
-    </>
-  )
+        </>
+    );
 }
 
-
-export default App
+export default App;
