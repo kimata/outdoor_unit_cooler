@@ -3,7 +3,6 @@
 from flask import jsonify, Blueprint, current_app
 
 import logging
-import pytz
 import os
 
 from webapp_config import APP_URL_PREFIX
@@ -12,7 +11,6 @@ from control import gen_control_msg, judge_control_mode
 from flask_util import support_jsonp
 
 from sensor_data import get_day_sum
-from control_config import get_cooler_status, get_outdoor_status
 
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 

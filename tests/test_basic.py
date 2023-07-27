@@ -34,7 +34,7 @@ def env_mock():
 
 @pytest.fixture(scope="function", autouse=True)
 def clear():
-    with mock.patch.dict("os.environ", {"DUMMY_MODE": "true"}) as fixture:
+    with mock.patch.dict("os.environ", {"DUMMY_MODE": "true"}):
         import actuator
         import valve
         import work_log

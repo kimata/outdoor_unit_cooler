@@ -26,8 +26,6 @@ import pathlib
 import logging
 from multiprocessing import Queue
 import threading
-from socket import getaddrinfo
-from socket import AF_INET, SOCK_STREAM
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 

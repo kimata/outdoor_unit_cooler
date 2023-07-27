@@ -48,7 +48,6 @@ from actuator import (
     send_valve_condition,
     check_valve_condition,
     stop_valve_monitor,
-    notify_hazard,
     check_hazard,
 )
 import traceback
