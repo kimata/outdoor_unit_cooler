@@ -79,50 +79,51 @@ def check_liveness(target_list, port=None):
 
 
 ######################################################################
-args = docopt(__doc__)
+if __name__ == "__main__":
+    args = docopt(__doc__)
 
-config_file = args["-c"]
-watch_mode = args["-m"]
-port = args["-p"]
-debug_mode = args["-d"]
+    config_file = args["-c"]
+    watch_mode = args["-m"]
+    port = args["-p"]
+    debug_mode = args["-d"]
 
-if debug_mode:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.INFO
+    if debug_mode:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
 
-logger.init(
-    "hems.unit_cooler",
-    level=log_level,
-)
-
-logging.info("Using config config: {config_file}".format(config_file=config_file))
-config = load_config(config_file)
-
-logging.info("Mode: {watch_mode}".format(watch_mode=watch_mode))
-if watch_mode == "CTRL":
-    name_list = ["controller"]
-    port = None
-elif watch_mode == "WEB":
-    name_list = ["web"]
-else:
-    name_list = ["receiver", "actuator", "monitor"]
-    port = None
-
-target_list = []
-for name in name_list:
-    target_list.append(
-        {
-            "name": name,
-            "liveness_file": pathlib.Path(config[name]["liveness"]["file"]),
-            "interval": config["controller"]["interval_sec"]
-            if (name == "receiver") or (name == "web")
-            else config[name]["interval_sec"],
-        }
+    logger.init(
+        "hems.unit_cooler",
+        level=log_level,
     )
 
-if check_liveness(target_list, port):
-    logging.info("OK.")
-    sys.exit(0)
-else:
-    sys.exit(-1)
+    logging.info("Using config config: {config_file}".format(config_file=config_file))
+    config = load_config(config_file)
+
+    logging.info("Mode: {watch_mode}".format(watch_mode=watch_mode))
+    if watch_mode == "CTRL":
+        name_list = ["controller"]
+        port = None
+    elif watch_mode == "WEB":
+        name_list = ["web"]
+    else:
+        name_list = ["receiver", "actuator", "monitor"]
+        port = None
+
+    target_list = []
+    for name in name_list:
+        target_list.append(
+            {
+                "name": name,
+                "liveness_file": pathlib.Path(config[name]["liveness"]["file"]),
+                "interval": config["controller"]["interval_sec"]
+                if (name == "receiver") or (name == "web")
+                else config[name]["interval_sec"],
+            }
+        )
+
+    if check_liveness(target_list, port):
+        logging.info("OK.")
+        sys.exit(0)
+    else:
+        sys.exit(-1)
