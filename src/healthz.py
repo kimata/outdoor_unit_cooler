@@ -37,7 +37,7 @@ def check_liveness_impl(name, liveness_file, interval):
         liveness_file.stat().st_mtime
     )
     # NOTE: 少なくとも1分は様子を見る
-    if elapsed.seconds > max(interval * 2, 60):
+    if elapsed.total_seconds() > max(interval * 2, 60):
         logging.warning(
             "Execution interval of {name} is too long. ({elapsed:,} sec)".format(
                 name=name, elapsed=elapsed.seconds
