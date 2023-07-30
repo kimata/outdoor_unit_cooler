@@ -151,6 +151,7 @@ def check_notify_slack(message):
     if message is None:
         assert notify_slack.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
     else:
+        assert len(notify_slack.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
         assert (
             notify_slack.get_hist()[-1].find(message) != -1
         ), "「{message}」が Slack で通知されていません．".format(message=message)
@@ -160,6 +161,7 @@ def check_work_log(message):
     if message is None:
         assert work_log.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
     else:
+        assert len(work_log.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
         assert (
             work_log.get_hist()[-1].find(message) != -1
         ), "「{message}」が work_log で通知されていません．".format(message=message)
