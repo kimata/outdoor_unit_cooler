@@ -151,6 +151,8 @@ def error_with_image(
 ):  # def error_with_image
     title = "Error: " + name
 
+    notify_hist.append(message)
+
     if not check_interval(interval_min):
         logging.warning("Interval is too short. Skipping.")
         return
@@ -158,9 +160,7 @@ def error_with_image(
     split_send(token, ch_name, title, message, formatter)
 
     if attatch_img is not None:
-        if ch_id is None:
-            logging.error("ch_id is not specified.")
-
+        assert ch_id is not None
         error_img(token, ch_id, title, attatch_img["data"], attatch_img["text"])
 
     ERROR_NOTIFY_FOOTPRINT.parent.mkdir(parents=True, exist_ok=True)
