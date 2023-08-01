@@ -9,5 +9,13 @@
     ],
     "automerge": true,
     "labels": ["renovate"],
-    "schedule": ["every weekend"]
+    "schedule": ["every weekend"],
+
+    "packageRules": [
+        {
+            "matchPaths": [".gitlab-ci.yml"],
+            "matchPackagePatterns": ["local_playwright"],
+            "enabled": false
+        }
+    ]
 }
