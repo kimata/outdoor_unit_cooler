@@ -279,7 +279,7 @@ deploy-controller:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: $CI_PIPELINE_SOURCE == "schedule"
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
         - changes:
               - app/cooler_controller.py
@@ -307,7 +307,7 @@ deploy-actuator:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: $CI_PIPELINE_SOURCE == "schedule"
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
         - changes:
               - app/unit_cooler.py
@@ -345,7 +345,7 @@ deploy-webapp:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: $CI_PIPELINE_SOURCE == "schedule"
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
         - changes:
               - react/**/*
@@ -365,7 +365,7 @@ deploy-webapp-demo:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp-demo
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: $CI_PIPELINE_SOURCE == "schedule"
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
         - changes:
               - react/**/*
@@ -383,8 +383,7 @@ renovate:
         # # NOTE: ついでにお掃除
         #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
     rules:
-        - if: $CI_COMMIT_BRANCH == "master"
-        - if: $CI_PIPELINE_SOURCE == "schedule"
-          when: always
+        - if: '$CI_COMMIT_BRANCH == "master"'
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
         - changes:
               - renovate.json
