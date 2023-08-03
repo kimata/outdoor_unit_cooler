@@ -6,9 +6,11 @@ KEYENCE のクランプオン式流量センサ FD-Q10C と IO-LINK で通信を
 
 Usage:
   fd_q10c.py [-l LOCK] [-t TIMEOUT]
+  fd_q10c.py -p
 
 Options:
   -l LOCK       : ロックファイル． [default: /dev/shm/fd_q10c.lock]
+  -p            : 存在確認を実施．
   -t TIMEOUT    : タイムアウト時間． [default: 5]
 """
 
@@ -32,6 +34,8 @@ class FD_Q10C:
     TIMEOUT = 5
 
     def __init__(self, lock_file=LOCK_FILE, timeout=TIMEOUT):
+        self.dev_addr = None
+        self.dev_type = "SPI, IO-LINK(UART)"
         self.lock_file = lock_file
         self.lock_fd = None
         self.timeout = timeout
@@ -111,6 +115,7 @@ class FD_Q10C:
             else:
                 return True
             time.sleep(0.5)
+
         os.close(self.lock_fd)
         self.lock_fd = None
 
@@ -125,7 +130,7 @@ class FD_Q10C:
         self.lock_fd = None
 
     def get_value_map(self, force_power_on=True):
-        value = self.get_value()
+        value = self.get_value(force_power_on)
 
         return {"flow": value}
 
@@ -140,10 +145,14 @@ if __name__ == "__main__":
 
     args = docopt(__doc__)
     lock_file = args["-l"]
+    ping_mode = args["-p"]
     timeout = int(args["-t"], 0)
 
     logging.getLogger().setLevel(logging.DEBUG)
 
     sensor = sensor.fd_q10c.FD_Q10C(lock_file, timeout)
 
-    logging.info("VALUE: {value}".format(value=sensor.get_value_map()))
+    if ping_mode:
+        logging.info("PING: {value}".format(value=sensor.ping()))
+    else:
+        logging.info("VALUE: {value}".format(value=sensor.get_value_map()))
