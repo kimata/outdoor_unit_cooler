@@ -1051,7 +1051,7 @@ def test_actuator_power_off_1(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 12,
         }
     )
 
@@ -1060,16 +1060,20 @@ def test_actuator_power_off_1(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 12,
         }
     )
 
-    time.sleep(2)
+    time.sleep(1)
     freezer.move_to(time_test(5))
+
     time.sleep(1)
     freezer.move_to(time_test(10))
+
     time.sleep(1)
     freezer.move_to(time_test(0, 3))
+
+    time.sleep(2)
 
     cooler_controller.wait_and_term(*control_handle)
     unit_cooler.wait_and_term(*actuator_handle)
