@@ -71,9 +71,8 @@ def check_valve_condition(config, valve_status):
     if valve_status["state"] == actuator_valve.VALVE_STATE.OPEN:
         flow = actuator_valve.get_flow()
         check_valve_condition.last_flow = flow
-        if (flow is not None) and (valve_status["duration"] > 10):
-            # バルブが開いてから時間が経っている場合
-            if flow < config["actuator"]["valve"]["on"]["min"]:
+        if (flow is not None) and (flow < config["actuator"]["valve"]["on"]["min"]):
+            if valve_status["duration"] > 5:
                 # NOTE: ハザード扱いにはしない
                 work_log(
                     "元栓が閉じています．(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
@@ -81,7 +80,8 @@ def check_valve_condition(config, valve_status):
                     ),
                     WORK_LOG_LEVEL.ERROR,
                 )
-            elif flow > config["actuator"]["valve"]["on"]["max"]:
+        elif (flow is not None) and (flow > config["actuator"]["valve"]["on"]["max"]):
+            if valve_status["duration"] > 15:
                 notify_hazard(
                     config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
                 )
