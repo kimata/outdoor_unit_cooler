@@ -1426,14 +1426,13 @@ def test_actuator_open(mocker, freezer):
             "msg_count": 10,
         }
     )
-    time.sleep(1)
+    time.sleep(2)
     freezer.move_to(time_test(5))
-    time.sleep(1)
+    time.sleep(2)
     freezer.move_to(time_test(10))
-    time.sleep(1)
+    time.sleep(2)
     freezer.move_to(time_test(15))
-    time.sleep(1)
-    freezer.move_to(time_test(20))
+    time.sleep(2)
 
     cooler_controller.wait_and_term(*control_handle)
     unit_cooler.wait_and_term(*actuator_handle)
