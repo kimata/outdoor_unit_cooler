@@ -137,7 +137,7 @@ def send_valve_condition(
     send_data["state"] = valve_condition["state"].value
     send_data["hostname"] = hostname
 
-    logging.info("Send: {valve_condition}".format(valve_condition=send_data))
+    logging.debug("Send: {valve_condition}".format(valve_condition=send_data))
 
     if dummy_mode:
         return
