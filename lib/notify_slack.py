@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import slack_sdk
-
 import json
 import logging
 import os
@@ -11,6 +9,7 @@ import tempfile
 import threading
 
 import footprint
+import slack_sdk
 
 notify_hist = []
 
@@ -77,7 +76,7 @@ def info(token, ch_name, name, message, formatter=format_simple):
 
 
 def check_interval(interval_min):
-    return footprint.elapsed(ERROR_NOTIFY_FOOTPRINT) < interval_min * 60
+    return footprint.elapsed(ERROR_NOTIFY_FOOTPRINT) > interval_min * 60
 
 
 def clear_interval():
@@ -161,8 +160,9 @@ def get_hist():
 
 if __name__ == "__main__":
     import os
-    import logger
     import sys
+
+    import logger
     import PIL.Image
     from config import load_config
 
