@@ -25,9 +25,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):
     try:
         while True:
             start_time = time.time()
-            socket.send_string(
-                "{ch} {json_str}".format(ch=CH, json_str=json.dumps(func()))
-            )
+            socket.send_string("{ch} {json_str}".format(ch=CH, json_str=json.dumps(func())))
 
             if msg_count != 0:
                 logging.debug(
@@ -105,9 +103,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
                     logging.debug("Send cache")
-                    backend.send_string(
-                        "{ch} {json_str}".format(ch=CH, json_str=cache[ch])
-                    )
+                    backend.send_string("{ch} {json_str}".format(ch=CH, json_str=cache[ch]))
                     proxy_count += 1
                 else:
                     logging.warning("Cache is empty")

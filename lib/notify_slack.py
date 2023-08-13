@@ -14,9 +14,7 @@ import footprint
 
 notify_hist = []
 
-ERROR_NOTIFY_FOOTPRINT = (
-    pathlib.Path(os.path.dirname(__file__)).parent / "data" / "error_notify"
-)
+ERROR_NOTIFY_FOOTPRINT = pathlib.Path(os.path.dirname(__file__)).parent / "data" / "error_notify"
 
 SIMPLE_TMPL = """\
 [
@@ -43,9 +41,7 @@ interval_check_lock = threading.Lock()
 def format_simple(title, message):
     return {
         "text": message,
-        "json": json.loads(
-            SIMPLE_TMPL.format(title=title, message=json.dumps(message))
-        ),
+        "json": json.loads(SIMPLE_TMPL.format(title=title, message=json.dumps(message))),
     }
 
 
@@ -96,9 +92,7 @@ def error_img(token, ch_id, title, img, text):
         img.save(img_path)
 
         try:
-            client.files_upload_v2(
-                channel=ch_id, file=img_path, title=title, initial_comment=text
-            )
+            client.files_upload_v2(channel=ch_id, file=img_path, title=title, initial_comment=text)
         except slack_sdk.errors.SlackApiError as e:
             logging.warning(e.response["error"])
 
@@ -186,11 +180,7 @@ if __name__ == "__main__":
 
     client = slack_sdk.WebClient(token=config["SLACK"]["BOT_TOKEN"])
 
-    img = PIL.Image.open(
-        pathlib.Path(
-            os.path.dirname(__file__), config["WEATHER"]["ICON"]["THERMO"]["PATH"]
-        )
-    )
+    img = PIL.Image.open(pathlib.Path(os.path.dirname(__file__), config["WEATHER"]["ICON"]["THERMO"]["PATH"]))
     if "INFO" in config["SLACK"]:
         info(
             config["SLACK"]["BOT_TOKEN"],

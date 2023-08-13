@@ -45,9 +45,7 @@ class FD_Q10C:
 
     def get_value(self, force_power_on=True):
         try:
-            return round(
-                self.read_param(0x94, driver.DATA_TYPE_UINT16, force_power_on) * 0.01, 2
-            )
+            return round(self.read_param(0x94, driver.DATA_TYPE_UINT16, force_power_on) * 0.01, 2)
         except:
             logging.warning(traceback.format_exc())
             return None

@@ -38,9 +38,7 @@ def debug(message):
 
 
 def dump_byte_list(label, byte_list):
-    logging.debug(
-        "{}: {}".format(label, ", ".join("0x{v:02X}".format(v=v) for v in byte_list))
-    )
+    logging.debug("{}: {}".format(label, ", ".join("0x{v:02X}".format(v=v) for v in byte_list)))
 
 
 def ltc2874_reg_read(spi, reg):
@@ -167,9 +165,7 @@ def com_read(spi, ser, length):
 def dir_param_read(spi, ser, addr):
     debug("***** CALL: dir_param_read(addr: 0x{:x}) ****".format(addr))
 
-    msq = msq_build(
-        io_link.MSQ_RW_READ, io_link.MSQ_CH_PAGE, addr, io_link.MSQ_TYPE_0, None
-    )
+    msq = msq_build(io_link.MSQ_RW_READ, io_link.MSQ_CH_PAGE, addr, io_link.MSQ_TYPE_0, None)
     com_write(spi, ser, msq)
 
     data = com_read(spi, ser, 4)[2:]
@@ -183,15 +179,9 @@ def dir_param_read(spi, ser, addr):
 
 
 def dir_param_write(spi, ser, addr, value):
-    debug(
-        "***** CALL: dir_param_write(addr: 0x{:x}, value: 0x{:x}) ****".format(
-            addr, value
-        )
-    )
+    debug("***** CALL: dir_param_write(addr: 0x{:x}, value: 0x{:x}) ****".format(addr, value))
 
-    msq = msq_build(
-        io_link.MSQ_RW_WRITE, io_link.MSQ_CH_PAGE, addr, io_link.MSQ_TYPE_0, [value]
-    )
+    msq = msq_build(io_link.MSQ_RW_WRITE, io_link.MSQ_CH_PAGE, addr, io_link.MSQ_TYPE_0, [value])
     com_write(spi, ser, msq)
 
     data = com_read(spi, ser, 4)[3:]
@@ -207,9 +197,7 @@ def isdu_req_build(index, length):
     isrv = io_link.ISDU_ISRV_READ_8BIT_IDX
 
     return [
-        msq_build(
-            rw, io_link.MSQ_CH_ISDU, 0x10, io_link.MSQ_TYPE_0, [(isrv << 4) | length]
-        ),
+        msq_build(rw, io_link.MSQ_CH_ISDU, 0x10, io_link.MSQ_TYPE_0, [(isrv << 4) | length]),
         msq_build(rw, io_link.MSQ_CH_ISDU, 0x01, io_link.MSQ_TYPE_0, [index]),
         msq_build(
             rw,
@@ -222,9 +210,7 @@ def isdu_req_build(index, length):
 
 
 def isdu_res_read(spi, ser, flow):
-    msq = msq_build(
-        io_link.MSQ_RW_READ, io_link.MSQ_CH_ISDU, flow, io_link.MSQ_TYPE_0, None
-    )
+    msq = msq_build(io_link.MSQ_RW_READ, io_link.MSQ_CH_ISDU, flow, io_link.MSQ_TYPE_0, None)
     com_write(spi, ser, msq)
 
     data = com_read(spi, ser, 4)[2:]

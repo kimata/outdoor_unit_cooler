@@ -61,9 +61,7 @@ STAT_DIR_PATH = pathlib.Path("/dev/shm")
 # OFF Duty から ON Duty に遷移する度に変更日時が更新される．
 # STATE が IDLE になった際に削除される．
 # (OFF Duty になって実際にバルブを閉じただけでは削除されない)
-STAT_PATH_VALVE_STATE_WORKING = (
-    STAT_DIR_PATH / "unit_cooler" / "valve" / "state" / "working"
-)
+STAT_PATH_VALVE_STATE_WORKING = STAT_DIR_PATH / "unit_cooler" / "valve" / "state" / "working"
 
 # STATE が IDLE になった際に作られるファイル．
 # (OFF Duty になって実際にバルブを閉じただけでは作られない)
@@ -260,11 +258,7 @@ def set_cooling_working(duty_info):
     if status["state"] == VALVE_STATE.OPEN:
         # NOTE: 現在バルブが開かれている
         if status["duration"] >= duty_info["on_sec"]:
-            logging.info(
-                "COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(
-                    left=duty_info["off_sec"]
-                )
-            )
+            logging.info("COOLING: WORKING (OFF duty, {left:.0f} sec left)".format(left=duty_info["off_sec"]))
             work_log("OFF Duty になったのでバルブを締めます．")
             return set_state(VALVE_STATE.CLOSE)
         else:
@@ -277,11 +271,7 @@ def set_cooling_working(duty_info):
     else:
         # NOTE: 現在バルブが閉じられている
         if status["duration"] >= duty_info["off_sec"]:
-            logging.info(
-                "COOLING: WORKING (ON duty, {left:.0f} sec left)".format(
-                    left=duty_info["on_sec"]
-                )
-            )
+            logging.info("COOLING: WORKING (ON duty, {left:.0f} sec left)".format(left=duty_info["on_sec"]))
             work_log("ON Duty になったのでバルブを開けます．")
             return set_state(VALVE_STATE.OPEN)
         else:

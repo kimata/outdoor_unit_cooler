@@ -73,11 +73,7 @@ def queue_put(config, cmd_queue, message):
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
 def cmd_receive_worker(config, control_host, pub_port, cmd_queue, msg_count=0):
-    logging.info(
-        "Start command receive worker ({host}:{port})".format(
-            host=control_host, port=pub_port
-        )
-    )
+    logging.info("Start command receive worker ({host}:{port})".format(host=control_host, port=pub_port))
     ret = 0
     try:
         control_pubsub.start_client(
@@ -128,15 +124,11 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
 
                     recv_cooling_mode = cooling_mode
                     receive_time = datetime.datetime.now()
-                    logging.info(
-                        "Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode))
-                    )
+                    logging.info("Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode)))
                     if mode_index_prev != cooling_mode["mode_index"]:
                         work_log.work_log(
                             "冷却モードが変更されました．({prev} → {cur})".format(
-                                prev="init"
-                                if mode_index_prev == -1
-                                else mode_index_prev,
+                                prev="init" if mode_index_prev == -1 else mode_index_prev,
                                 cur=cooling_mode["mode_index"],
                             )
                         )
@@ -160,9 +152,9 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                 if receive_count >= msg_count:
                     break
 
-            if (datetime.datetime.now() - receive_time).total_seconds() > config[
-                "controller"
-            ]["interval_sec"] * 10:
+            if (datetime.datetime.now() - receive_time).total_seconds() > config["controller"][
+                "interval_sec"
+            ] * 10:
                 work_log.work_log("冷却モードの指示を受信できません．", work_log.WORK_LOG_LEVEL.ERROR)
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
@@ -190,9 +182,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
     sender = None
     hostname = "unit_cooler"
     try:
-        sender = fluent.sender.FluentSender(
-            "sensor", host=config["monitor"]["fluent"]["host"]
-        )
+        sender = fluent.sender.FluentSender("sensor", host=config["monitor"]["fluent"]["host"])
         hostname = os.environ.get("NODE_HOSTNAME", socket.gethostname())
     except:
         work_log.work_log("流量のロギングを開始できません．", work_log.WORK_LOG_LEVEL.ERROR)
@@ -216,9 +206,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
             valve_status = get_valve_status()
             valve_condition = check_valve_condition(config, valve_status)
 
-            send_valve_condition(
-                sender, hostname, recv_cooling_mode, valve_condition, dummy_mode
-            )
+            send_valve_condition(sender, hostname, recv_cooling_mode, valve_condition, dummy_mode)
             monitor_count += 1
 
             if (i % log_period) == 0:
@@ -323,9 +311,7 @@ def start(arg):
         logging.warning("Set dummy mode")
         os.environ["DUMMY_MODE"] = "true"
 
-    logging.info(
-        "Using config config: {config_file}".format(config_file=setting["config_file"])
-    )
+    logging.info("Using config config: {config_file}".format(config_file=setting["config_file"]))
     config = load_config(setting["config_file"])
 
     if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):

@@ -5,31 +5,103 @@ description = "エアコンが動作を開始すると自動的に室外機へ�
 authors = ["KIMATA Tetsuya <kimata@green-rabbit.net>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-influxdb-client = {extras = ["ciso"], version = "^1.36.1"}
-pytest-freezegun = "^0.4.2"
-slack-bolt = "^1.18.0"
-docopt = "^0.6.2"
-pytest-cov = "^4.1.0"
-pytest-mock = "^3.11.1"
-PyYAML = "^6.0"
+"RPi.GPIO" = "^0.7.1"
 Flask = "^2.3.2"
 Flask-Cors = "^4.0.0"
+PyYAML = "^6.0"
 coloredlogs = "^15.0.1"
-pytest-html = "^3.2.0"
-playwright = "^1.36.0"
-pytest-playwright = "^0.3.3"
-zmq = "^0.0.0"
+docopt = "^0.6.2"
 fluent-logger = "^0.10.0"
-pytz = "^2023.3"
+influxdb-client = {extras = ["ciso"], version = "^1.36.1"}
 psutil = "^5.9.5"
-spidev = "^3.6"
 pyserial = "^3.5"
-"RPi.GPIO" = "^0.7.1"
-pytest-profiling = "^1.7.0"
+python = "^3.10"
+pytz = "^2023.3"
+slack-bolt = "^1.18.0"
+spidev = "^3.6"
 sseclient = "^0.0.27"
+zmq = "^0.0.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.test.dependencies]
+flaky = "^3.7.0"
+playwright = "^1.36.0"
+pytest-cov = "^4.1.0"
+pytest-freezegun = "^0.4.2"
+pytest-html = "^3.2.0"
+pytest-mock = "^3.11.1"
+pytest-playwright = "^0.4.0"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--verbose --cov=app --cov=lib --capture=sys --cov-report=html --html=tests/evidence/index.htm --self-contained-html"
+testpaths = [
+    "tests",
+]
+filterwarnings = [
+    "ignore:The hookimpl CovPlugin.pytest_configure_node uses",
+    "ignore:The hookimpl CovPlugin.pytest_testnodedown uses"
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+
+  # 以下，未使用関数
+
+  # config.py
+  "def get_db_config",
+
+  # logger.py
+  "class GZipRotator",
+  "def log_formatter",
+  "if log_dir_path is not None:",
+  "if log_queue is not None:",
+  "if is_str_log:",
+
+  # ltc2874.py
+  "def dir_param_read",
+  "def dir_param_write",
+
+  # sensor_data.py
+  "if create_empty and not last:",
+  "def get_equip_on_minutes",
+  "def get_equip_mode_period",
+  "def dump_data",
+
+  # notify_slack.py
+  "def info",
+  "def error_img",
+  "def error_with_image",
+
+  # webapp_event.py
+  "if event_type == EVENT_TYPE.CONTROL:",
+  "elif event_type == EVENT_TYPE.SCHEDULE:",
+
+  # webapp_log.py
+  "elif level == APP_LOG_LEVEL.WARN:",
+
+  # flask_util.py
+  "def remote_host",
+  "def auth_user",
+]
+
+[tool.coverage.html]
+directory = "tests/evidence/coverage"
+
+[tool.black]
+target-version = ['py310']
+line-length = 110
+
+[tool.isort]
+profile = "black"
+line_length = 110
+multi_line_output = 5
+include_trailing_comma = true
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

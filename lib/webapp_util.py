@@ -50,19 +50,9 @@ def snap():
 @blueprint.route("/api/sysinfo", methods=["GET"])
 @support_jsonp
 def api_sysinfo():
-    date = (
-        subprocess.Popen(["date", "-R"], stdout=subprocess.PIPE)
-        .communicate()[0]
-        .decode()
-        .strip()
-    )
+    date = subprocess.Popen(["date", "-R"], stdout=subprocess.PIPE).communicate()[0].decode().strip()
 
-    uptime = (
-        subprocess.Popen(["uptime", "-s"], stdout=subprocess.PIPE)
-        .communicate()[0]
-        .decode()
-        .strip()
-    )
+    uptime = subprocess.Popen(["uptime", "-s"], stdout=subprocess.PIPE).communicate()[0].decode().strip()
 
     loadAverage = re.search(
         r"load average: (.+)",

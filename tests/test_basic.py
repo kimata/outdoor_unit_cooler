@@ -74,9 +74,7 @@ def fluent_mock():
 
 
 def time_test(offset_min=0, offset_hour=0):
-    return datetime.datetime.now().replace(
-        hour=offset_hour, minute=offset_min, second=0
-    )
+    return datetime.datetime.now().replace(hour=offset_hour, minute=offset_min, second=0)
 
 
 def gen_sensor_data(value=[30, 34, 25], valid=True):
@@ -88,8 +86,7 @@ def gen_sensor_data(value=[30, 34, 25], valid=True):
 
     for i in range(len(value)):
         sensor_data["time"].append(
-            datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(minutes=i - len(value))
+            datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=i - len(value))
         )
 
     return sensor_data
@@ -152,9 +149,9 @@ def check_notify_slack(message):
         assert notify_slack.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
     else:
         assert len(notify_slack.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
-        assert (
-            notify_slack.get_hist()[-1].find(message) != -1
-        ), "「{message}」が Slack で通知されていません．".format(message=message)
+        assert notify_slack.get_hist()[-1].find(message) != -1, "「{message}」が Slack で通知されていません．".format(
+            message=message
+        )
 
 
 def check_work_log(message):
@@ -162,14 +159,12 @@ def check_work_log(message):
         assert work_log.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
     else:
         assert len(work_log.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
-        assert (
-            work_log.get_hist()[-1].find(message) != -1
-        ), "「{message}」が work_log で通知されていません．".format(message=message)
+        assert work_log.get_hist()[-1].find(message) != -1, "「{message}」が work_log で通知されていません．".format(
+            message=message
+        )
 
 
-def mock_fd_q10c(
-    mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00
-):
+def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00):
     import struct
     import sensor.fd_q10c
 
@@ -301,9 +296,7 @@ def test_controller_start_error_1(mocker):
     import cooler_controller
     from threading import Thread as Thread_orig
 
-    def thread_mock(
-        group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
-    ):
+    def thread_mock(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
         thread_mock.i += 1
         if thread_mock.i == 1:
             raise RuntimeError()
@@ -338,9 +331,7 @@ def test_controller_start_error_2(mocker):
     import cooler_controller
     from threading import Thread as Thread_orig
 
-    def thread_mock(
-        group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
-    ):
+    def thread_mock(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
         thread_mock.i += 1
         if thread_mock.i == 2:
             raise RuntimeError()
@@ -671,9 +662,7 @@ def test_controller_dummy_error(mocker):
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-    def send_string_mock(
-        u: str, flags: int = 0, copy: bool = True, encoding: str = "utf-8", **kwargs
-    ):
+    def send_string_mock(u: str, flags: int = 0, copy: bool = True, encoding: str = "utf-8", **kwargs):
         send_string_mock.i += 1
 
         if send_string_mock.i == 1:
@@ -2127,9 +2116,7 @@ def test_fd_q10c_ext(mocker):
     import sensor.fd_q10c
 
     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-    fd_q10c_ser_trans.insert(
-        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD1, 0x18]}
-    )
+    fd_q10c_ser_trans.insert(3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0xD1, 0x18]})
 
     mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
 
@@ -2140,9 +2127,7 @@ def test_fd_q10c_wait(mocker):
     import sensor.fd_q10c
 
     fd_q10c_ser_trans = gen_fd_q10c_ser_trans_sense()
-    fd_q10c_ser_trans.insert(
-        3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0x01, 0x3C]}
-    )
+    fd_q10c_ser_trans.insert(3, {"send": [0xF0, 0x2D], "recv": [0xF0, 0x2D, 0x01, 0x3C]})
 
     mock_fd_q10c(mocker, fd_q10c_ser_trans, count=10)
 
@@ -2172,9 +2157,7 @@ def test_fd_q10c_unknown_datatype(mocker):
 
     mock_fd_q10c(mocker)
 
-    assert sensor.fd_q10c.FD_Q10C().read_param(
-        0x94, sensor.fd_q10c.driver.DATA_TYPE_RAW, True
-    ) == [1, 1]
+    assert sensor.fd_q10c.FD_Q10C().read_param(0x94, sensor.fd_q10c.driver.DATA_TYPE_RAW, True) == [1, 1]
 
 
 def test_fd_q10c_header_error(mocker):
@@ -2189,9 +2172,7 @@ def test_fd_q10c_header_error(mocker):
 
     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
     def msq_checksum_mock(data):
-        if (inspect.stack()[4].function == "isdu_res_read") and (
-            data == [data_injected]
-        ):
+        if (inspect.stack()[4].function == "isdu_res_read") and (data == [data_injected]):
             return fd_q10c_ser_trans[3]["recv"][3]
         else:
             return msq_checksum_orig(data)
@@ -2215,9 +2196,7 @@ def test_fd_q10c_chk_error(mocker):
 
     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
     def msq_checksum_mock(data):
-        if (inspect.stack()[4].function == "isdu_res_read") and (
-            data == [data_injected]
-        ):
+        if (inspect.stack()[4].function == "isdu_res_read") and (data == [data_injected]):
             return fd_q10c_ser_trans[6]["recv"][3]
         else:
             return msq_checksum_orig(data)
@@ -2241,9 +2220,7 @@ def test_fd_q10c_header_invalid(mocker):
 
     # NOTE: 特定の関数からの特定の引数での call の際のみ，入れ替える
     def msq_checksum_mock(data):
-        if (inspect.stack()[4].function == "isdu_res_read") and (
-            data == [data_injected]
-        ):
+        if (inspect.stack()[4].function == "isdu_res_read") and (data == [data_injected]):
             return fd_q10c_ser_trans[3]["recv"][3]
         else:
             return msq_checksum_orig(data)
@@ -2448,9 +2425,7 @@ def test_webapp_dummy_mode(mocker):
 
     time.sleep(2)
 
-    app = webapp.create_app(
-        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True}
-    )
+    app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
     client = app.test_client()
 
     response = client.get("/unit_cooler/api/stat")
@@ -2514,16 +2489,12 @@ def test_webapp_queue_overflow(mocker):
         }
     )
 
-    app = webapp.create_app(
-        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False}
-    )
+    app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False})
     client = app.test_client()
 
     # NOTE: カバレッジ用にキューを溢れさせる
     for _ in range(100):
-        webapp.queuing_message(
-            load_config(CONFIG_FILE), app.config["MESSAGE_QUEUE"], "TEST"
-        )
+        webapp.queuing_message(load_config(CONFIG_FILE), app.config["MESSAGE_QUEUE"], "TEST")
         time.sleep(0.01)
 
     response = client.get("/unit_cooler/api/stat")
@@ -2582,9 +2553,7 @@ def test_webapp_day_sum(mocker):
 
     time.sleep(2)
 
-    app = webapp.create_app(
-        {"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True}
-    )
+    app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
     client = app.test_client()
 
     response = client.get("/unit_cooler/api/stat")

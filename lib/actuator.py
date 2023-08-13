@@ -28,11 +28,7 @@ def clear_hazard(config):
 
 def notify_hazard(config, message):
     if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
-        (
-            time.time()
-            - pathlib.Path(config["actuator"]["hazard"]["file"]).stat().st_mtime
-        )
-        / 60
+        (time.time() - pathlib.Path(config["actuator"]["hazard"]["file"]).stat().st_mtime) / 60
         > HAZARD_NOTIFY_INTERVAL_MIN
     ):
         work_log(message, WORK_LOG_LEVEL.ERROR)
@@ -82,19 +78,13 @@ def check_valve_condition(config, valve_status):
                 )
         elif (flow is not None) and (flow > config["actuator"]["valve"]["on"]["max"]):
             if valve_status["duration"] > 15:
-                notify_hazard(
-                    config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow)
-                )
+                notify_hazard(config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
     else:
-        logging.debug(
-            "Valve is close for {duration:.1f} sec".format(
-                duration=valve_status["duration"]
-            )
-        )
+        logging.debug("Valve is close for {duration:.1f} sec".format(duration=valve_status["duration"]))
 
-        if (
-            valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]
-        ) and (check_valve_condition.last_flow == 0):
+        if (valve_status["duration"] >= config["actuator"]["valve"]["power_off_sec"]) and (
+            check_valve_condition.last_flow == 0
+        ):
             # バルブが閉じてから長い時間が経っていて流量も 0 の場合，センサーを停止する
             flow = 0.0
             if actuator_valve.get_power_state():
@@ -110,10 +100,9 @@ def check_valve_condition(config, valve_status):
             ):
                 notify_hazard(
                     config,
-                    (
-                        "電磁弁が壊れていますので制御を停止します．"
-                        + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
-                    ).format(duration=valve_status["duration"], flow=flow),
+                    ("電磁弁が壊れていますので制御を停止します．" + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)").format(
+                        duration=valve_status["duration"], flow=flow
+                    ),
                 )
 
     return {"state": valve_status["state"], "flow": flow}
@@ -122,9 +111,7 @@ def check_valve_condition(config, valve_status):
 check_valve_condition.last_flow = 0
 
 
-def send_valve_condition(
-    sender, hostname, recv_cooling_mode, valve_condition, dummy_mode=False
-):
+def send_valve_condition(sender, hostname, recv_cooling_mode, valve_condition, dummy_mode=False):
     # NOTE: 少し加工して送りたいので，まずコピーする
     send_data = {"state": valve_condition["state"]}
 

@@ -28,11 +28,7 @@ def get_cooler_state(aircon_power, temp):
         raise RuntimeError("外気温が不明のため，エアコン動作モードを判断できません．")
 
     if aircon_power["value"] is None:
-        logging.warning(
-            "{name} の消費電力が不明のため，動作モードを判断できません．OFFとみなします．".format(
-                name=aircon_power["name"]
-            )
-        )
+        logging.warning("{name} の消費電力が不明のため，動作モードを判断できません．OFFとみなします．".format(name=aircon_power["name"]))
         return MODE.OFF
 
     if temp >= TEMP_THRESHOLD:

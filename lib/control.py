@@ -61,16 +61,12 @@ def get_sense_data(config):
                     {
                         "name": sensor["name"],
                         # NOTE: タイムゾーン情報を削除しておく．
-                        "time": timezone.localize(
-                            (data["time"][0].replace(tzinfo=None))
-                        ),
+                        "time": timezone.localize((data["time"][0].replace(tzinfo=None))),
                         "value": data["value"][0],
                     }
                 )
             else:
-                notify_error(
-                    config, "{name} のデータを取得できませんでした．".format(name=sensor["name"])
-                )
+                notify_error(config, "{name} のデータを取得できませんでした．".format(name=sensor["name"]))
                 kind_data.append({"name": sensor["name"], "value": None})
 
         sense_data[kind] = kind_data
@@ -148,12 +144,8 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
-        control_msg["duty"]["on_sec"] = max(
-            control_msg["duty"]["on_sec"] / speedup, ON_SEC_MIN
-        )
-        control_msg["duty"]["off_sec"] = max(
-            control_msg["duty"]["off_sec"] / speedup, OFF_SEC_MIN
-        )
+        control_msg["duty"]["on_sec"] = max(control_msg["duty"]["on_sec"] / speedup, ON_SEC_MIN)
+        control_msg["duty"]["off_sec"] = max(control_msg["duty"]["off_sec"] / speedup, OFF_SEC_MIN)
 
     return control_msg
 
@@ -172,10 +164,7 @@ def print_control_msg():
                     on_ratio=100.0
                     * control_msg["duty"]["on_sec"]
                     / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"])
-                    if (
-                        (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"])
-                        != 0
-                    )
+                    if ((control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"]) != 0)
                     else 0,
                 )
             )

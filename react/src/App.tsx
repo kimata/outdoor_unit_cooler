@@ -176,7 +176,10 @@ function App() {
                             </small>
                         </p>
                         <p className="display-6">
-                            <a href="https://github.com/kimata/e-ink_weather_panel/" className="text-secondary">
+                            <a
+                                href="https://github.com/kimata/e-ink_weather_panel/"
+                                className="text-secondary"
+                            >
                                 <Github />
                             </a>
                         </p>

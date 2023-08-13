@@ -55,11 +55,7 @@ def queuing_message(config, message_queue, message):
 
 
 def watch_client(config, server_host, server_port, message_queue, msg_count):
-    logging.info(
-        "Start watch client (host: {host}:{port})".format(
-            host=server_host, port=server_port
-        )
-    )
+    logging.info("Start watch client (host: {host}:{port})".format(host=server_host, port=server_port))
     control_pubsub.start_client(
         server_host,
         server_port,
@@ -136,9 +132,7 @@ def create_app(arg):
     app.register_blueprint(webapp_log_proxy.blueprint)
     app.register_blueprint(webapp_util.blueprint)
 
-    webapp_log_proxy.init(
-        "http://{host}:5001/unit_cooler".format(host=setting["actuator_host"])
-    )
+    webapp_log_proxy.init("http://{host}:5001/unit_cooler".format(host=setting["actuator_host"]))
 
     # app.debug = True
 

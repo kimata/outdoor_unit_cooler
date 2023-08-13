@@ -50,9 +50,7 @@ def init(config_, is_read_only=False):
             "CREATE TABLE IF NOT EXISTS log(id INTEGER primary key autoincrement, date INTEGER, message TEXT)"
         )
         sqlite.commit()
-        sqlite.row_factory = lambda c, r: dict(
-            zip([col[0] for col in c.description], r)
-        )
+        sqlite.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
 
     if not is_read_only:
         should_terminate = False
@@ -93,9 +91,7 @@ def app_log_impl(message, level):
             'INSERT INTO log VALUES (NULL, DATETIME("now", "localtime"), ?)',
             [message],
         )
-        sqlite.execute(
-            'DELETE FROM log WHERE date <= DATETIME("now", "localtime", "-60 days")'
-        )
+        sqlite.execute('DELETE FROM log WHERE date <= DATETIME("now", "localtime", "-60 days")')
         sqlite.commit()
 
         notify_event(EVENT_TYPE.LOG)
@@ -201,9 +197,7 @@ def api_log_view():
     if len(log) == 0:
         last_time = time.time()
     else:
-        last_time = datetime.datetime.strptime(
-            log[0]["date"], "%Y-%m-%d %H:%M:%S"
-        ).timestamp()
+        last_time = datetime.datetime.strptime(log[0]["date"], "%Y-%m-%d %H:%M:%S").timestamp()
 
     response = jsonify({"data": log, "last_time": last_time})
 

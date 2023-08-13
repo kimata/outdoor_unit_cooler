@@ -19,14 +19,22 @@ const Watering = ({ isReady, stat }: Props) => {
                         <div className="col-11">
                             <div className="row">
                                 <div className="col-12">
-                                    <span className="text-start display-1 ms-4" data-testid="watering-amount-info">
+                                    <span
+                                        className="text-start display-1 ms-4"
+                                        data-testid="watering-amount-info"
+                                    >
                                         <span className="fw-bold digit">{watering.amount.toFixed(1)}</span>
                                         <span className="display-5 ms-2">L</span>
                                     </span>
                                 </div>
                                 <div className="col-12 mt-3">
-                                    <span className="text-start ms-4 text-muted" data-testid="watering-price-info">
-                                        <span className="fw-bold display-6 digit">{watering.price.toFixed(1)}</span>
+                                    <span
+                                        className="text-start ms-4 text-muted"
+                                        data-testid="watering-price-info"
+                                    >
+                                        <span className="fw-bold display-6 digit">
+                                            {watering.price.toFixed(1)}
+                                        </span>
                                         <span className="ms-2">円</span>
                                     </span>
                                 </div>

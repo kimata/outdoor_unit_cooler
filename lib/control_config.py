@@ -89,15 +89,12 @@ CORRECTION_CONDITION = [
     {
         "judge": lambda sense_data: sense_data["humi"][0]["value"] > HUMI_THRESHOLD,
         "message": lambda sense_data: (
-            "湿度 ({humi:.1f} %) が "
-            + "{threshold:.1f} % より高いので冷却を停止します．(outdoor_status: -2)"
+            "湿度 ({humi:.1f} %) が " + "{threshold:.1f} % より高いので冷却を停止します．(outdoor_status: -2)"
         ).format(humi=sense_data["humi"][0]["value"], threshold=HUMI_THRESHOLD),
         "correction": -4,
     },
     {
-        "judge": lambda sense_data: (
-            sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_H
-        )
+        "judge": lambda sense_data: (sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_H)
         and (sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_DAYTIME),
         "message": lambda sense_data: (
             "日射量 ({solar_rad:,.0f} W/m^2) が "
@@ -113,9 +110,7 @@ CORRECTION_CONDITION = [
         "correction": 3,
     },
     {
-        "judge": lambda sense_data: (
-            sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_L
-        )
+        "judge": lambda sense_data: (sense_data["temp"][0]["value"] > TEMP_THRESHOLD_HIGH_L)
         and (sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_DAYTIME),
         "message": lambda sense_data: (
             "日射量 ({solar_rad:,.0f} W/m^2) が "
@@ -131,11 +126,9 @@ CORRECTION_CONDITION = [
         "correction": 2,
     },
     {
-        "judge": lambda sense_data: sense_data["solar_rad"][0]["value"]
-        > SOLAR_RAD_THRESHOLD_HIGH,
+        "judge": lambda sense_data: sense_data["solar_rad"][0]["value"] > SOLAR_RAD_THRESHOLD_HIGH,
         "message": lambda sense_data: (
-            "日射量 ({solar_rad:,.0f} W/m^2) が "
-            + "{threshold:,.0f} W/m^2 より大きいので冷却を少し強化します．(outdoor_status: 1)"
+            "日射量 ({solar_rad:,.0f} W/m^2) が " + "{threshold:,.0f} W/m^2 より大きいので冷却を少し強化します．(outdoor_status: 1)"
         ).format(
             solar_rad=sense_data["solar_rad"][0]["value"],
             threshold=SOLAR_RAD_THRESHOLD_HIGH,
@@ -143,9 +136,7 @@ CORRECTION_CONDITION = [
         "correction": 1,
     },
     {
-        "judge": lambda sense_data: (
-            sense_data["temp"][0]["value"] > TEMP_THRESHOLD_MID
-        )
+        "judge": lambda sense_data: (sense_data["temp"][0]["value"] > TEMP_THRESHOLD_MID)
         and (sense_data["lux"][0]["value"] < LUX_THRESHOLD),
         "message": lambda sense_data: (
             " 外気温 ({temp:.1f} ℃) が {temp_threshold:.1f} ℃ より高いものの，"
@@ -162,17 +153,14 @@ CORRECTION_CONDITION = [
     {
         "judge": lambda sense_data: sense_data["lux"][0]["value"] < LUX_THRESHOLD,
         "message": lambda sense_data: (
-            "照度 ({lux:,.0f} LUX) が "
-            + "{threshold:,.0f} LUX より小さいので冷却を弱めます．(outdoor_status: -2)"
+            "照度 ({lux:,.0f} LUX) が " + "{threshold:,.0f} LUX より小さいので冷却を弱めます．(outdoor_status: -2)"
         ).format(lux=sense_data["lux"][0]["value"], threshold=LUX_THRESHOLD),
         "correction": -2,
     },
     {
-        "judge": lambda sense_data: sense_data["solar_rad"][0]["value"]
-        < SOLAR_RAD_THRESHOLD_LOW,
+        "judge": lambda sense_data: sense_data["solar_rad"][0]["value"] < SOLAR_RAD_THRESHOLD_LOW,
         "message": lambda sense_data: (
-            "日射量 ({solar_rad:,.0f} W/m^2) が "
-            + "{threshold:,.0f} W/m^2 より小さいので冷却を少し弱めます．(outdoor_status: -1)"
+            "日射量 ({solar_rad:,.0f} W/m^2) が " + "{threshold:,.0f} W/m^2 より小さいので冷却を少し弱めます．(outdoor_status: -1)"
         ).format(
             solar_rad=sense_data["solar_rad"][0]["value"],
             threshold=SOLAR_RAD_THRESHOLD_LOW,
@@ -188,8 +176,7 @@ COOLER_CONDITION = [
         "status": 6,
     },
     {
-        "judge": lambda mode_map: (mode_map[aircon.MODE.FULL] >= 1)
-        and (mode_map[aircon.MODE.NORMAL] >= 1),
+        "judge": lambda mode_map: (mode_map[aircon.MODE.FULL] >= 1) and (mode_map[aircon.MODE.NORMAL] >= 1),
         "message": "複数台ののエアコンがフル稼働もしくは平常運転しています．(cooler_status: 5)",
         "status": 5,
     },

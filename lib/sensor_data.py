@@ -81,9 +81,7 @@ def fetch_data_impl(
             query += " |> last()"
 
         logging.debug("Flux query = {query}".format(query=query))
-        client = influxdb_client.InfluxDBClient(
-            url=db_config["url"], token=token, org=db_config["org"]
-        )
+        client = influxdb_client.InfluxDBClient(url=db_config["url"], token=token, org=db_config["org"])
         query_api = client.query_api()
 
         return query_api.query(query=query)
@@ -146,11 +144,7 @@ def fetch_data(
                 # NOTE: aggregateWindow(createEmpty: true) と fill(usePrevious: true) の組み合わせ
                 # だとタイミングによって，先頭に None が入る
                 if record.get_value() is None:
-                    logging.debug(
-                        "DELETE {datetime}".format(
-                            datetime=record.get_time() + localtime_offset
-                        )
-                    )
+                    logging.debug("DELETE {datetime}".format(datetime=record.get_time() + localtime_offset))
                     continue
 
                 data.append(record.get_value())
@@ -306,11 +300,7 @@ def get_equip_mode_period(
             # NOTE: aggregateWindow(createEmpty: true) と fill(usePrevious: true) の組み合わせ
             # だとタイミングによって，先頭に None が入る
             if record.get_value() is None:
-                logging.debug(
-                    "DELETE {datetime}".format(
-                        datetime=record.get_time() + localtime_offset
-                    )
-                )
+                logging.debug("DELETE {datetime}".format(datetime=record.get_time() + localtime_offset))
                 continue
 
             is_idle = True
@@ -393,9 +383,7 @@ def get_day_sum(config, measure, hostname, field, offset_day=0):
 
 def dump_data(data):
     for i in range(len(data["time"])):
-        logging.info(
-            "{time}: {value}".format(time=data["time"][i], value=data["value"][i])
-        )
+        logging.info("{time}: {value}".format(time=data["time"][i], value=data["value"][i]))
 
 
 if __name__ == "__main__":
@@ -421,9 +409,7 @@ if __name__ == "__main__":
 
     db_config = get_db_config(config)
 
-    dump_data(
-        fetch_data(db_config, measure, hostname, param, start, "now()", every, window)
-    )
+    dump_data(fetch_data(db_config, measure, hostname, param, start, "now()", every, window))
 
     start = "-{hour}h{minute}m".format(hour=now.hour, minute=now.minute)
 
@@ -457,9 +443,7 @@ if __name__ == "__main__":
     logging.info(
         "Valve on period = {range_list}".format(
             range_list=json.dumps(
-                get_equip_mode_period(
-                    db_config, measure, hostname, param, threshold, start, "now()"
-                ),
+                get_equip_mode_period(db_config, measure, hostname, param, threshold, start, "now()"),
                 indent=2,
                 default=str,
             )

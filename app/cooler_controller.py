@@ -40,11 +40,7 @@ import logger
 
 
 def test_client(server_host, server_port):
-    logging.info(
-        "Start test client (host: {host}:{port})".format(
-            host=server_host, port=server_port
-        )
-    )
+    logging.info("Start test client (host: {host}:{port})".format(host=server_host, port=server_port))
     control_pubsub.start_client(
         server_host,
         server_port,
@@ -111,9 +107,7 @@ def start(arg):
 
     logging.info("Start controller (port: {port})".format(port=setting["server_port"]))
 
-    logging.info(
-        "Using config config: {config_file}".format(config_file=setting["config_file"])
-    )
+    logging.info("Using config config: {config_file}".format(config_file=setting["config_file"]))
     config = load_config(setting["config_file"])
 
     if setting["dummy_mode"]:

@@ -30,9 +30,7 @@ def get_log():
     stop_day = 7 if os.environ.get("DUMMY_MODE", "false") == "true" else 0
 
     try:
-        url = "{base_url}{api_endpoint}".format(
-            base_url=api_base_url, api_endpoint="/api/log_view"
-        )
+        url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/log_view")
 
         # NOTE: 簡易リバースプロキシ
         res = requests.get(url, params={"stop_day": stop_day})
@@ -54,9 +52,7 @@ def api_event():
 
     # NOTE: EventStream を中継する
     def event_stream():
-        url = "{base_url}{api_endpoint}".format(
-            base_url=api_base_url, api_endpoint="/api/event"
-        )
+        url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/event")
         sse = sseclient.SSEClient(url)
         i = 0
         for event in sse:
