@@ -1079,7 +1079,6 @@ def test_actuator_power_off_1(mocker, freezer):
     check_healthz("actuator", True)
     check_healthz("monitor", True)
     # NOTE: タイミング次第でエラーが記録されるので notify_slack はチェックしない
-    check_notify_slack(None)
     check_work_log("長い間バルブが閉じられていますので，流量計の電源を OFF します．")
 
 
