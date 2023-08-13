@@ -26,7 +26,7 @@ def env_mock():
         "os.environ",
         {
             "TEST": "true",
-            # "NO_COLORED_LOGS": "true",
+            "NO_COLORED_LOGS": "true",
         },
     ) as fixture:
         yield fixture
