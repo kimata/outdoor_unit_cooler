@@ -145,13 +145,13 @@ def check_healthz(name, is_healthy):
 
 
 def check_notify_slack(message):
+    notify_hist = notify_slack.get_hist()
+
     if message is None:
-        assert notify_slack.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
+        assert notify_hist == [], "正常なはずなのに，エラー通知がされています．"
     else:
-        assert len(notify_slack.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
-        assert notify_slack.get_hist()[-1].find(message) != -1, "「{message}」が Slack で通知されていません．".format(
-            message=message
-        )
+        assert len(notify_hist) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
+        assert notify_hist[-1].find(message) != -1, "「{message}」が Slack で通知されていません．".format(message=message)
 
 
 def check_work_log(message):
