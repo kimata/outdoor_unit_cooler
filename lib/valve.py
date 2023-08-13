@@ -253,8 +253,6 @@ def set_cooling_working(duty_info):
 
     status = get_status()
 
-    logging.info([status["duration"], duty_info["on_sec"]])
-
     if status["state"] == VALVE_STATE.OPEN:
         # NOTE: 現在バルブが開かれている
         if status["duration"] >= duty_info["on_sec"]:

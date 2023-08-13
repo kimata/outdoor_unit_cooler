@@ -1401,9 +1401,11 @@ def test_actuator_open(mocker, freezer):
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
+    mocker.patch("sensor.ltc2874.com_status", return_value=True)
+
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
 
-    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 1})
 
     # NOTE: mock で差し替えたセンサーを使わせるため，ダミーモードを取り消す
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
@@ -1428,11 +1430,14 @@ def test_actuator_open(mocker, freezer):
     )
     time.sleep(2)
     freezer.move_to(time_test(5))
-    time.sleep(2)
+
+    mocker.patch("control.dummy_control_mode", return_value={"control_mode": 0})
+
+    time.sleep(1)
     freezer.move_to(time_test(10))
-    time.sleep(2)
+    time.sleep(1)
     freezer.move_to(time_test(15))
-    time.sleep(2)
+    time.sleep(1)
 
     cooler_controller.wait_and_term(*control_handle)
     unit_cooler.wait_and_term(*actuator_handle)
