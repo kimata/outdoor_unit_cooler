@@ -12,13 +12,13 @@ Options:
   -w WINDOWE   : 算出に使うウィンドウ [default: 5]
 """
 
-from docopt import docopt
+import datetime
+import logging
+import os
+import traceback
 
 import influxdb_client
-import datetime
-import os
-import logging
-import traceback
+from docopt import docopt
 
 # NOTE: データが欠損している期間も含めてデータを敷き詰めるため，
 # timedMovingAverage を使う．timedMovingAverage の計算の結果，データが後ろに
@@ -350,7 +350,7 @@ def get_day_sum(config, measure, hostname, field, offset_day=0):
     try:
         every_min = 1
         window_min = 5
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=+9)))
 
         start = "-{offset_day}d{hour}h{minute}m".format(
             offset_day=offset_day, hour=now.hour, minute=now.minute
@@ -387,10 +387,10 @@ def dump_data(data):
 
 
 if __name__ == "__main__":
-    import logger
     import json
 
-    from config import load_config, get_db_config
+    import logger
+    from config import get_db_config, load_config
 
     args = docopt(__doc__)
 
@@ -400,7 +400,7 @@ if __name__ == "__main__":
     every = args["-e"]
     window = args["-w"]
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=+9)))
     measure = config["USAGE"]["TARGET"]["TYPE"]
     hostname = config["USAGE"]["TARGET"]["HOST"]
     param = config["USAGE"]["TARGET"]["PARAM"]

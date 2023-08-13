@@ -102,7 +102,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
 
     cooling_mode = {"state": COOLING_STATE.IDLE}
     interval_sec = config["actuator"]["interval_sec"] / speedup
-    receive_time = datetime.datetime.now()
+    receive_time = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=+9)))
     mode_index_prev = -1
     receive_count = 0
     ret = 0
@@ -123,7 +123,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                             break
 
                     recv_cooling_mode = cooling_mode
-                    receive_time = datetime.datetime.now()
+                    receive_time = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=+9)))
                     logging.info("Receive: {cooling_mode}".format(cooling_mode=str(cooling_mode)))
                     if mode_index_prev != cooling_mode["mode_index"]:
                         work_log.work_log(
@@ -152,9 +152,9 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                 if receive_count >= msg_count:
                     break
 
-            if (datetime.datetime.now() - receive_time).total_seconds() > config["controller"][
-                "interval_sec"
-            ] * 10:
+            if (
+                datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=+9))) - receive_time
+            ).total_seconds() > config["controller"]["interval_sec"] * 10:
                 work_log.work_log("冷却モードの指示を受信できません．", work_log.WORK_LOG_LEVEL.ERROR)
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
