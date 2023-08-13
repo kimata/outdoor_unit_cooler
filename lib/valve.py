@@ -6,7 +6,8 @@ import time
 import logging
 import threading
 import traceback
-import datetime
+
+import footprint
 from valve_state import VALVE_STATE, COOLING_STATE
 from work_log import work_log
 
@@ -96,9 +97,8 @@ def init(pin=GPIO_PIN_DEFAULT):
     pin_no = pin
     valve_lock = threading.Lock()
 
-    STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
-    STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
-    STAT_PATH_VALVE_STATE_IDLE.touch()
+    footprint.clear(STAT_PATH_VALVE_STATE_WORKING)
+    footprint.update(STAT_PATH_VALVE_STATE_IDLE)
 
     set_state(VALVE_STATE.CLOSE)
 
@@ -107,10 +107,10 @@ def init(pin=GPIO_PIN_DEFAULT):
 def clear_stat():
     global ctrl_hist
 
-    STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
-    STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
-    STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
-    STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
+    footprint.clear(STAT_PATH_VALVE_STATE_WORKING)
+    footprint.clear(STAT_PATH_VALVE_STATE_IDLE)
+    footprint.clear(STAT_PATH_VALVE_OPEN)
+    footprint.clear(STAT_PATH_VALVE_CLOSE)
     ctrl_hist = []
 
 
@@ -145,15 +145,13 @@ def set_state(valve_state):
         GPIO.output(pin_no, valve_state.value)
 
         if valve_state == VALVE_STATE.OPEN:
-            STAT_PATH_VALVE_CLOSE.unlink(missing_ok=True)
-            if not STAT_PATH_VALVE_OPEN.exists():
-                STAT_PATH_VALVE_OPEN.parent.mkdir(parents=True, exist_ok=True)
-                set_start_time(STAT_PATH_VALVE_OPEN)
+            footprint.clear(STAT_PATH_VALVE_CLOSE)
+            if not footprint.exists(STAT_PATH_VALVE_OPEN):
+                footprint.update(STAT_PATH_VALVE_OPEN)
         else:
-            STAT_PATH_VALVE_OPEN.unlink(missing_ok=True)
-            if not STAT_PATH_VALVE_CLOSE.exists():
-                STAT_PATH_VALVE_CLOSE.parent.mkdir(parents=True, exist_ok=True)
-                set_start_time(STAT_PATH_VALVE_CLOSE)
+            footprint.clear(STAT_PATH_VALVE_OPEN)
+            if not footprint.exists(STAT_PATH_VALVE_CLOSE):
+                footprint.update(STAT_PATH_VALVE_CLOSE)
 
     return get_status()
 
@@ -172,19 +170,6 @@ def get_state():
         return VALVE_STATE.CLOSE
 
 
-def get_duration(stat_file):
-    with open(stat_file, "r") as f:
-        start = datetime.datetime.fromtimestamp(int(f.read()))
-        now = datetime.datetime.now()
-
-        return int((now - start).total_seconds())
-
-
-def set_start_time(stat_file):
-    with open(stat_file, "w") as f:
-        f.write(str(int(datetime.datetime.now().timestamp())))
-
-
 # NOTE: 実際のバルブの状態と，その状態になってからの経過時間を返します
 def get_status():
     global valve_lock
@@ -193,17 +178,17 @@ def get_status():
         valve_state = get_state()
 
         if valve_state == VALVE_STATE.OPEN:
-            assert STAT_PATH_VALVE_OPEN.exists()
+            assert footprint.exists(STAT_PATH_VALVE_OPEN)
 
             return {
                 "state": valve_state,
-                "duration": get_duration(STAT_PATH_VALVE_OPEN),
+                "duration": footprint.elapsed(STAT_PATH_VALVE_OPEN),
             }
         else:
-            if STAT_PATH_VALVE_CLOSE.exists():
+            if footprint.exists(STAT_PATH_VALVE_CLOSE):
                 return {
                     "state": valve_state,
-                    "duration": get_duration(STAT_PATH_VALVE_CLOSE),
+                    "duration": footprint.elapsed(STAT_PATH_VALVE_CLOSE),
                 }
             else:
                 return {"state": valve_state, "duration": 0}
@@ -255,11 +240,10 @@ def stop_sensing():
 # 実際にバルブを開いてからの経過時間を返します．
 # duty_info = { "enable": bool, "on": on_sec, "off": off_sec }
 def set_cooling_working(duty_info):
-    STAT_PATH_VALVE_STATE_IDLE.unlink(missing_ok=True)
+    footprint.clear(STAT_PATH_VALVE_STATE_IDLE)
 
-    if not STAT_PATH_VALVE_STATE_WORKING.exists():
-        STAT_PATH_VALVE_STATE_WORKING.parent.mkdir(parents=True, exist_ok=True)
-        STAT_PATH_VALVE_STATE_WORKING.touch()
+    if not footprint.exists(STAT_PATH_VALVE_STATE_WORKING):
+        footprint.update(STAT_PATH_VALVE_STATE_WORKING)
         work_log("冷却を開始します．")
         logging.info("COOLING: IDLE -> WORKING")
         return set_state(VALVE_STATE.OPEN)
@@ -310,11 +294,10 @@ def set_cooling_working(duty_info):
 
 
 def set_cooling_idle():
-    STAT_PATH_VALVE_STATE_WORKING.unlink(missing_ok=True)
+    footprint.clear(STAT_PATH_VALVE_STATE_WORKING)
 
-    if not STAT_PATH_VALVE_STATE_IDLE.exists():
-        STAT_PATH_VALVE_STATE_IDLE.parent.mkdir(parents=True, exist_ok=True)
-        STAT_PATH_VALVE_STATE_IDLE.touch()
+    if not footprint.exists(STAT_PATH_VALVE_STATE_IDLE):
+        footprint.update(STAT_PATH_VALVE_STATE_IDLE)
         work_log("冷却を停止しました．")
         logging.info("COOLING: WORKING -> IDLE")
         return set_state(VALVE_STATE.CLOSE)
