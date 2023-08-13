@@ -44,6 +44,7 @@ def init(config_, is_read_only=False):
     config = config_
 
     if sqlite is None:
+        LOG_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         sqlite = sqlite3.connect(LOG_DB_PATH, check_same_thread=False)
         sqlite.execute(
             "CREATE TABLE IF NOT EXISTS log(id INTEGER primary key autoincrement, date INTEGER, message TEXT)"
