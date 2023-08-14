@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-from enum import IntEnum
-from flask import jsonify, Blueprint, request, g
+import datetime
 import logging
+import os
+import sqlite3
 import threading
 import time
-import sqlite3
-import datetime
+import traceback
+from enum import IntEnum
 from multiprocessing import Queue
 from wsgiref.handlers import format_date_time
-from webapp_config import APP_URL_PREFIX, LOG_DB_PATH
-from webapp_event import notify_event, EVENT_TYPE
-from flask_util import support_jsonp, gzipped
+
 import notify_slack
-import traceback
+from flask import Blueprint, g, jsonify, request
+from flask_util import gzipped, support_jsonp
+from webapp_config import APP_URL_PREFIX, LOG_DB_PATH
+from webapp_event import EVENT_TYPE, notify_event
 
 
 class APP_LOG_LEVEL(IntEnum):

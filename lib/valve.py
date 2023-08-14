@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import logging
 import os
 import pathlib
-import time
-import logging
 import threading
+import time
 import traceback
 
 import footprint
-from valve_state import VALVE_STATE, COOLING_STATE
+from valve_state import COOLING_STATE, VALVE_STATE
 from work_log import work_log
 
 if os.environ.get("DUMMY_MODE", "false") != "true":  # pragma: no cover

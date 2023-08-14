@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import zmq
 import json
 import logging
 import time
 import traceback
+
+import zmq
 
 CH = "unit_cooler"
 SER_TIMEOUT = 10

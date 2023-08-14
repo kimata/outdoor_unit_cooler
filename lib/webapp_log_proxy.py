@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from flask import jsonify, Blueprint, request, Response, g
-import logging
-import requests
-import time
-import os
 import json
+import logging
+import os
+import time
 import traceback
-import sseclient  # つかうのは sseclient，sseclient-py ではない
-
-from webapp_config import APP_URL_PREFIX
-from flask_util import support_jsonp, gzipped
 from wsgiref.handlers import format_date_time
+
+import requests
+import sseclient  # つかうのは sseclient，sseclient-py ではない
+from flask import Blueprint, Response, g, jsonify, request
+from flask_util import gzipped, support_jsonp
+from webapp_config import APP_URL_PREFIX
 
 blueprint = Blueprint("webapp-proxy", __name__, url_prefix=APP_URL_PREFIX)
 

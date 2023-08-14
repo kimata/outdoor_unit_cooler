@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from flask import jsonify, Blueprint, current_app
-
 import logging
 import os
 
-from webapp_config import APP_URL_PREFIX
-
 from control import gen_control_msg, judge_control_mode
+from flask import Blueprint, current_app, jsonify
 from flask_util import support_jsonp
-
 from sensor_data import get_day_sum
+from webapp_config import APP_URL_PREFIX
 
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 

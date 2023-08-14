@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import coloredlogs
+import bz2
+import io
 import logging
 import logging.handlers
-import bz2
-import pathlib
 import os
-import io
+import pathlib
+
+import coloredlogs
 
 MAX_SIZE = 10 * 1024 * 1024
 ROTATE_COUNT = 10

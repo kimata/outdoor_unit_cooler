@@ -14,12 +14,12 @@ Options:
   -t TIMEOUT    : タイムアウト時間． [default: 5]
 """
 
-import os
-import time
 import fcntl
 import logging
-import sys
+import os
 import pathlib
+import sys
+import time
 import traceback
 
 if __name__ == "__main__":

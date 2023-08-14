@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import functools
-from flask import (
-    g,
-    request,
-    current_app,
-    after_this_request,
-)
-import socket
 import gzip
 import io
+import socket
+
+from flask import after_this_request, current_app, g, request
 
 
 def gzipped(f):

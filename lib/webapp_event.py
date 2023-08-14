@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from flask import Blueprint, Response, request
-from enum import Enum
-import threading
-import time
 import logging
 import multiprocessing
+import threading
+import time
 import traceback
+from enum import Enum
 
+from flask import Blueprint, Response, request
 from webapp_config import APP_URL_PREFIX
 
 blueprint = Blueprint("webapp-event", __name__, url_prefix=APP_URL_PREFIX)

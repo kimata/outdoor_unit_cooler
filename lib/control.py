@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import logging
-
 import copy
+import logging
 import os
 import pathlib
-import pytz
-from control_config import (
-    MESSAGE_LIST,
-    ON_SEC_MIN,
-    OFF_SEC_MIN,
-    get_cooler_status,
-    get_outdoor_status,
-)
-from sensor_data import fetch_data
+
 import notify_slack
+import pytz
+from control_config import MESSAGE_LIST, OFF_SEC_MIN, ON_SEC_MIN, get_cooler_status, get_outdoor_status
+from sensor_data import fetch_data
 
 
 def notify_error(config, message, is_logging=True):

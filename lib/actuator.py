@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import logging
 import pathlib
 import time
-import logging
 
-from work_log import work_log, WORK_LOG_LEVEL
+from work_log import WORK_LOG_LEVEL, work_log
 
 HAZARD_NOTIFY_INTERVAL_MIN = 30
 

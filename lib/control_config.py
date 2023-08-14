@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
-import pathlib
 import logging
+import pathlib
+import sys
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 

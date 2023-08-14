@@ -3,15 +3,15 @@
 
 # ADI の LTC2874 を使って，IO-LINK 通信を行うライブラリです．
 
-import spidev
-import serial
-import struct
 import logging
 import logging.handlers
 import pprint
+import struct
 import time
 
 import sensor.io_link as io_link
+import serial
+import spidev
 
 DEBUG = True
 

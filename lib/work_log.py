@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from enum import IntEnum
 import logging
+from enum import IntEnum
 
-import webapp_log
 import webapp_event
+import webapp_log
 from control import notify_error
 
 

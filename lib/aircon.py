@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from enum import Enum
-
 import logging
+from enum import Enum
 
 # クーラー動作中と判定する電力閾値(min)
 POWER_THRESHOLD_WORK = 20
