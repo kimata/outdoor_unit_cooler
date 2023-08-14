@@ -48,7 +48,7 @@ from actuator import (
     send_valve_condition,
     check_valve_condition,
     stop_valve_monitor,
-    check_hazard,
+    hazard_check,
 )
 import traceback
 from config import load_config
@@ -137,7 +137,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                 # NOTE: テストする際，freezer 使って日付をいじるとこの例外が発生する
                 logging.debug(traceback.format_exc())
                 pass
-            if check_hazard(config):
+            if hazard_check(config):
                 cooling_mode = {"state": COOLING_STATE.IDLE}
             set_cooling_state(config, cooling_mode)
 

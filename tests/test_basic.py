@@ -158,8 +158,8 @@ def check_work_log(message):
     if message is None:
         assert work_log.hist_get() == [], "正常なはずなのに，エラー通知がされています．"
     else:
-        assert len(work_log.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
-        assert work_log.get_hist()[-1].find(message) != -1, "「{message}」が work_log で通知されていません．".format(
+        assert len(work_log.hist_get()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
+        assert work_log.hist_get()[-1].find(message) != -1, "「{message}」が work_log で通知されていません．".format(
             message=message
         )
 
@@ -1622,8 +1622,8 @@ def test_actuator_leak(mocker, freezer):
     check_healthz("actuator", True)
     check_healthz("monitor", True)
     assert (
-        notify_slack.get_hist()[-1].find("水漏れしています．") == 0
-        or notify_slack.get_hist()[-2].find("水漏れしています．") == 0
+        notify_slack.hist_get()[-1].find("水漏れしています．") == 0
+        or notify_slack.hist_get()[-2].find("水漏れしています．") == 0
     )
 
 
