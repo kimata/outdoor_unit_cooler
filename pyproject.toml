@@ -21,6 +21,7 @@ pytz = "^2023.3"
 slack-bolt = "^1.18.0"
 spidev = "^3.6"
 sseclient = "^0.0.27"
+pytest-timeout = "^2.1.0"
 
 [tool.poetry.group.test.dependencies]
 flaky = "^3.7.0"
@@ -35,7 +36,7 @@ coverage = {extras = ["toml"], version = "^7.3.0"}
 [tool.pytest.ini_options]
 minversion = "6.0"
 
-addopts = "--verbose --cov=app --cov=lib --log-file-level=INFO --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s %(message)s\" --capture=sys --cov-report=html --html=tests/evidence/index.htm --self-contained-html"
+addopts = "--verbose --cov=app --cov=lib --timeout=180 --log-file-level=INFO --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s %(message)s\" --capture=sys --cov-report=html --html=tests/evidence/index.htm --self-contained-html"
 
 testpaths = [
     "tests",
