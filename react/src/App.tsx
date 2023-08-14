@@ -51,10 +51,12 @@ function App() {
             solar_rad: [],
             power: [],
         },
-        watering: {
-            amount: 0,
-            price: 0,
-        },
+        watering: [
+            {
+                amount: 0,
+                price: 0,
+            },
+        ],
     };
     const emptyLog: ApiResponse.Log = {
         data: [],

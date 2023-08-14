@@ -62,7 +62,7 @@ const Watering = ({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">本日の散水量</h4>
                     </div>
-                    {isReady ? amount(stat.watering) : loading()}
+                    {isReady ? amount(stat.watering[0]) : loading()}
                 </div>
             </div>
         </div>

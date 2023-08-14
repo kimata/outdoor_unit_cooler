@@ -35,6 +35,10 @@ def watering(config):
     }
 
 
+def watering_list(config):
+    return [watering(config)]
+
+
 def get_last_message(config, message_queue):
     if os.environ.get("DUMMY_MODE", "false") == "true":
         return gen_control_msg(config)
@@ -53,7 +57,7 @@ def get_stats(config, server_host, server_port, message_queue):
     mode = judge_control_mode(config)
 
     return {
-        "watering": watering(config),
+        "watering": watering_list(config),
         "sensor": mode["sense_data"],
         "mode": get_last_message(config, message_queue),
         "cooler_status": mode["cooler_status"],
