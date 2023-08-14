@@ -1429,7 +1429,7 @@ def test_actuator_open(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 15,
+            "msg_count": 20,
         }
     )
     time.sleep(2)
