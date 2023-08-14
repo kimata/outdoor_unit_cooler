@@ -15,18 +15,19 @@ from sensor_data import get_day_sum
 blueprint = Blueprint("unit-cooler-info", __name__, url_prefix=APP_URL_PREFIX)
 
 
-def watering(config):
+def watering(config, day_before):
     if os.environ.get("DUMMY_MODE", "false") == "true":
-        offset_day = 7
+        day_offset = 7
     else:
-        offset_day = 0
+        day_offset = 0
 
     amount = get_day_sum(
         config["controller"]["influxdb"],
         config["controller"]["watering"]["measure"],
         config["controller"]["watering"]["hostname"],
         "flow",
-        offset_day,
+        day_before,
+        day_offset,
     )
 
     return {
@@ -36,7 +37,7 @@ def watering(config):
 
 
 def watering_list(config):
-    return [watering(config)]
+    return [watering(config, i) for i in range(7)]
 
 
 def get_last_message(config, message_queue):
