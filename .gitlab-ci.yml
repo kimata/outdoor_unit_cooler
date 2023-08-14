@@ -275,7 +275,7 @@ test-healthz-docker:
             - actuator_log.txt
             - webapp_log.txt
 
-test-coverage:
+test-walk-through:
     stage: test
 
     needs: ["build-react", "test-controller-regular", "test-actuator-regular", "test-webapp-docker"]
@@ -299,7 +299,7 @@ test-coverage:
 
 deploy-controller:
     stage: deploy
-    needs: ["test-controller-regular", "test-healthz-docker"]
+    needs: ["test-controller-regular", "test-healthz-docker", "test-walk-through"]
 
     image:
         name: bitnami/kubectl:latest
@@ -327,7 +327,7 @@ deploy-controller:
 
 deploy-actuator:
     stage: deploy
-    needs: ["test-actuator-regular", "test-healthz-docker"]
+    needs: ["test-actuator-regular", "test-healthz-docker", "test-walk-through"]
 
     image:
         name: bitnami/kubectl:latest
@@ -365,7 +365,7 @@ deploy-actuator:
 
 deploy-webapp:
     stage: deploy
-    needs: ["test-webapp-docker", "test-healthz-docker"]
+    needs: ["test-webapp-docker", "test-healthz-docker", "test-walk-through"]
 
     image:
         name: bitnami/kubectl:latest
@@ -385,7 +385,7 @@ deploy-webapp:
 
 deploy-webapp-demo:
     stage: deploy
-    needs: ["test-webapp-docker", "test-healthz-docker"]
+    needs: ["test-webapp-docker", "test-healthz-docker", "test-walk-through"]
 
     image:
         name: bitnami/kubectl:latest
