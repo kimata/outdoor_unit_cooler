@@ -11,6 +11,7 @@ const History = ({ isReady, stat }: Props) => {
             <div className="card-body outdoor_unit">
                 <div className="container">
                     <div className="row"></div>
+                    {watering[0]["amount"]}
                 </div>
             </div>
         );
