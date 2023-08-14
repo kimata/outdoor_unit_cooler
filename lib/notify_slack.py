@@ -7,13 +7,12 @@ import os
 import pathlib
 import tempfile
 import threading
-from multiprocessing import Queue
 
 import footprint
 import slack_sdk
 
 # NOTE: テスト用
-notify_hist = Queue()
+notify_hist = []
 
 ERROR_NOTIFY_FOOTPRINT = pathlib.Path(os.path.dirname(__file__)).parent / "data" / "error_notify"
 
@@ -77,11 +76,11 @@ def info(token, ch_name, name, message, formatter=format_simple):
     split_send(token, ch_name, title, message, formatter)
 
 
-def check_interval(interval_min):
+def interval_check(interval_min):
     return footprint.elapsed(ERROR_NOTIFY_FOOTPRINT) > interval_min * 60
 
 
-def clear_interval():
+def interval_clear():
     footprint.clear(ERROR_NOTIFY_FOOTPRINT)
 
 
@@ -108,9 +107,9 @@ def error(
 ):
     title = "Error: " + name
 
-    notify_hist.put(message)
+    hist_add(message)
 
-    if not check_interval(interval_min):
+    if not interval_check(interval_min):
         logging.warning("Interval is too short. Skipping.")
         return
 
@@ -131,9 +130,9 @@ def error_with_image(
 ):  # def error_with_image
     title = "Error: " + name
 
-    notify_hist.put(message)
+    hist_add(message)
 
-    if not check_interval(interval_min):
+    if not interval_check(interval_min):
         logging.warning("Interval is too short. Skipping.")
         return
 
@@ -147,25 +146,24 @@ def error_with_image(
 
 
 # NOTE: テスト用
-def clear_hist():
+def hist_clear():
     global notify_hist
 
-    while not notify_hist.empty():
-        notify_hist.get(False)
+    notify_hist = []
 
 
 # NOTE: テスト用
-def get_hist():
+def hist_add(message):
     global notify_hist
 
-    hist = []
-    while not notify_hist.empty():
-        try:
-            hist.append(notify_hist.get(False))
-        except:  # pragma: no cover
-            pass
+    notify_hist.append(message)
 
-    return hist
+
+# NOTE: テスト用
+def hist_get():
+    global notify_hist
+
+    return notify_hist
 
 
 if __name__ == "__main__":
