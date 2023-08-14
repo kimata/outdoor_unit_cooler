@@ -13,7 +13,7 @@
 }
 
 .outdoor_unit {
-    background-image: url(../public/wall.png);
+    background-image: url(wall.png);
     background-position: bottom 5px right 5px;
     background-repeat: no-repeat;
     background-size: 200px;
