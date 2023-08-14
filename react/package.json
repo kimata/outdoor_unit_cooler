@@ -12,11 +12,13 @@
     },
     "dependencies": {
         "bootstrap": "^5.3.1",
+        "chart.js": "^4.3.3",
         "dayjs": "^1.11.9",
         "react": "^18.2.0",
         "react-bootstrap": "^2.8.0",
         "react-bootstrap-icons": "^1.10.3",
         "react-bootstrap-pagination-control": "^1.0.5",
+        "react-chartjs-2": "^5.2.0",
         "react-dom": "^18.2.0",
         "react-string-replace": "^1.1.1"
     },
