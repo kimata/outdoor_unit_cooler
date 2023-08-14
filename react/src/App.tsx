@@ -18,13 +18,15 @@ import preval from "preval.macro";
 import { ApiResponse } from "./lib/ApiResponse";
 
 import { Watering } from "./components/Watering";
+import { History } from "./components/History";
 import { CoolingMode } from "./components/CoolingMode";
 import { AirConditioner } from "./components/AirConditioner";
 import { Sensor } from "./components/Sensor";
 import { Log } from "./components/Log";
 
 function App() {
-    const API_ENDPOINT = "/unit_cooler/api";
+    // const API_ENDPOINT = "/unit_cooler/api";
+    const API_ENDPOINT = "https://unit-cooler-webapp.kubernetes.green-rabbit.net/unit_cooler/api";
 
     const emptyStat: ApiResponse.Stat = {
         cooler_status: {
@@ -160,6 +162,7 @@ function App() {
                     <div className="container">
                         <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3">
                             <Watering isReady={isStatReady} stat={stat} />
+                            <History isReady={isStatReady} stat={stat} />
                             <CoolingMode isReady={isStatReady} stat={stat} />
                             <AirConditioner isReady={isStatReady} stat={stat} />
                             <Sensor isReady={isStatReady} stat={stat} />
