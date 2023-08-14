@@ -40,7 +40,8 @@ testpaths = [
 ]
 filterwarnings = [
     "ignore:The hookimpl CovPlugin.pytest_configure_node uses",
-    "ignore:The hookimpl CovPlugin.pytest_testnodedown uses"
+    "ignore:The hookimpl CovPlugin.pytest_testnodedown uses",
+    "ignore::DeprecationWarning:pytest_freezegun",
 ]
 
 [tool.coverage.run]

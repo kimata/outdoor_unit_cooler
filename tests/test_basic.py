@@ -1051,7 +1051,7 @@ def test_actuator_power_off_1(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 12,
+            "msg_count": 15,
         }
     )
 
@@ -1060,7 +1060,7 @@ def test_actuator_power_off_1(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 12,
+            "msg_count": 15,
         }
     )
 
@@ -1594,7 +1594,7 @@ def test_actuator_leak(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
     control_handle = cooler_controller.start(
@@ -1602,7 +1602,7 @@ def test_actuator_leak(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
 
@@ -1794,7 +1794,7 @@ def test_actuator_close(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
 
@@ -1803,7 +1803,7 @@ def test_actuator_close(mocker, freezer):
             "config_file": CONFIG_FILE,
             "dummy_mode": True,
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 15,
         }
     )
     freezer.move_to(time_test(1))
