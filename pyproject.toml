@@ -105,7 +105,6 @@ line-length = 110
 [tool.isort]
 profile = "black"
 line_length = 110
-multi_line_output = 5
 include_trailing_comma = true
 
 [build-system]
