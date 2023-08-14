@@ -16,48 +16,46 @@ Options:
   -d                : デバッグモードで動作します．
 """
 
-from docopt import docopt
-
-import os
-import sys
-
-from multiprocessing import Queue
 import concurrent.futures
-import threading
-from flask import Flask
-from flask_cors import CORS
-import werkzeug.serving
-
-import socket
-import time
 import datetime
-import math
-import signal
-import pathlib
 import logging
+import math
+import os
+import pathlib
+import signal
+import socket
+import sys
+import threading
+import time
+from multiprocessing import Queue
 
 import fluent.sender
+import werkzeug.serving
+from docopt import docopt
+from flask import Flask
+from flask_cors import CORS
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
-import control_pubsub
-from actuator import (
-    init_actuator,
-    set_cooling_state,
-    get_valve_status,
-    send_valve_condition,
-    check_valve_condition,
-    stop_valve_monitor,
-    hazard_check,
-)
 import traceback
-from config import load_config
-import work_log
-from valve_state import VALVE_STATE, COOLING_STATE
-from control import notify_error
-import webapp_log
-import webapp_event
+
+import control_pubsub
 import logger
+import webapp_event
+import webapp_log
+import work_log
+from actuator import (
+    check_valve_condition,
+    get_valve_status,
+    hazard_check,
+    init_actuator,
+    send_valve_condition,
+    set_cooling_state,
+    stop_valve_monitor,
+)
+from config import load_config
+from control import notify_error
+from valve_state import COOLING_STATE, VALVE_STATE
 
 LOG_SERVER_PORT = 5001
 DUMMY_MODE_SPEEDUP = 12.0
