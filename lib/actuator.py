@@ -22,11 +22,11 @@ def init_actuator(pin_no):
     actuator_valve.init(pin_no)
 
 
-def clear_hazard(config):
+def hazard_clear(config):
     pathlib.Path(config["actuator"]["hazard"]["file"]).unlink(missing_ok=True)
 
 
-def notify_hazard(config, message):
+def hazard_notify(config, message):
     if (not pathlib.Path(config["actuator"]["hazard"]["file"]).exists()) or (
         (time.time() - pathlib.Path(config["actuator"]["hazard"]["file"]).stat().st_mtime) / 60
         > HAZARD_NOTIFY_INTERVAL_MIN
@@ -37,16 +37,16 @@ def notify_hazard(config, message):
     actuator_valve.set_state(actuator_valve.VALVE_STATE.CLOSE)
 
 
-def check_hazard(config):
+def hazard_check(config):
     if pathlib.Path(config["actuator"]["hazard"]["file"]).exists():
-        notify_hazard(config, "過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています．")
+        hazard_notify(config, "過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています．")
         return True
     else:
         return False
 
 
 def set_cooling_state(config, cooling_mode):
-    if check_hazard(config):
+    if hazard_check(config):
         cooling_mode = {"state": actuator_valve.COOLING_STATE.IDLE}
 
     return actuator_valve.set_cooling_state(cooling_mode)
@@ -78,7 +78,7 @@ def check_valve_condition(config, valve_status):
                 )
         elif (flow is not None) and (flow > config["actuator"]["valve"]["on"]["max"]):
             if valve_status["duration"] > 15:
-                notify_hazard(config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
+                hazard_notify(config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
     else:
         logging.debug("Valve is close for {duration:.1f} sec".format(duration=valve_status["duration"]))
 
@@ -98,7 +98,7 @@ def check_valve_condition(config, valve_status):
                 and (flow is not None)
                 and (flow > config["actuator"]["valve"]["off"]["max"])
             ):
-                notify_hazard(
+                hazard_notify(
                     config,
                     ("電磁弁が壊れていますので制御を停止します．" + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)").format(
                         duration=valve_status["duration"], flow=flow

@@ -45,11 +45,11 @@ def clear():
     for name in ["controller", "receiver", "actuator", "monitor", "web"]:
         pathlib.Path(config[name]["liveness"]["file"]).unlink(missing_ok=True)
 
-    actuator.clear_hazard(config)
+    actuator.hazard_clear(config)
     valve.clear_stat()
-    notify_slack.clear_interval()
-    work_log.clear_hist()
-    notify_slack.clear_hist()
+    notify_slack.interval_clear()
+    work_log.hist_clear()
+    notify_slack.hist_clear()
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -145,7 +145,7 @@ def check_healthz(name, is_healthy):
 
 
 def check_notify_slack(message):
-    notify_hist = notify_slack.get_hist()
+    notify_hist = notify_slack.hist_get()
 
     if message is None:
         assert notify_hist == [], "正常なはずなのに，エラー通知がされています．"
@@ -156,7 +156,7 @@ def check_notify_slack(message):
 
 def check_work_log(message):
     if message is None:
-        assert work_log.get_hist() == [], "正常なはずなのに，エラー通知がされています．"
+        assert work_log.hist_get() == [], "正常なはずなのに，エラー通知がされています．"
     else:
         assert len(work_log.get_hist()) != 0, "異常が発生したはずなのに，エラー通知がされていません．"
         assert work_log.get_hist()[-1].find(message) != -1, "「{message}」が work_log で通知されていません．".format(

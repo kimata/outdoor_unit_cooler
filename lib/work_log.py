@@ -38,14 +38,14 @@ def term():
 
 
 # NOTE: テスト用
-def clear_hist():
+def hist_clear():
     global log_hist
 
     log_hist = []
 
 
 # NOTE: テスト用
-def get_hist():
+def hist_get():
     global log_hist
 
     return log_hist
