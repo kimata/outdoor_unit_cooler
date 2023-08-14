@@ -44,6 +44,7 @@ filterwarnings = [
     "ignore:The hookimpl CovPlugin.pytest_configure_node uses",
     "ignore:The hookimpl CovPlugin.pytest_testnodedown uses",
     "ignore::DeprecationWarning:pytest_freezegun",
+    "ignore::DeprecationWarning:docopt",
 ]
 
 [tool.coverage.run]
