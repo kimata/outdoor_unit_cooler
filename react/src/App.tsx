@@ -25,8 +25,8 @@ import { Sensor } from "./components/Sensor";
 import { Log } from "./components/Log";
 
 function App() {
-    // const API_ENDPOINT = "/unit_cooler/api";
-    const API_ENDPOINT = "https://unit-cooler-webapp.kubernetes.green-rabbit.net/unit_cooler/api";
+    const API_ENDPOINT = "/unit_cooler/api";
+    // const API_ENDPOINT = "https://unit-cooler-webapp.kubernetes.green-rabbit.net/unit_cooler/api";
 
     const emptyStat: ApiResponse.Stat = {
         cooler_status: {
