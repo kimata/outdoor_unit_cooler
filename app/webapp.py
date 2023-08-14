@@ -116,7 +116,7 @@ def create_app(arg):
 
     app = Flask("unit_cooler")
 
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app)
 
     app.config["CONFIG"] = config
     app.config["SERVER_HOST"] = setting["control_host"]
