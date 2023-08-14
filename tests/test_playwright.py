@@ -3,7 +3,6 @@
 
 from playwright.sync_api import expect
 
-
 APP_URL_TMPL = "http://{host}:{port}/unit_cooler/"
 
 

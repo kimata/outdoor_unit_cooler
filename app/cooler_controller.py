@@ -22,21 +22,21 @@ Options:
   -s SERVER_HOST    : サーバーのホスト名を指定します． [default: localhost]
 """
 
-from docopt import docopt
-
-import os
-import sys
 import logging
+import os
 import pathlib
-import traceback
+import sys
 import threading
+import traceback
+
+from docopt import docopt
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
-from control import gen_control_msg, notify_error, print_control_msg
 import control_pubsub
-from config import load_config
 import logger
+from config import load_config
+from control import gen_control_msg, notify_error, print_control_msg
 
 
 def test_client(server_host, server_port):

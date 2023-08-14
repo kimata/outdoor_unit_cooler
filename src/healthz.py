@@ -13,14 +13,13 @@ Options:
   -d                : デバッグモードで動作します．
 """
 
-from docopt import docopt
-
-import requests
+import datetime
 import logging
 import pathlib
-import datetime
 import sys
 
+import requests
+from docopt import docopt
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 

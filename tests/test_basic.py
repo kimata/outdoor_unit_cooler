@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
-import pathlib
-import pytest
-import time
-import re
-import json
 import datetime
-from unittest import mock
+import json
 import logging
+import pathlib
+import re
+import sys
+import time
+from unittest import mock
+
+import pytest
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "app"))
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
@@ -166,6 +167,7 @@ def check_work_log(message):
 
 def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00):
     import struct
+
     import sensor.fd_q10c
 
     spidev_mock = mocker.MagicMock()
@@ -293,8 +295,9 @@ def test_controller_influxdb_dummy(mocker):
 
 
 def test_controller_start_error_1(mocker):
-    import cooler_controller
     from threading import Thread as Thread_orig
+
+    import cooler_controller
 
     def thread_mock(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
         thread_mock.i += 1
@@ -328,8 +331,9 @@ def test_controller_start_error_1(mocker):
 
 
 def test_controller_start_error_2(mocker):
-    import cooler_controller
     from threading import Thread as Thread_orig
+
+    import cooler_controller
 
     def thread_mock(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
         thread_mock.i += 1
@@ -748,9 +752,9 @@ def test_actuator_normal(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
+    import control_config
     import cooler_controller
     import unit_cooler
-    import control_config
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
@@ -795,10 +799,10 @@ def test_actuator_duty_disable(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
-    import cooler_controller
-    import unit_cooler
     import control
     import control_config
+    import cooler_controller
+    import unit_cooler
     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
 
     mock_gpio(mocker)
@@ -1461,10 +1465,10 @@ def test_actuator_flow_unknown_1(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
+    import control
+    import control_config
     import cooler_controller
     import unit_cooler
-    import control_config
-    import control
     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
 
     mock_gpio(mocker)
@@ -1515,10 +1519,10 @@ def test_actuator_flow_unknown_2(mocker):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
+    import control
+    import control_config
     import cooler_controller
     import unit_cooler
-    import control_config
-    import control
     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
 
     mock_gpio(mocker)
@@ -1569,10 +1573,10 @@ def test_actuator_leak(mocker, freezer):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
+    import control
+    import control_config
     import cooler_controller
     import unit_cooler
-    import control_config
-    import control
     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
 
     mock_gpio(mocker)
@@ -1769,10 +1773,10 @@ def test_actuator_close(mocker, freezer):
     # NOTE: RPi.GPIO を差し替えるため，一旦ダミーモードにする
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
+    import control
+    import control_config
     import cooler_controller
     import unit_cooler
-    import control_config
-    import control
     from control_config import MESSAGE_LIST as MESSAGE_LIST_orig
 
     mock_gpio(mocker)
@@ -2014,8 +2018,8 @@ def test_actuator_iolink_short(mocker):
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "true"})
 
     import cooler_controller
-    import unit_cooler
     import sensor.fd_q10c
+    import unit_cooler
 
     mock_gpio(mocker)
 
@@ -2173,6 +2177,7 @@ def test_fd_q10c_unknown_datatype(mocker):
 
 def test_fd_q10c_header_error(mocker):
     import inspect
+
     import sensor.fd_q10c
     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
@@ -2197,6 +2202,7 @@ def test_fd_q10c_header_error(mocker):
 
 def test_fd_q10c_chk_error(mocker):
     import inspect
+
     import sensor.fd_q10c
     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
@@ -2221,6 +2227,7 @@ def test_fd_q10c_chk_error(mocker):
 
 def test_fd_q10c_header_invalid(mocker):
     import inspect
+
     import sensor.fd_q10c
     from sensor.ltc2874 import msq_checksum as msq_checksum_orig
 
@@ -2295,13 +2302,14 @@ def test_actuator_restart():
 
 
 def test_webapp(mocker):
+    import gzip
+
+    import cooler_controller
     import requests
+    import unit_cooler
     import webapp
     import webapp_event
     import webapp_log
-    import cooler_controller
-    import unit_cooler
-    import gzip
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
     mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
@@ -2408,11 +2416,11 @@ def test_webapp(mocker):
 
 
 def test_webapp_dummy_mode(mocker):
+    import cooler_controller
+    import unit_cooler
     import webapp
     import webapp_event
     import webapp_log
-    import cooler_controller
-    import unit_cooler
 
     mocker.patch("control.fetch_data", return_value=gen_sensor_data())
     mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
@@ -2474,9 +2482,9 @@ def test_webapp_dummy_mode(mocker):
 
 
 def test_webapp_queue_overflow(mocker):
-    import webapp
     import cooler_controller
     import unit_cooler
+    import webapp
     from config import load_config
 
     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
@@ -2530,9 +2538,9 @@ def test_webapp_queue_overflow(mocker):
 
 
 def test_webapp_day_sum(mocker):
-    import webapp
     import cooler_controller
     import unit_cooler
+    import webapp
 
     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
 

@@ -16,26 +16,25 @@ Options:
   -D                : ダミーモードで実行します．
 """
 
-from docopt import docopt
-
+import logging
 import os
+import pathlib
+import sys
+import threading
+from multiprocessing import Queue
+
+from docopt import docopt
 from flask import Flask
 from flask_cors import CORS
-import sys
-import pathlib
-import logging
-from multiprocessing import Queue
-import threading
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent / "lib"))
 
-import unit_cooler_info
 import control_pubsub
-
-import webapp_base
-import webapp_util
-import webapp_log_proxy
 import logger
+import unit_cooler_info
+import webapp_base
+import webapp_log_proxy
+import webapp_util
 from config import load_config
 
 watch_thread = None
