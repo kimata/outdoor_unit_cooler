@@ -43,8 +43,9 @@ const History = ({ isReady, stat }: Props) => {
         return (
             <div className="card-body">
                 <div className="container">
-                    <div className="row"></div>
-                    <Bar options={chartOptions} data={chartData} />
+                    <div className="row" data-testid="history-info">
+                        <Bar options={chartOptions} data={chartData} />
+                    </div>
                 </div>
             </div>
         );
