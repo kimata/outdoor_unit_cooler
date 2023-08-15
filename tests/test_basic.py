@@ -779,7 +779,7 @@ def test_actuator_normal(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 20,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -832,7 +832,7 @@ def test_actuator_duty_disable(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -875,7 +875,7 @@ def test_actuator_log(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1064,7 +1064,7 @@ def test_actuator_power_off_1(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 15,
+            "msg_count": 20,
         }
     )
 
@@ -1132,7 +1132,7 @@ def test_actuator_power_off_2(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1206,7 +1206,7 @@ def test_actuator_fd_q10c_stop_error(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1280,7 +1280,7 @@ def test_actuator_fd_q10c_get_state_error(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1499,7 +1499,7 @@ def test_actuator_flow_unknown_1(mocker):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 20,
         }
     )
 
@@ -1553,7 +1553,7 @@ def test_actuator_flow_unknown_2(mocker):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 20,
         }
     )
 
@@ -1608,7 +1608,7 @@ def test_actuator_leak(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 15,
+            "msg_count": 20,
         }
     )
 
@@ -1660,7 +1660,7 @@ def test_actuator_speedup(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1911,7 +1911,7 @@ def test_actuator_notify_hazard(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -2329,7 +2329,7 @@ def test_webapp(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -2440,7 +2440,7 @@ def test_webapp_dummy_mode(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -2506,7 +2506,7 @@ def test_webapp_queue_overflow(mocker):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 7,
+            "msg_count": 10,
         }
     )
 
@@ -2568,7 +2568,7 @@ def test_webapp_day_sum(mocker):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
