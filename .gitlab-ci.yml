@@ -19,7 +19,7 @@ build-react:
         paths:
             - react/dist
     cache:
-        key: npm
+        key: "${CI_JOB_NAME}"
         paths:
             - .npm/
 
@@ -214,6 +214,7 @@ test-webapp-docker:
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
 
     cache:
+        key: "${CI_JOB_NAME}"
         paths:
             - .venv
             - .poetry
@@ -292,6 +293,7 @@ test-walk-through:
         - poetry run pytest tests/test_basic.py
 
     cache:
+        key: "${CI_JOB_NAME}"
         paths:
             - .venv
             - .poetry
