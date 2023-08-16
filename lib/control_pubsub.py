@@ -36,6 +36,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):
                 )
                 # NOTE: Proxy が間に入るので，1回多く回す
                 if send_count == msg_count:
+                    logging.info("Terminate, because the specified number of times has been reached.")
                     break
                 send_count += 1
 
@@ -118,6 +119,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                 )
             )
             if proxy_count == msg_count:
+                logging.info("Terminate, because the specified number of times has been reached.")
                 break
 
     frontend.close()
@@ -153,6 +155,7 @@ def start_client(server_host, server_port, func, msg_count=0):
                 )
             )
             if receive_count == msg_count:
+                logging.info("Terminate, because the specified number of times has been reached.")
                 break
 
     logging.warning("Stop ZMQ client")

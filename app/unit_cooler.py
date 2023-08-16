@@ -148,6 +148,7 @@ def valve_ctrl_worker(config, cmd_queue, dummy_mode=False, speedup=1, msg_count=
                     )
                 )
                 if receive_count >= msg_count:
+                    logging.info("Terminate, because the specified number of times has been reached.")
                     break
 
             if (
@@ -203,7 +204,6 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
 
             valve_status = get_valve_status()
             valve_condition = check_valve_condition(config, valve_status)
-
             send_valve_condition(sender, hostname, recv_cooling_mode, valve_condition, dummy_mode)
             monitor_count += 1
 
@@ -233,6 +233,7 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
                     )
                 )
                 if monitor_count >= msg_count:
+                    logging.info("Terminate, because the specified number of times has been reached.")
                     break
 
             if flow_unknown > config["monitor"]["sense"]["giveup"]:
