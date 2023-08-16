@@ -2067,7 +2067,8 @@ def test_actuator_iolink_short(mocker):
 def test_fd_q10c(mocker):
     import sensor.fd_q10c
 
-    mock_fd_q10c(mocker)
+    # NOTE: spi_read=0x00 で，電源 OFF を返すようにする
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00)
 
     assert sensor.fd_q10c.FD_Q10C().get_value(False) is None
     assert sensor.fd_q10c.FD_Q10C().get_value(True) == 2.57
