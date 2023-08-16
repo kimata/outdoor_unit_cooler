@@ -34,11 +34,11 @@ def start_server(server_port, func, interval_sec, msg_count=0):
                         send_count=send_count, msg_count=msg_count
                     )
                 )
-                # NOTE: Proxy が間に入るので，1回多く回す
-                if send_count == msg_count:
+                send_count += 1
+                # NOTE: Proxy が間に入るので，2回多く回す
+                if send_count == (msg_count + 2):
                     logging.info("Terminate, because the specified number of times has been reached.")
                     break
-                send_count += 1
 
             sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
             logging.debug("Seep {sleep_sec:.1f} sec...".format(sleep_sec=sleep_sec))

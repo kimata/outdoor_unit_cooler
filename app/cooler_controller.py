@@ -117,6 +117,13 @@ def start(arg):
     proxy_thread = None
     control_thread = None
     try:
+        control_thread = control_server_start(
+            config,
+            setting["real_port"],
+            setting["dummy_mode"],
+            setting["speedup"],
+            setting["msg_count"],
+        )
         if not setting["disable_proxy"]:
             proxy_thread = cache_proxy_start(
                 config,
@@ -125,14 +132,6 @@ def start(arg):
                 setting["server_port"],
                 setting["msg_count"],
             )
-        control_thread = control_server_start(
-            config,
-            setting["real_port"],
-            setting["dummy_mode"],
-            setting["speedup"],
-            setting["msg_count"],
-        )
-
     except:
         notify_error(config, traceback.format_exc())
         pass
