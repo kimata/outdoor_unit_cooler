@@ -109,6 +109,7 @@ def com_start(spi):
         # Power on, CQ OC Timeout = 480us
         info("***** Power-On IO-Link ****")
         ltc2874_reg_write(spi, 0x0E, 0x11)
+        info("Wait for device booting ({sleep_sec} sec)".format(sleep_sec=5))
         time.sleep(5)
 
     # Wakeup

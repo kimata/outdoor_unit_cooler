@@ -165,7 +165,7 @@ def check_work_log(message):
         )
 
 
-def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x00):
+def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x11):
     import struct
 
     import sensor.fd_q10c
@@ -1197,7 +1197,7 @@ def test_actuator_fd_q10c_stop_error(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
@@ -1206,7 +1206,7 @@ def test_actuator_fd_q10c_stop_error(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
         }
     )
 
