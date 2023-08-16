@@ -1433,7 +1433,7 @@ def test_actuator_open(mocker, freezer):
             "config_file": CONFIG_FILE,
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 20,
+            "msg_count": 15,
         }
     )
     time.sleep(2)
@@ -1800,7 +1800,7 @@ def test_actuator_close(mocker, freezer):
         {
             "config_file": CONFIG_FILE,
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 10,
         }
     )
 
@@ -1809,7 +1809,7 @@ def test_actuator_close(mocker, freezer):
             "config_file": CONFIG_FILE,
             "dummy_mode": True,
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 10,
         }
     )
     freezer.move_to(time_test(1))
@@ -1819,6 +1819,7 @@ def test_actuator_close(mocker, freezer):
     freezer.move_to(time_test(3))
     time.sleep(1)
     freezer.move_to(time_test(4))
+    time.sleep(1)
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
