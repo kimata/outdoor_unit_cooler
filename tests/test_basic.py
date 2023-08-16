@@ -1819,8 +1819,6 @@ def test_actuator_close(mocker, freezer):
     freezer.move_to(time_test(3))
     time.sleep(1)
     freezer.move_to(time_test(4))
-    time.sleep(1)
-    freezer.move_to(time_test(5))
 
     unit_cooler.wait_and_term(*actuator_handle)
     cooler_controller.wait_and_term(*control_handle)
