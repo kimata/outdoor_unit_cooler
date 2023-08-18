@@ -34,7 +34,7 @@ const History = ({ isReady, stat }: Props) => {
             datasets: [
                 {
                     label: "散水量",
-                    data: watering_list.map((watering) => watering["amount"].toFixed(1)),
+                    data: watering_list.map((watering) => watering["amount"].toFixed(1)).reverse(),
                     backgroundColor: "rgba(128, 128, 128, 0.6)",
                 },
             ],
