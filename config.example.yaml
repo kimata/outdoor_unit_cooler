@@ -62,7 +62,7 @@ actuator:
         # 元栓を閉じてからこの時間経過したら，流量センサの電源を落とす
         power_off_sec: 7200
 
-    interval_sec: 20
+    interval_sec: 30
 
     hazard:
         file: /dev/shm/unit_cooler.hazard
@@ -77,7 +77,7 @@ monitor:
     sense:
         giveup: 10
 
-    interval_sec: 2
+    interval_sec: 30
 
     liveness:
         file: /dev/shm/healthz.monitor
