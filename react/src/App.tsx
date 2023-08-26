@@ -181,7 +181,7 @@ function App() {
                         </p>
                         <p className="display-6">
                             <a
-                                href="https://github.com/kimata/e-ink_weather_panel/"
+                                href="https://github.com/kimata/outdoor_unit_cooler"
                                 className="text-secondary"
                             >
                                 <Github />
