@@ -140,7 +140,8 @@ test-actuator-regular:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py -D
 
-        # - echo "Controller: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)"
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
 
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
@@ -153,7 +154,8 @@ test-actuator-regular:
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
 
-        # - echo "Actuator: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)"
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
 
         - docker run --rm ${CURL_IMAGE} --head
           http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
@@ -187,14 +189,16 @@ test-webapp-docker:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py -D
 
-        # - echo "Controller: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)"
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
 
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -D
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
-        # - echo "Actuator: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)"
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
 
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
@@ -214,7 +218,8 @@ test-webapp-docker:
         - poetry install --no-interaction --with test
         - poetry run playwright install --with-deps chromium
 
-        # - echo "Webapp: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)"
+        - WEB_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
+        - 'echo "Actuator: ${WEB_IP}"'
 
         - poetry run pytest tests/test_playwright.py
           --host $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
@@ -255,14 +260,16 @@ test-healthz-docker:
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/cooler_controller.py
 
-        # - echo "Controller: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)"
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
 
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
           ./app/unit_cooler.py -D
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
-        # - echo "Actuator: $(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)"
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
 
         - docker run --rm --detach=true --tty=true
           --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}
