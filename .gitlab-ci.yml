@@ -395,7 +395,14 @@ deploy-actuator:
 
 deploy-webapp:
     stage: deploy
-    needs: ["test-webapp-docker", "test-healthz-docker", "test-walk-through"]
+
+    needs:
+        - job: test-webapp-docker
+          optional: true
+        - job: test-healthz-docker
+          optional: true
+        - job: test-walk-through
+          optional: true
 
     image:
         name: bitnami/kubectl:latest
@@ -415,7 +422,14 @@ deploy-webapp:
 
 deploy-webapp-demo:
     stage: deploy
-    needs: ["test-webapp-docker", "test-healthz-docker", "test-walk-through"]
+
+    needs:
+        - job: test-webapp-docker
+          optional: true
+        - job: test-healthz-docker
+          optional: true
+        - job: test-walk-through
+          optional: true
 
     image:
         name: bitnami/kubectl:latest
