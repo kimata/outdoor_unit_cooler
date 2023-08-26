@@ -29,8 +29,6 @@ WORKDIR /opt/unit_cooler
 
 COPY . .
 
-ENV PATH="/root/.local/bin:$PATH"
-
 EXPOSE 2222
 EXPOSE 5000
 EXPOSE 5001
