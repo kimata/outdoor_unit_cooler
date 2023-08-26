@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install --assume-yes \
     python3 \
     python3-dev \
  && apt-get clean \
- && rm -rf /va/rlib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/unit_cooler
 
