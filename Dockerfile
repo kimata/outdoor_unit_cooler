@@ -1,4 +1,4 @@
-FROM python:3.11.5-bookworm as build
+FROM python:3.10.13-bookworm as build
 
 RUN apt-get update && apt-get install --assume-yes \
     gcc \
@@ -19,7 +19,7 @@ RUN poetry config virtualenvs.create false \
  && poetry install \
  && rm -rf ~/.cache
 
-FROM python:3.11.5-slim-bookworm as prod
+FROM python:3.10.13-bookworm as prod
 
 ENV TZ=Asia/Tokyo
 
