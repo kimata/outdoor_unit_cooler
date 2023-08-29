@@ -23,7 +23,7 @@ FROM python:3.10.13-bookworm as prod
 
 ENV TZ=Asia/Tokyo
 
-COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=build /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 
 WORKDIR /opt/unit_cooler
 
