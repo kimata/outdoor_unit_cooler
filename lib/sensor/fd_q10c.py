@@ -98,6 +98,7 @@ class FD_Q10C:
         spi = None
         try:
             spi = driver.com_open()
+
             driver.com_stop(spi, is_power_off=True)
             driver.com_close(spi)
             self._release()

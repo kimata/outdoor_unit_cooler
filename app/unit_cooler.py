@@ -238,7 +238,6 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
 
             if flow_unknown > config["monitor"]["sense"]["giveup"]:
                 work_log.work_log("流量計が使えません．", work_log.WORK_LOG_LEVEL.ERROR)
-
                 break
             elif flow_unknown > (config["monitor"]["sense"]["giveup"] / 2):
                 logging.warning("流量計が応答しないので一旦，リセットします．")
