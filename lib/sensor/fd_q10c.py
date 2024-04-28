@@ -79,6 +79,7 @@ class FD_Q10C:
                 driver.com_stop(spi, ser)
                 driver.com_close(spi)
             else:
+                logging.info("Sensor is powered OFF.")
                 value = None
 
             self._release()
