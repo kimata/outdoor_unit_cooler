@@ -53,6 +53,10 @@ def ltc2874_reg_write(spi, reg, data):
     spi.xfer2([(0x03 << 5) | (reg << 1), data])
 
 
+def ltc2874_reset(spi):
+    spi.xfer2([0x07 << 5, 0x00])
+
+
 def msq_checksum(data):
     chk = 0x52
     for d in data:
@@ -93,6 +97,7 @@ def com_open():
 
 
 def com_close(spi):
+    ltc2874_reset(spi)
     spi.close()
 
 
