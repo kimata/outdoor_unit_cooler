@@ -59,9 +59,9 @@ class FD_Q10C:
         if not self._acquire():
             raise RuntimeError("Unable to acquire the lock.")
 
-        # NOTE: 電源 ON なら True
         try:
             spi = driver.com_open()
+            # NOTE: 電源 ON なら True
             return driver.com_status(spi)
         except:
             return False

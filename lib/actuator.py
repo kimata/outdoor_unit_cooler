@@ -100,7 +100,8 @@ def check_valve_condition(config, valve_status):
             ):
                 hazard_notify(
                     config,
-                    ("電磁弁が壊れていますので制御を停止します．" + "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)").format(
+                    "電磁弁が壊れていますので制御を停止します．"
+                    + "(バルブを閉じてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
                         duration=valve_status["duration"], flow=flow
                     ),
                 )
