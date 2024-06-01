@@ -23,7 +23,7 @@ def elapsed(path):
         last_update = f.read()
 
         if last_update != "":
-            diff_sec -= float()
+            diff_sec -= float(last_update)
 
     return diff_sec
 
