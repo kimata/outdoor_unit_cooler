@@ -56,13 +56,18 @@ class FD_Q10C:
             return None
 
     def get_state(self):
+        if not self._acquire():
+            raise RuntimeError("Unable to acquire the lock.")
+
         # NOTE: 電源 ON なら True
         try:
             spi = driver.com_open()
             return driver.com_status(spi)
         except:
-            driver.com_close(spi)
             return False
+        finally:
+            driver.com_close(spi)
+            self._release()
 
     def read_param(self, index, data_type, force_power_on=True):
         if not self._acquire():
@@ -77,19 +82,13 @@ class FD_Q10C:
                 value = driver.isdu_read(spi, ser, index, data_type)
 
                 driver.com_stop(spi, ser)
-                driver.com_close(spi)
             else:
                 logging.info("Sensor is powered OFF.")
                 value = None
-
-            self._release()
-
             return value
-        except:
+        finally:
             driver.com_close(spi)
-
             self._release()
-            raise
 
     def stop(self):
         if not self._acquire():
