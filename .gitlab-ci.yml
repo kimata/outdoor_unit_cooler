@@ -1,4 +1,4 @@
-image: docker:24.0-dind
+image: docker:26.1-dind
 
 stages:
     - build-webapp
