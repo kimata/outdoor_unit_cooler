@@ -147,6 +147,7 @@ function App() {
         }, 58000);
         return () => {
             clearInterval(intervalId);
+            eventSource.close();
         };
     }, []);
 
