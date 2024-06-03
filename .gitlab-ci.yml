@@ -1,4 +1,4 @@
-image: docker:24.0-dind
+image: docker:26.1-dind
 
 stages:
     - build-webapp
@@ -10,7 +10,7 @@ stages:
 build-react:
     stage: build-webapp
 
-    image: node:20.5
+    image: node:22.2
     script:
         - cd react
         - npm ci --cache .npm --prefer-offline
