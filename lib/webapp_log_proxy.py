@@ -50,6 +50,8 @@ def get_log():
 def api_event():
     count = request.args.get("count", 0, type=int)
 
+    logging.error("START")
+
     # NOTE: EventStream を中継する
     def event_stream():
         url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/event")
