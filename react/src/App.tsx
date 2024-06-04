@@ -80,7 +80,7 @@ function App() {
                 .then((resJson) => resolve(resJson))
                 .catch((e) => {
                     setError(true);
-                    console.error("通信に失敗しました", e);
+                    console.error("通信に失敗しました．", e);
                 });
         });
     };
@@ -131,6 +131,7 @@ function App() {
             });
             eventSource.onerror = () => {
                 if (eventSource.readyState === 2) {
+                    console.warn("EventSource が閉じられました．", e);
                     eventSource.close();
                     setTimeout(watchEvent, 1000);
                 }
