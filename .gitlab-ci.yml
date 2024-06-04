@@ -387,7 +387,7 @@ deploy-actuator:
               - lib/valve_state.py
               - lib/webapp_config.py
               - lib/webapp_base.py
-              - lib/webapp_log.py
+              - lib/webapp_log_proxy.py
               - lib/webapp_event.py
               - lib/flask_util.py
               - lib/work_log.py
