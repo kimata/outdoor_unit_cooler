@@ -139,8 +139,6 @@ def create_app(arg):
 
 
 if __name__ == "__main__":
-    import gunicorn
-
     args = docopt(__doc__)
 
     config_file = args["-c"]
@@ -162,5 +160,4 @@ if __name__ == "__main__":
     app = create_app(app_arg)
 
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
-    gunicorn.run_app(app, host="0.0.0.0", port=5000, workers=4)
-    # app.run(host="0.0.0.0", threaded=True, use_reloader=True)
+    app.run(host="0.0.0.0", threaded=True, use_reloader=True)
