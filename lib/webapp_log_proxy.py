@@ -9,7 +9,7 @@ from wsgiref.handlers import format_date_time
 
 import requests
 import sseclient  # つかうのは sseclient，sseclient-py ではない
-from flask import Blueprint, Response, g, jsonify, request
+from flask import Blueprint, Response, g, jsonify, request, stream_with_context
 from flask_util import gzipped, support_jsonp
 from webapp_config import APP_URL_PREFIX
 
@@ -66,14 +66,14 @@ def api_event():
                 i += 1
                 if i == count:
                     return
-        except:
+        finally:
             logging.error("DISCONNECT")
             # NOTE: 切断処理
             sse.resp.close()
 
         pass  # pragma: no cover
 
-    res = Response(event_stream(), mimetype="text/event-stream")
+    res = Response(stream_with_context(event_stream()), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")
     res.headers.add("Cache-Control", "no-cache")
     res.headers.add("X-Accel-Buffering", "no")
