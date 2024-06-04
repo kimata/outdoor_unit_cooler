@@ -105,7 +105,7 @@ def create_app(arg):
     watch_thread.start()
 
     # NOTE: アクセスログは無効にする
-    # logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         if setting["dummy_mode"]:

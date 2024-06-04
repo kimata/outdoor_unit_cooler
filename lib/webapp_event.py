@@ -7,7 +7,7 @@ import time
 import traceback
 from enum import Enum
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, request, stream_with_context
 from webapp_config import APP_URL_PREFIX
 
 blueprint = Blueprint("webapp-event", __name__, url_prefix=APP_URL_PREFIX)
@@ -117,7 +117,7 @@ def api_event():
                     if i == count:
                         return
 
-    res = Response(event_stream(), mimetype="text/event-stream")
+    res = Response(stream_with_context(event_stream()), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")
     res.headers.add("Cache-Control", "no-cache")
     res.headers.add("X-Accel-Buffering", "no")

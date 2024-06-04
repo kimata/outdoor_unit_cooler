@@ -50,24 +50,19 @@ def get_log():
 def api_event():
     count = request.args.get("count", 0, type=int)
 
-    logging.error("START")
-
     # NOTE: EventStream を中継する
     def event_stream():
         url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/event")
         sse = sseclient.SSEClient(url)
         i = 0
         try:
-            logging.error("WAIT")
             for event in sse:
-                logging.error("EMIT")
                 yield "data: {}\n\n".format(event.data)
 
                 i += 1
                 if i == count:
                     return
         finally:
-            logging.error("DISCONNECT")
             # NOTE: 切断処理
             sse.resp.close()
 
