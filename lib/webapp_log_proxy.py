@@ -56,6 +56,7 @@ def api_event():
         sse = sseclient.SSEClient(url)
         i = 0
         try:
+            logging.error("WAIT")
             for event in sse:
                 logging.error("EMIT")
                 yield "data: {}\n\n".format(event.data)
