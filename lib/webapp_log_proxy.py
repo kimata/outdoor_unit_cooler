@@ -57,12 +57,13 @@ def api_event():
         i = 0
         try:
             for event in sse:
+                logging.error("EMIT")
                 yield "data: {}\n\n".format(event.data)
 
                 i += 1
                 if i == count:
                     return
-        except GeneratorExit:
+        except:
             logging.error("DISCONNECT")
             # NOTE: 切断処理
             sse.resp.close()
