@@ -56,10 +56,15 @@ def api_event():
         sse = sseclient.SSEClient(url)
         i = 0
         for event in sse:
-            yield "data: {}\n\n".format(event.data)
+            try:
+                yield "data: {}\n\n".format(event.data)
 
-            i += 1
-            if i == count:
+                i += 1
+                if i == count:
+                    return
+            except GeneratorExit:
+                # NOTE: 切断処理
+                sse.resp.close()
                 return
         pass  # pragma: no cover
 
