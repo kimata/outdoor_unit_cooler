@@ -131,7 +131,7 @@ function App() {
             });
             eventSource.onerror = () => {
                 if (eventSource.readyState === 2) {
-                    console.warn("EventSource が閉じられました．", e);
+                    console.warn("EventSource が閉じられました．再接続します．", e);
                     eventSource.close();
                     setTimeout(watchEvent, 1000);
                 }
