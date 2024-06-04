@@ -55,17 +55,17 @@ def api_event():
         url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/event")
         sse = sseclient.SSEClient(url)
         i = 0
-        for event in sse:
-            try:
+        try:
+            for event in sse:
                 yield "data: {}\n\n".format(event.data)
 
                 i += 1
                 if i == count:
                     return
-            except GeneratorExit:
-                # NOTE: 切断処理
-                sse.resp.close()
-                return
+        except GeneratorExit:
+            # NOTE: 切断処理
+            sse.resp.close()
+
         pass  # pragma: no cover
 
     res = Response(event_stream(), mimetype="text/event-stream")
