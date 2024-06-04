@@ -21,6 +21,7 @@ pytz = "^2023.3"
 slack-bolt = "^1.18.0"
 spidev = "^3.6"
 sseclient = "^0.0.27"
+gunicorn = "^22.0.0"
 
 [tool.poetry.group.test.dependencies]
 flaky = "^3.7.0"
