@@ -145,6 +145,7 @@ function App() {
         const intervalId = setInterval(() => {
             loadStat();
         }, 58000);
+
         return () => {
             clearInterval(intervalId);
             eventSource.close();
