@@ -120,7 +120,7 @@ def api_event():
             # NOTE: クライアントが切断された時にソケットを解放するため，定期的に yield を呼ぶ
             j += 1
             if j == 100:
-                yield ""
+                yield "data: dummy"
                 j = 0
 
     res = Response(stream_with_context(event_stream()), mimetype="text/event-stream")

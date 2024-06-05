@@ -63,6 +63,7 @@ def api_event():
                 if i == count:
                     return
         finally:
+            logging.error("CLOSE")
             # NOTE: 切断処理
             sse.resp.close()
 
