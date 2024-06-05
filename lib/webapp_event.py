@@ -102,6 +102,7 @@ def api_event():
             last_count.append(event_count[i])
 
         i = 0
+        j = 0
         while True:
             time.sleep(0.5)
             for name, event_type in EVENT_TYPE.__members__.items():
@@ -116,6 +117,11 @@ def api_event():
 
                     if i == count:
                         return
+            # NOTE: クライアントが切断された時にソケットを解放するため，定期的に yield を呼ぶ
+            j += 1
+            if j == 100:
+                yield ""
+                j = 0
 
     res = Response(stream_with_context(event_stream()), mimetype="text/event-stream")
     res.headers.add("Access-Control-Allow-Origin", "*")
