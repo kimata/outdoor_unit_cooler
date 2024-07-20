@@ -37,7 +37,7 @@ def check_liveness_impl(name, liveness_file, interval):
     if elapsed.total_seconds() > max(interval * 2, 60):
         logging.warning(
             "Execution interval of {name} is too long. ({elapsed:,} sec)".format(
-                name=name, elapsed=elapsed.seconds
+                name=name, elapsed=elapsed.total_seconds
             )
         )
         return False
