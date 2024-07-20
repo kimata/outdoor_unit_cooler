@@ -114,9 +114,9 @@ def api_event():
                     last_count[index] = event_count[index]
 
                     i += 1
-
                     if i == count:
                         return
+
             # NOTE: クライアントが切断された時にソケットを解放するため，定期的に yield を呼ぶ
             j += 1
             if j == 100:
