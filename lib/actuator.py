@@ -60,14 +60,25 @@ def stop_valve_monitor():
     actuator_valve.stop_flow_monitor()
 
 
-def check_valve_condition(config, valve_status):
+def check_valve_condition(config):
     logging.debug("Check valve condition")
 
     flow = -1
+
+    valve_status = get_valve_status()
     if valve_status["state"] == actuator_valve.VALVE_STATE.OPEN:
         flow = actuator_valve.get_flow()
+
+        # NOTE: get_flow() の内部で流量センサーの電源を入れている場合は計測に時間がかかるので，
+        # その間に電磁弁の状態が変化している可能性があるので，再度状態を取得する
+        valve_status = get_valve_status()
+
         check_valve_condition.last_flow = flow
-        if (flow is not None) and (flow < config["actuator"]["valve"]["on"]["min"]):
+        if (
+            (valve_status["state"] == actuator_valve.VALVE_STATE.OPEN)
+            and (flow is not None)
+            and (flow < config["actuator"]["valve"]["on"]["min"])
+        ):
             if valve_status["duration"] > 5:
                 # NOTE: ハザード扱いにはしない
                 work_log(

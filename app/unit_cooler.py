@@ -202,8 +202,8 @@ def valve_monitor_worker(config, dummy_mode=False, speedup=1, msg_count=0):
                 logging.info("Terminate monitor worker")
                 break
 
+            valve_condition = check_valve_condition(config)
             valve_status = get_valve_status()
-            valve_condition = check_valve_condition(config, valve_status)
             send_valve_condition(sender, hostname, recv_cooling_mode, valve_condition, dummy_mode)
             monitor_count += 1
 
