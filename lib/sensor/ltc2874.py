@@ -54,6 +54,7 @@ def ltc2874_reg_write(spi, reg, data):
 
 
 def ltc2874_reset(spi):
+    logging.info("Reset LTC2874")
     spi.xfer2([0x07 << 5, 0x00])
 
 
