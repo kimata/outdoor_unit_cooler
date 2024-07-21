@@ -377,10 +377,7 @@ deploy-actuator:
               - lib/control.py
               - lib/control_config.py
               - lib/control_pubsub.py
-              - lib/fd_q10c.py
-              - lib/io_link.py
               - lib/logger.py
-              - lib/ltc2874.py
               - lib/notify_slack.py
               - lib/sensor_data.py
               - lib/valve.py
@@ -391,6 +388,9 @@ deploy-actuator:
               - lib/webapp_event.py
               - lib/flask_util.py
               - lib/work_log.py
+              - lib/sensor/fd_q10c.py
+              - lib/sensor/ltc2874.py
+              - lib/sensor/io_link.py
               - src/healthz.py
 
 deploy-webapp:
