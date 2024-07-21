@@ -14,7 +14,7 @@ docopt = "^0.6.2"
 zmq = "^0.0.0"
 fluent-logger = "^0.10.0"
 influxdb-client = {extras = ["ciso"], version = "^1.36.1"}
-psutil = "^5.9.5"
+psutil = "^6.0.0"
 pyserial = "^3.5"
 python = "^3.10"
 pytz = "^2023.3"
