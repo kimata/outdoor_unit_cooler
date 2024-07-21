@@ -75,12 +75,12 @@ MESSAGE_LIST = [
     # 7
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 4 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 5 * 60},
     },
     # 8
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 2 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 3 * 60},
     },
 ]
 
