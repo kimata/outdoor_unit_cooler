@@ -55,7 +55,7 @@ MESSAGE_LIST = [
     # 3
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 20 * 60},
+        "duty": {"enable": True, "on_sec": 0.2 * 60, "off_sec": 15 * 60},
     },
     # 4
     {
@@ -65,22 +65,22 @@ MESSAGE_LIST = [
     # 5
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 8 * 60},
+        "duty": {"enable": True, "on_sec": 0.3 * 60, "off_sec": 10 * 60},
     },
     # 6
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 6 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 8 * 60},
     },
     # 7
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 5 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 6 * 60},
     },
     # 8
     {
         "state": COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 3 * 60},
+        "duty": {"enable": True, "on_sec": 0.4 * 60, "off_sec": 4 * 60},
     },
 ]
 
