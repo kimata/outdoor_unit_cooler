@@ -96,8 +96,9 @@ def com_open():
     return spi
 
 
-def com_close(spi):
-    ltc2874_reset(spi)
+def com_close(spi, is_reset=True):
+    if is_reset:
+        ltc2874_reset(spi)
     spi.close()
 
 
