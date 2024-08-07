@@ -101,12 +101,12 @@ class FD_Q10C:
 
             driver.com_stop(spi, is_power_off=True)
             driver.com_close(spi, is_reset=True)
-            self._release()
         except:
             if spi is not None:
                 driver.com_close(spi, is_reset=True)
-                self._release()
                 raise
+        finally:
+            self._release()
 
     def _acquire(self):
         self.lock_fd = os.open(self.lock_file, os.O_RDWR | os.O_CREAT | os.O_TRUNC)
