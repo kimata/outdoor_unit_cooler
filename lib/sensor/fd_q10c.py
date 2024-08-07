@@ -52,7 +52,10 @@ class FD_Q10C:
             else:
                 return round(raw * 0.01, 2)
         except:
-            self.stop()
+            try:
+                self.stop()
+            except:
+                pass
             logging.warning(traceback.format_exc())
             return None
 
