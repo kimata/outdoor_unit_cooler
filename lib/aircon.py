@@ -8,7 +8,7 @@ POWER_THRESHOLD_WORK = 20
 # クーラー平常運転中と判定する電力閾値(min)
 POWER_THRESHOLD_NORMAL = 500
 # クーラーフル稼働中と判定する電力閾値(min)
-POWER_THRESHOLD_FULL = 1000
+POWER_THRESHOLD_FULL = 900
 # エアコンの冷房動作と判定する温度閾値(min)
 TEMP_THRESHOLD = 20
 
