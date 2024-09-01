@@ -89,7 +89,12 @@ def check_valve_condition(config):
                 )
         elif (flow is not None) and (flow > config["actuator"]["valve"]["on"]["max"]):
             if valve_status["duration"] > 15:
-                hazard_notify(config, "水漏れしています．(流量が {flow:.1f} L/min)".format(flow=flow))
+                hazard_notify(
+                    config,
+                    "水漏れしています．(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
+                        duration=valve_status["duration"], flow=flow
+                    ),
+                )
     else:
         logging.debug("Valve is close for {duration:.1f} sec".format(duration=valve_status["duration"]))
 
