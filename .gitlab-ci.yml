@@ -148,7 +148,7 @@ test-actuator-regular:
           ./app/unit_cooler.py -n 1 -D
           -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
 
-        - sleep 5
+        - sleep 10
 
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
