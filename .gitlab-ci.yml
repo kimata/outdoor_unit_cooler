@@ -342,18 +342,7 @@ deploy-controller:
         # NOTE: 自動実行ではデプロイしない
         - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
-        - changes:
-              - app/cooler_controller.py
-              - lib/aircon.py
-              - lib/config.py
-              - lib/control.py
-              - lib/control_config.py
-              - lib/valve_state.py
-              - lib/control_pubsub.py
-              - lib/logger.py
-              - lib/notify_slack.py
-              - lib/sensor_data.py
-              - src/healthz.py
+        - when: on_success
 
 deploy-actuator:
     stage: deploy
@@ -370,28 +359,7 @@ deploy-actuator:
         # NOTE: 自動実行ではデプロイしない
         - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
-        - changes:
-              - app/unit_cooler.py
-              - lib/aircon.py
-              - lib/config.py
-              - lib/control.py
-              - lib/control_config.py
-              - lib/control_pubsub.py
-              - lib/logger.py
-              - lib/notify_slack.py
-              - lib/sensor_data.py
-              - lib/valve.py
-              - lib/valve_state.py
-              - lib/webapp_config.py
-              - lib/webapp_base.py
-              - lib/webapp_log.py
-              - lib/webapp_event.py
-              - lib/flask_util.py
-              - lib/work_log.py
-              - lib/sensor/fd_q10c.py
-              - lib/sensor/ltc2874.py
-              - lib/sensor/io_link.py
-              - src/healthz.py
+        - when: on_success
 
 deploy-webapp:
     stage: deploy
@@ -409,10 +377,7 @@ deploy-webapp:
         # NOTE: 自動実行ではデプロイしない
         - if: '$CI_PIPELINE_SOURCE == "schedule"'
           when: never
-        - changes:
-              - react/**/*
-              - app/webapp.py
-              - lib/*
+        - when: on_success
 
 deploy-webapp-demo:
     stage: deploy
@@ -427,13 +392,7 @@ deploy-webapp-demo:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webapp-demo
     rules:
-        # NOTE: 自動実行ではデプロイしない
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
-          when: never
-        - changes:
-              - react/**/*
-              - app/webapp.py
-              - lib/*
+        - if: '$CI_PIPELINE_SOURCE == "push"'
 
 renovate:
     stage: renovate
