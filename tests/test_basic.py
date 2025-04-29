@@ -854,6 +854,7 @@ def test_actuator_log(mocker):
 
     import cooler_controller
     import unit_cooler
+    import webapp_config
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
@@ -894,7 +895,7 @@ def test_actuator_log(mocker):
     time.sleep(3)
 
     res = requests.get(
-        "http://localhost:5001/unit_cooler/api/log_view",
+        f"http://localhost:5001/{webapp_config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
     )
     assert res.status_code == 200
@@ -902,18 +903,18 @@ def test_actuator_log(mocker):
     assert len(json.loads(res.text)["data"]) != 0
     assert "last_time" in json.loads(res.text)
 
-    res = requests.get("http://localhost:5001/unit_cooler/api/log_clear")
+    res = requests.get(f"http://localhost:5001/{webapp_config.URL_PREFIX}/api/log_clear")
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
 
-    res = requests.get("http://localhost:5001/unit_cooler/api/log_view")
+    res = requests.get(f"http://localhost:5001/{webapp_config.URL_PREFIX}/api/log_view")
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
     assert len(json.loads(res.text)["data"]) == 0
     assert "last_time" in json.loads(res.text)
 
     res = requests.get(
-        "http://localhost:5001/unit_cooler/api/log_view",
+        f"http://localhost:5001/{webapp_config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
         params={
             "callback": "TEST",
@@ -923,7 +924,7 @@ def test_actuator_log(mocker):
     assert res.text.find("TEST(") == 0
 
     res = requests.get(
-        "http://localhost:5001/unit_cooler/api/event",
+        f"http://localhost:5001/{webapp_config.URL_PREFIX}/api/event",
         params={"count": "1"},
     )
     assert res.status_code == 200
@@ -2310,6 +2311,7 @@ def test_webapp(mocker):
     import requests
     import unit_cooler
     import webapp
+    import webapp_config
     import webapp_event
     import webapp_log
 
@@ -2340,48 +2342,48 @@ def test_webapp(mocker):
 
     response = client.get("/")
     assert response.status_code == 302
-    assert re.search(r"/unit_cooler/$", response.location)
+    assert re.search(rf"{webapp_config.URL_PREFIX}/$", response.location)
 
-    response = client.get("/unit_cooler/")
+    response = client.get(f"{webapp_config.URL_PREFIX}/")
     assert response.status_code == 200
     assert "室外機" in response.data.decode("utf-8")
 
     response = client.get(
-        "/unit_cooler/",
+        f"{webapp_config.URL_PREFIX}/",
         headers={"Accept-Encoding": "gzip"},
     )
     assert response.status_code == 200
     assert "室外機" in gzip.decompress(response.data).decode("utf-8")
 
-    response = client.get("/unit_cooler/api/log_view")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/log_view")
     assert response.status_code == 200
     assert "data" in response.json
     assert len(response.json["data"]) != 0
     assert "last_time" in response.json
 
-    response = client.get("/unit_cooler/api/event", query_string={"count": "2"})
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/event", query_string={"count": "2"})
     assert response.status_code == 200
     assert response.data.decode()
 
-    response = client.get("/unit_cooler/api/memory")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/memory")
     assert response.status_code == 200
     assert "memory" in response.json
 
-    response = client.get("/unit_cooler/api/snapshot")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/snapshot")
     assert response.status_code == 200
     assert "msg" in response.json
 
-    response = client.get("/unit_cooler/api/snapshot")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/snapshot")
     assert response.status_code == 200
     assert "msg" not in response.json
 
-    response = client.get("/unit_cooler/api/sysinfo")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/sysinfo")
     assert response.status_code == 200
     assert "date" in response.json
     assert "uptime" in response.json
     assert "loadAverage" in response.json
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
     assert "watering" in response.json
     assert "sensor" in response.json
@@ -2394,7 +2396,7 @@ def test_webapp(mocker):
     mocker.patch("webapp_log_proxy.requests.get", return_value=response)
 
     # NOTE: mock を戻す手間を避けるため，最後に実施
-    response = client.get("/unit_cooler/api/log_view")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/log_view")
     assert response.status_code == 200
     assert "data" in response.json
     assert len(response.json["data"]) == 0
@@ -2421,6 +2423,7 @@ def test_webapp_dummy_mode(mocker):
     import cooler_controller
     import unit_cooler
     import webapp
+    import webapp_config
     import webapp_event
     import webapp_log
 
@@ -2449,7 +2452,7 @@ def test_webapp_dummy_mode(mocker):
     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
     client = app.test_client()
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
     assert "watering" in response.json
     assert "sensor" in response.json
@@ -2463,7 +2466,7 @@ def test_webapp_dummy_mode(mocker):
         new_callable=mocker.PropertyMock,
     )
 
-    response = client.get("/unit_cooler/", headers={"Accept-Encoding": "gzip"})
+    response = client.get(f"{webapp_config.URL_PREFIX}/", headers={"Accept-Encoding": "gzip"})
     assert response.status_code == 301
 
     cooler_controller.wait_and_term(*control_handle)
@@ -2487,6 +2490,7 @@ def test_webapp_queue_overflow(mocker):
     import cooler_controller
     import unit_cooler
     import webapp
+    import webapp_config
     from config import load_config
 
     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
@@ -2518,7 +2522,7 @@ def test_webapp_queue_overflow(mocker):
         webapp.queuing_message(load_config(CONFIG_FILE), app.config["MESSAGE_QUEUE"], "TEST")
         time.sleep(0.01)
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
     assert "watering" in response.json
     assert "sensor" in response.json
@@ -2543,6 +2547,7 @@ def test_webapp_day_sum(mocker):
     import cooler_controller
     import unit_cooler
     import webapp
+    import webapp_config
 
     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
 
@@ -2577,7 +2582,7 @@ def test_webapp_day_sum(mocker):
     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
     client = app.test_client()
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
     assert "watering" in response.json
     assert "sensor" in response.json
@@ -2585,10 +2590,10 @@ def test_webapp_day_sum(mocker):
     assert "cooler_status" in response.json
     assert "outdoor_status" in response.json
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
 
-    response = client.get("/unit_cooler/api/stat")
+    response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
     assert response.status_code == 200
 
     cooler_controller.wait_and_term(*control_handle)

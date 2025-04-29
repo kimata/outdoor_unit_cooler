@@ -92,7 +92,8 @@ def check_valve_condition(config):
                 hazard_notify(
                     config,
                     "水漏れしています．(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)".format(
-                        duration=valve_status["duration"], flow=flow
+                        duration=valve_status["duration"],
+                        flow=flow,
                     ),
                 )
     else:
