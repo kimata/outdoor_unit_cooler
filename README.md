@@ -37,13 +37,18 @@ https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
 
 ## 準備
 
-`app/unit_cooler.py` を配置する Raspberry Pi で，`/boot/firmware/config.txt` に下記の
-設定を追加します．
+`app/unit_cooler.py` を配置する Raspberry Pi で，以下の設定を行います．
 
-```text
-dtparam=spi=on
-dtoverlay=disable-bt
-```
+-   Bluetooth の無効化
+    `/boot/firmware/config.txt` に下記の設定を追加します．
+
+    ```text
+    dtparam=spi=on
+    dtoverlay=disable-bt
+    ```
+
+-   シリアルコンソールの無効化
+    `/boot/firmware/cmdline.txt` から `console=` の指定を削除します．
 
 ## 設定
 
