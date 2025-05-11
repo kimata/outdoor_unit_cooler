@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import json
 import logging
 import time
@@ -54,21 +52,17 @@ def start_server(server_port, func, interval_sec, msg_count=0):
 
 # NOTE: Last Value Caching Proxy
 # see https://zguide.zeromq.org/docs/chapter5/
-def start_proxy(server_host, server_port, proxy_port, msg_count=0):
-    logging.info(
-        "Start ZMQ proxy server (front: {server_host}:{server_port}, port: {port})...".format(
-            server_host=server_host, server_port=server_port, port=proxy_port
-        )
-    )
+def start_proxy(server_host, server_port, proxy_port, msg_count=0):  # noqa: PLR0915, C901
+    logging.info("Start ZMQ proxy server (front: %s:%d, port: %d)...", server_host, server_port, proxy_port)
 
     context = zmq.Context()
 
     frontend = context.socket(zmq.SUB)
-    frontend.connect("tcp://{host}:{port}".format(host=server_host, port=server_port))
+    frontend.connect(f"tcp://{server_host}:{server_port}")
     frontend.setsockopt_string(zmq.SUBSCRIBE, CH)
 
     backend = context.socket(zmq.XPUB)
-    backend.bind("tcp://*:{port}".format(port=proxy_port))
+    backend.bind(f"tcp://*:{proxy_port}")
 
     cache = {}
 
@@ -105,7 +99,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
                     logging.debug("Send cache")
-                    backend.send_string("{ch} {json_str}".format(ch=CH, json_str=cache[ch]))
+                    backend.send_string(f"{CH} {cache[CH]}")
                     proxy_count += 1
                 else:
                     logging.warning("Cache is empty")
@@ -113,11 +107,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):
                 pass
 
         if msg_count != 0:
-            logging.debug(
-                "(proxy_count, msg_count) = ({proxy_count}, {msg_count})".format(
-                    proxy_count=proxy_count, msg_count=msg_count
-                )
-            )
+            logging.debug("(proxy_count, msg_count) = (%d, %d)", proxy_count, msg_count)
             if proxy_count == msg_count:
                 logging.info("Terminate, because the specified number of times has been reached.")
                 break
@@ -134,7 +124,7 @@ def start_client(server_host, server_port, func, msg_count=0):
 
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    target = "tcp://{host}:{port}".format(host=server_host, port=server_port)
+    target = f"tcp://{server_host}:{server_port}"
     socket.connect(target)
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
@@ -144,16 +134,12 @@ def start_client(server_host, server_port, func, msg_count=0):
     while True:
         ch, json_str = socket.recv_string().split(" ", 1)
         json_data = json.loads(json_str)
-        logging.debug("recv {json}".format(json=json_data))
+        logging.debug("recv %s", json_data)
         func(json_data)
 
         if msg_count != 0:
             receive_count += 1
-            logging.debug(
-                "(receive_count, msg_count) = ({receive_count}, {msg_count})".format(
-                    receive_count=receive_count, msg_count=msg_count
-                )
-            )
+            logging.debug("(receive_count, msg_count) = (%d, %d)", receive_count, msg_count)
             if receive_count == msg_count:
                 logging.info("Terminate, because the specified number of times has been reached.")
                 break
@@ -169,7 +155,7 @@ def start_client(server_host, server_port, func, msg_count=0):
 def get_last_message(server_host, server_port):  # pragma: no cover
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    target = "tcp://{host}:{port}".format(host=server_host, port=server_port)
+    target = f"tcp://{server_host}:{server_port}"
     socket.connect(target)
     socket.setsockopt_string(zmq.SUBSCRIBE, CH)
 
