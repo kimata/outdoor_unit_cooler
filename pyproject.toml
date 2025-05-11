@@ -1,65 +1,55 @@
-[tool.poetry]
+[project]
 name = "outdoor_unit_cooler"
 version = "0.1.0"
 description = "エアコンが動作を開始すると自動的に室外機へのミスト噴射を行うシステムです．"
-authors = ["KIMATA Tetsuya <kimata@green-rabbit.net>"]
+authors = [
+    { name = "KIMATA Tetsuya", email = "kimata@green-rabbit.net" }
+]
 
-[tool.poetry.dependencies]
-"RPi.GPIO" = "^0.7.1"
-Flask = "^3.0.0"
-Flask-Cors = "^4.0.0"
-PyYAML = "^6.0"
-coloredlogs = "^15.0.1"
-docopt = "^0.6.2"
-zmq = "^0.0.0"
-fluent-logger = "^0.10.0"
-influxdb-client = {extras = ["ciso"], version = "^1.36.1"}
-psutil = "^6.0.0"
-pyserial = "^3.5"
-python = "^3.10"
-pytz = "^2023.3"
-slack-bolt = "^1.18.0"
-spidev = "^3.6"
-sseclient = "^0.0.27"
+readme = "README.md"
+requires-python = ">= 3.10"
 
-[tool.poetry.group.test.dependencies]
-flaky = "^3.7.0"
-playwright = "^1.36.0"
-pytest-cov = "^5.0.0"
-pytest-freezegun = "^0.4.2"
-pytest-html = "^4.0.0"
-pytest-mock = "^3.11.1"
-pytest-playwright = "^0.4.0"
-coverage = {extras = ["toml"], version = "^7.3.0"}
-pytest-timeout = "^2.1.0"
+dependencies = [
+    "rpi-gpio>=0.7.1",
+    "flask>=3.1.0",
+    "flask-cors>=5.0.1",
+    "docopt-ng>=0.9.0",
+    "influxdb-client[ciso]>=1.44.0",
+    "my-lib @ git+https://github.com/kimata/my-py-lib@e3b1074bbbc99225da970440b7304fa748fb0220",
+    "zmq>=0.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["flask/src/rasp_water"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 
-addopts = "--verbose --cov=app --cov=lib --timeout=180 --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys --cov-report=html --html=tests/evidence/index.htm --self-contained-html"
+# addopts = "--verbose --log-cli-level=DEBUG --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys  --html=tests/evidence/index.htm --self-contained-html --cov=flask --cov-report=html -vv"
+
+addopts = "--verbose --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys  --html=tests/evidence/index.htm --self-contained-html --cov=flask --cov-report=html -vv"
+
 
 testpaths = [
     "tests",
 ]
+
 filterwarnings = [
     "ignore:The hookimpl CovPlugin.pytest_configure_node uses",
     "ignore:The hookimpl CovPlugin.pytest_testnodedown uses",
-    "ignore::DeprecationWarning:pytest_freezegun",
-    "ignore::DeprecationWarning:docopt",
 ]
-
-[tool.black]
-target-version = ['py310']
-line-length = 110
-
-[tool.isort]
-profile = "black"
-line_length = 110
-include_trailing_comma = true
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 
 [tool.coverage.run]
