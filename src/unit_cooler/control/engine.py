@@ -1,138 +1,86 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""
+屋外の気象情報とエアコンの稼働状況に基づき、冷却モードを決定します。
+
+Usage:
+  engine.py [-c CONFIG] [-D]
+
+Options:
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します。[default: config.yaml]
+  -D                : デバッグモードで動作します。
+"""
+
 import copy
 import logging
-import os
 import pathlib
 
-import notify_slack
-import pytz
-from control_config import MESSAGE_LIST, OFF_SEC_MIN, ON_SEC_MIN, get_cooler_status, get_outdoor_status
-from sensor_data import fetch_data
+import my_lib.notify.slack
+import unit_cooler.control.message
+import unit_cooler.control.sensor
+import unit_cooler.util
+
+# 最低でもこの時間は ON にする (テスト時含む)
+ON_SEC_MIN = 5
+# 最低でもこの時間は OFF にする (テスト時含む)
+OFF_SEC_MIN = 5
 
 
-def notify_error(config, message, is_logging=True):
-    if is_logging:
-        logging.error(message)
+def dummy_cooling_mode():
+    cooling_mode = (dummy_cooling_mode.prev_mode + 1) % len(unit_cooler.control.message.CONTROL_MESSAGE_LIST)
+    dummy_cooling_mode.prev_mode = cooling_mode
 
-    if ("slack" not in config) or (os.environ.get("DUMMY_MODE", "false") == "true"):
-        return
+    logging.info("cooling_mode: %d", cooling_mode)
 
-    notify_slack.error(
-        config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"]["name"],
-        config["slack"]["from"],
-        message,
-        config["slack"]["error"]["interval_min"],
-    )
+    return {"cooling_mode": cooling_mode}
 
 
-def get_sense_data(config):
-    timezone = pytz.timezone("Asia/Tokyo")
-
-    if os.environ.get("DUMMY_MODE", "false") == "true":
-        start = "-169h"
-        stop = "-168h"
-    else:
-        start = "-1h"
-        stop = "now()"
-
-    sense_data = {}
-    for kind in config["controller"]["sensor"]:
-        kind_data = []
-        for sensor in config["controller"]["sensor"][kind]:
-            data = fetch_data(
-                config["controller"]["influxdb"],
-                sensor["measure"],
-                sensor["hostname"],
-                kind,
-                start,
-                stop,
-                last=True,
-            )
-            if data["valid"]:
-                kind_data.append(
-                    {
-                        "name": sensor["name"],
-                        # NOTE: タイムゾーン情報を削除しておく．
-                        "time": timezone.localize((data["time"][0].replace(tzinfo=None))),
-                        "value": data["value"][0],
-                    }
-                )
-            else:
-                notify_error(config, "{name} のデータを取得できませんでした．".format(name=sensor["name"]))
-                kind_data.append({"name": sensor["name"], "value": None})
-
-        sense_data[kind] = kind_data
-
-    return sense_data
+dummy_cooling_mode.prev_mode = 0
 
 
-def dummy_control_mode():
-    control_mode = (dummy_control_mode.prev_mode + 1) % len(MESSAGE_LIST)
-    dummy_control_mode.prev_mode = control_mode
+def judge_cooling_mode(config):
+    logging.info("Judge cooling mode")
 
-    logging.info("control_mode: {control_mode}".format(control_mode=control_mode))
-
-    return {"control_mode": control_mode}
-
-
-dummy_control_mode.prev_mode = 0
-
-
-def judge_control_mode(config):
-    logging.info("Judge control mode")
-
-    sense_data = get_sense_data(config)
+    sense_data = unit_cooler.control.sensor.get_sense_data(config)
 
     try:
-        cooler_status = get_cooler_status(config, sense_data)
+        cooler_activity = unit_cooler.control.sensor.get_cooler_activity(sense_data)
     except RuntimeError as e:
-        notify_error(config, e.args[0])
-        cooler_status = {"status": 0, "message": None}
+        unit_cooler.util.notify_error(config, e.args[0])
+        cooler_activity = {"status": 0, "message": None}
 
-    if cooler_status["status"] == 0:
+    if cooler_activity["status"] == 0:
         outdoor_status = {"status": None, "message": None}
-        control_mode = 0
+        cooling_mode = 0
     else:
-        outdoor_status = get_outdoor_status(sense_data)
-        control_mode = max(cooler_status["status"] + outdoor_status["status"], 0)
+        outdoor_status = unit_cooler.control.sensor.get_outdoor_status(sense_data)
+        cooling_mode = max(cooler_activity["status"] + outdoor_status["status"], 0)
 
-    if cooler_status["message"] is not None:
-        logging.info(cooler_status["message"])
+    if cooler_activity["message"] is not None:
+        logging.info(cooler_activity["message"])
     if outdoor_status["message"] is not None:
         logging.info(outdoor_status["message"])
 
     logging.info(
-        (
-            "control_mode: {control_mode} "
-            + "(cooler_status: {cooler_status}, "
-            + "outdoor_status: {outdoor_status})"
-        ).format(
-            control_mode=control_mode,
-            cooler_status=cooler_status["status"],
-            outdoor_status=outdoor_status["status"],
-        )
+        "cooling_mode: %d (cooler_status: %s, outdoor_status: %s)",
+        cooling_mode,
+        cooler_activity["status"],
+        outdoor_status["status"],
     )
 
     return {
-        "control_mode": control_mode,
-        "cooler_status": cooler_status,
+        "cooling_mode": cooling_mode,
+        "cooler_status": cooler_activity,
         "outdoor_status": outdoor_status,
         "sense_data": sense_data,
     }
 
 
 def gen_control_msg(config, dummy_mode=False, speedup=1):
-    if dummy_mode:
-        mode = dummy_control_mode()
-    else:
-        mode = judge_control_mode(config)
+    mode = dummy_cooling_mode() if dummy_mode else judge_cooling_mode(config)
+    mode_index = min(mode["cooling_mode"], len(unit_cooler.control.message.CONTROL_MESSAGE_LIST) - 1)
+    control_msg = copy.deepcopy(unit_cooler.control.message.CONTROL_MESSAGE_LIST[mode_index])
 
-    mode_index = min(mode["control_mode"], len(MESSAGE_LIST) - 1)
-    control_msg = copy.deepcopy(MESSAGE_LIST[mode_index])
-
-    # NOTE: 参考として，どのモードかも通知する
+    # NOTE: 参考として、どのモードかも通知する
     control_msg["mode_index"] = mode_index
 
     pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
@@ -144,23 +92,20 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     return control_msg
 
 
-def print_control_msg():
-    for control_msg in MESSAGE_LIST:
-        if control_msg["duty"]["enable"]:
-            logging.info(
-                (
-                    "state: {state}, on_se_sec: {on_sec:4,} sec, "
-                    + "off_sec: {off_sec:5,} sec, on_ratio: {on_ratio:4.1f}%"
-                ).format(
-                    state=control_msg["state"].name,
-                    on_sec=control_msg["duty"]["on_sec"],
-                    off_sec=int(control_msg["duty"]["off_sec"]),
-                    on_ratio=100.0
-                    * control_msg["duty"]["on_sec"]
-                    / (control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"])
-                    if ((control_msg["duty"]["on_sec"] + control_msg["duty"]["off_sec"]) != 0)
-                    else 0,
-                )
-            )
-        else:
-            logging.info("state: {state}".format(state=control_msg["state"].name))
+if __name__ == "__main__":
+    # TEST Code
+    import docopt
+    import my_lib.config
+    import my_lib.logger
+    import my_lib.pretty
+
+    args = docopt.docopt(__doc__)
+
+    config_file = args["-c"]
+    debug_mode = args["-D"]
+
+    my_lib.logger.init("test", level=logging.DEBUG if debug_mode else logging.INFO)
+
+    config = my_lib.config.load(config_file)
+
+    logging.info(my_lib.pretty.format(gen_control_msg(config)))
