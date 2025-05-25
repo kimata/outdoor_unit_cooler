@@ -23,8 +23,6 @@ import time
 import unit_cooler.const
 import zmq
 
-SER_TIMEOUT = 10
-
 
 def start_server(server_port, func, interval_sec, msg_count=0):
     logging.info("Start ZMQ server (port: %d)...", server_port)
@@ -140,32 +138,9 @@ if __name__ == "__main__":
     import my_lib.config
     import my_lib.logger
     import my_lib.pretty
+    import unit_cooler.actuator.subscribe
     import unit_cooler.const
     import unit_cooler.control.engine
-
-    def start_client(server_host, server_port):
-        logging.info("Start ZMQ client...")
-
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        target = f"tcp://{server_host}:{server_port}"
-        socket.connect(target)
-        socket.setsockopt_string(zmq.SUBSCRIBE, unit_cooler.const.PUBSUB_CH)
-
-        logging.info("Client initialize done.")
-
-        while True:
-            ch, json_str = socket.recv_string().split(" ", 1)
-            json_data = json.loads(json_str)
-            logging.info("recv %s", my_lib.pretty.format(json_data))
-
-            break
-
-        logging.warning("Stop ZMQ client")
-
-        socket.disconnect(target)
-        socket.close()
-        context.destroy()
 
     args = docopt.docopt(__doc__)
 
@@ -199,7 +174,12 @@ if __name__ == "__main__":
     )
     server_thread.start()
 
-    start_client(server_host, server_port)
+    unit_cooler.actuator.subscribe.start_client(
+        server_host,
+        server_port,
+        lambda message: logging.info("receive: %s", message),
+        msg_count,
+    )
 
     server_thread.join()
     proxy_thread.join()

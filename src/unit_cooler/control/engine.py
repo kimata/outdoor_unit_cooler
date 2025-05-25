@@ -12,7 +12,6 @@ Options:
 
 import copy
 import logging
-import pathlib
 
 import my_lib.notify.slack
 import unit_cooler.control.message
@@ -82,8 +81,6 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
 
     # NOTE: 参考として、どのモードかも通知する
     control_msg["mode_index"] = mode_index
-
-    pathlib.Path(config["controller"]["liveness"]["file"]).touch(exist_ok=True)
 
     if dummy_mode:
         control_msg["duty"]["on_sec"] = max(control_msg["duty"]["on_sec"] / speedup, ON_SEC_MIN)
