@@ -1,0 +1,511 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "properties": {
+        "controller": {
+            "type": "object",
+            "properties": {
+                "influxdb": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string"
+                        },
+                        "token": {
+                            "type": "string"
+                        },
+                        "org": {
+                            "type": "string"
+                        },
+                        "bucket": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "bucket",
+                        "org",
+                        "token",
+                        "url"
+                    ]
+                },
+                "sensor": {
+                    "type": "object",
+                    "properties": {
+                        "temp": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        },
+                        "humi": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        },
+                        "lux": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        },
+                        "solar_rad": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        },
+                        "power": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "humi",
+                        "lux",
+                        "power",
+                        "solar_rad",
+                        "temp"
+                    ]
+                },
+                "watering": {
+                    "type": "object",
+                    "properties": {
+                        "measure": {
+                            "type": "string"
+                        },
+                        "hostname": {
+                            "type": "string"
+                        },
+                        "unit_price": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "hostname",
+                        "measure",
+                        "unit_price"
+                    ]
+                },
+                "interval_sec": {
+                    "type": "integer"
+                },
+                "liveness": {
+                    "type": "object",
+                    "properties": {
+                        "file": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "file"
+                    ]
+                }
+            },
+            "required": [
+                "influxdb",
+                "interval_sec",
+                "liveness",
+                "sensor",
+                "watering"
+            ]
+        },
+        "actuator": {
+            "type": "object",
+            "properties": {
+                "subscribe": {
+                    "type": "object",
+                    "properties": {
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "file"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "liveness"
+                    ]
+                },
+                "control": {
+                    "type": "object",
+                    "properties": {
+                        "valve": {
+                            "type": "object",
+                            "properties": {
+                                "pin_no": {
+                                    "type": "integer"
+                                },
+                                "on": {
+                                    "type": "object",
+                                    "properties": {
+                                        "min": {
+                                            "type": "number"
+                                        },
+                                        "max": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "max",
+                                        "min"
+                                    ]
+                                },
+                                "off": {
+                                    "type": "object",
+                                    "properties": {
+                                        "max": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "max"
+                                    ]
+                                },
+                                "power_off_sec": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "off",
+                                "on",
+                                "pin_no",
+                                "power_off_sec"
+                            ]
+                        },
+                        "interval_sec": {
+                            "type": "integer"
+                        },
+                        "hazard": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "file"
+                            ]
+                        },
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "file"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "hazard",
+                        "interval_sec",
+                        "liveness",
+                        "valve"
+                    ]
+                },
+                "monitor": {
+                    "type": "object",
+                    "properties": {
+                        "flow": {
+                            "type": "object",
+                            "properties": {
+                                "on": {
+                                    "type": "object",
+                                    "properties": {
+                                        "min": {
+                                            "type": "number"
+                                        },
+                                        "max": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "max",
+                                        "min"
+                                    ]
+                                },
+                                "off": {
+                                    "type": "object",
+                                    "properties": {
+                                        "max": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "max"
+                                    ]
+                                },
+                                "power_off_sec": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "off",
+                                "on",
+                                "power_off_sec"
+                            ]
+                        },
+                        "fluent": {
+                            "type": "object",
+                            "properties": {
+                                "host": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "host"
+                            ]
+                        },
+                        "sense": {
+                            "type": "object",
+                            "properties": {
+                                "giveup": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "giveup"
+                            ]
+                        },
+                        "interval_sec": {
+                            "type": "integer"
+                        },
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "file"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "flow",
+                        "fluent",
+                        "interval_sec",
+                        "liveness",
+                        "sense"
+                    ]
+                },
+                "log_server": {
+                    "type": "object",
+                    "properties": {
+                        "webapp": {
+                            "type": "object",
+                            "properties": {
+                                "port": {
+                                    "type": "integer"
+                                },
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "log_file_path": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "log_file_path"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "data",
+                                "port"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "webapp"
+                    ]
+                }
+            },
+            "required": [
+                "control",
+                "log_server",
+                "monitor",
+                "subscribe"
+            ]
+        },
+        "webui": {
+            "type": "object",
+            "properties": {
+                "webapp": {
+                    "type": "object",
+                    "properties": {
+                        "static_dir_path": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "static_dir_path"
+                    ]
+                },
+                "subscribe": {
+                    "type": "object",
+                    "properties": {
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "file": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "file"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "liveness"
+                    ]
+                }
+            },
+            "required": [
+                "subscribe",
+                "webapp"
+            ]
+        },
+        "slack": {
+            "type": "object",
+            "properties": {
+                "bot_token": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "object",
+                    "properties": {
+                        "channel": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name"
+                            ]
+                        },
+                        "interval_min": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "channel",
+                        "interval_min"
+                    ]
+                }
+            },
+            "required": [
+                "bot_token",
+                "error",
+                "from"
+            ]
+        }
+    },
+    "required": [
+        "actuator",
+        "controller",
+        "slack",
+        "webui"
+    ]
+}
