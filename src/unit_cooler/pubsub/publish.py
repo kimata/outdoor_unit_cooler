@@ -140,7 +140,7 @@ if __name__ == "__main__":
     import my_lib.pretty
     import unit_cooler.actuator.subscribe
     import unit_cooler.const
-    import unit_cooler.control.engine
+    import unit_cooler.controller.engine
 
     args = docopt.docopt(__doc__)
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         target=start_server,
         args=(
             real_port,
-            lambda: unit_cooler.control.engine.gen_control_msg(config, dummy_mode, speedup),
+            lambda: unit_cooler.controller.engine.gen_control_msg(config, dummy_mode, speedup),
             config["controller"]["interval_sec"] / speedup,
             msg_count,
         ),

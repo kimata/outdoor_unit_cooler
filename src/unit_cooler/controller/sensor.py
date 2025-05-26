@@ -17,7 +17,7 @@ import my_lib.notify.slack
 import my_lib.sensor_data
 import my_lib.time
 import unit_cooler.const
-import unit_cooler.control.message
+import unit_cooler.controller.message
 
 ############################################################
 # 屋外の状況を判断する際に参照する閾値
@@ -58,7 +58,7 @@ COOLER_ACTIVITY_LIST = [
     },
     {
         "judge": lambda mode_map: (mode_map[unit_cooler.const.AIRCON_MODE.FULL] >= 1)
-        and (mode_map[unit_cooler.control.sensor.AIRCON_MODE.NORMAL] >= 1),
+        and (mode_map[unit_cooler.controller.sensor.AIRCON_MODE.NORMAL] >= 1),
         "message": "複数台ののエアコンがフル稼働もしくは平常運転しています。(cooler_status: 5)",
         "status": 5,
     },
@@ -290,13 +290,10 @@ def get_sense_data(config):
                     }
                 )
             else:
-                my_lib.notify.slack.error(
-                    config["slack"]["bot_token"],
-                    config["slack"]["error"]["channel"]["name"],
-                    config["slack"]["from"],
+                unit_cooler.util.notify_error(
+                    config,
                     f'{sensor["name"]} のデータを取得できませんでした。',
                 )
-
                 kind_data.append({"name": sensor["name"], "value": None})
 
         sense_data[kind] = kind_data

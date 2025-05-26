@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import logging
 import os
 
@@ -8,7 +9,10 @@ def notify_error(config, message, is_logging=True):
     if is_logging:
         logging.error(message)
 
-    if ("slack" not in config) or (os.environ.get("DUMMY_MODE", "false") == "true"):
+    if ("slack" not in config) or (
+        (os.environ.get("TEST", "false") != "true") and (os.environ.get("DUMMY_MODE", "false") == "true")
+    ):
+        # NOTE: テストではなく、ダミーモードで実行している時は Slack 通知しない
         return
 
     my_lib.notify.slack.error(

@@ -23,8 +23,8 @@ import traceback
 import my_lib.footprint
 import unit_cooler.actuator.control
 import unit_cooler.actuator.monitor
-import unit_cooler.actuator.subscribe
 import unit_cooler.const
+import unit_cooler.pubsub.subscribe
 import unit_cooler.util
 
 last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
@@ -51,8 +51,7 @@ def subscribe_worker(config, control_host, pub_port, message_queue, liveness_fil
     logging.info("Start subscribe worker (%s:%d)", control_host, pub_port)
     ret = 0
     try:
-        logging.info([control_host, pub_port])
-        unit_cooler.actuator.subscribe.start_client(
+        unit_cooler.pubsub.subscribe.start_client(
             control_host,
             pub_port,
             lambda message: queue_put(message_queue, message, liveness_file),
@@ -202,7 +201,7 @@ def get_worker_def(config, message_queue, setting):
                 control_worker,
                 config,
                 message_queue,
-                pathlib.Path(config["actuator"]["monitor"]["liveness"]["file"]),
+                pathlib.Path(config["actuator"]["control"]["liveness"]["file"]),
                 setting["dummy_mode"],
                 setting["speedup"],
                 setting["msg_count"],

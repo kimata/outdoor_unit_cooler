@@ -22,38 +22,48 @@ import os
 import signal
 import time
 
-import unit_cooler.actuator.log_server
-import unit_cooler.actuator.work_log
-import unit_cooler.actuator.worker
+SCHEMA_CONFIG = "config.schema"
 
 
-def sig_handler(num, frame):
+def sig_handler(num, frame):  # noqa: ARG001
+    import unit_cooler.actuator.worker
+
     logging.warning("Receive signal %d", num)
 
     if num == signal.SIGTERM:
         unit_cooler.actuator.worker.should_terminate = True
 
 
-def wait_before_start():
+def wait_before_start(config):
     for i in range(config["actuator"]["control"]["interval_sec"]):
         logging.info(
-            "Wait for the old Pod to finish ({i:3} / {total:3})".format(
-                i=i + 1, total=config["actuator"]["interval_sec"]
-            )
+            "Wait for the old Pod to finish (%3d / %3d)", i + 1, config["actuator"]["control"]["interval_sec"]
         )
         time.sleep(1)
 
 
-def start(config, setting):
-    global should_terminate
-    global log_server_handle
+def start(config, arg):
+    global should_terminate  # noqa: PLW0603
+    global log_server_handle  # noqa: PLW0603
+
+    setting = {
+        "control_host": "localhost",
+        "pub_port": 2222,
+        "dummy_mode": False,
+        "speedup": 1,
+        "msg_count": 0,
+        "debug_mode": False,
+    }
+    setting.update(arg)
 
     should_terminate = False
+
+    logging.info("Using ZMQ server of %s:%d", setting["control_host"], setting["pub_port"])
 
     if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):
         # NOTE: 動作開始前に待つ。これを行わないと、複数の Pod が電磁弁を制御することに
         # なり、電磁弁の故障を誤判定する可能性がある。
-        wait_before_start()
+        wait_before_start(config)
 
     # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
     if setting["dummy_mode"]:
@@ -63,7 +73,14 @@ def start(config, setting):
     message_queue = multiprocessing.Queue()
     event_queue = multiprocessing.Queue()
 
-    my_lib.webapp.config.init(config["actuator"]["log_server"])
+    # NOTE: Blueprint のパス指定を YAML で行いたいので、my_lib.webapp の import 順を制御
+    import unit_cooler.actuator.log_server
+
+    log_server_handle = unit_cooler.actuator.log_server.start(config, event_queue)
+
+    import unit_cooler.actuator.work_log
+    import unit_cooler.actuator.worker
+
     unit_cooler.actuator.work_log.init(config, event_queue)
 
     logging.info("Initialize valve")
@@ -76,24 +93,25 @@ def start(config, setting):
         executor, unit_cooler.actuator.worker.get_worker_def(config, message_queue, setting)
     )
 
-    log_server_handle = unit_cooler.actuator.log_server.start(config, event_queue)
-
     signal.signal(signal.SIGTERM, sig_handler)
 
     return (executor, thread_list, log_server_handle)
 
 
 def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
-    global should_terminate
+    global should_terminate  # noqa: PLW0603
+
+    import unit_cooler.actuator.log_server
+    import unit_cooler.actuator.work_log
 
     should_terminate = terminate
 
     ret = 0
     for thread_info in thread_list:
-        logging.info("Wait {name} finish".format(name=thread_info["name"]))
+        logging.info("Wait %s finish", thread_info["name"])
 
         if thread_info["future"].result() != 0:
-            logging.warning("Error occurred in {name}".format(name=thread_info["name"]))
+            logging.warning("Error occurred in %s", thread_info["name"])
             ret = -1
 
     logging.info("Shutdown executor")
@@ -109,6 +127,7 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
 
 ######################################################################
 if __name__ == "__main__":
+    import pathlib
     import sys
 
     import docopt
@@ -127,7 +146,7 @@ if __name__ == "__main__":
 
     my_lib.logger.init("hems.unit_cooler", level=logging.DEBUG if debug_mode else logging.INFO)
 
-    config = my_lib.config.load(config_file)
+    config = my_lib.config.load(config_file, pathlib.Path(SCHEMA_CONFIG))
 
     sys.exit(
         wait_and_term(

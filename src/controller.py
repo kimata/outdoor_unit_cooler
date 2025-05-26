@@ -23,16 +23,17 @@ import threading
 import traceback
 
 import my_lib.footprint
-
-import unit_cooler.control.engine
-import unit_cooler.control.message
-import unit_cooler.control.publish
+import unit_cooler.controller.engine
+import unit_cooler.controller.message
+import unit_cooler.pubsub.publish
 import unit_cooler.util
+
+SCHEMA_CONFIG = "config.schema"
 
 
 def test_client(server_host, server_port):
     logging.info("Start test client (host: %s:%d)", server_host, server_port)
-    unit_cooler.control.pubsub.start_client(
+    unit_cooler.controller.pubsub.start_client(
         server_host,
         server_port,
         lambda message: logging.info("receive: %s", message),
@@ -43,7 +44,7 @@ def test_client(server_host, server_port):
 # NOTE: Last Value Caching Proxy
 def cache_proxy_start(server_host, real_port, server_port, msg_count):
     thread = threading.Thread(
-        target=unit_cooler.control.publish.start_proxy,
+        target=unit_cooler.pubsub.publish.start_proxy,
         args=(server_host, real_port, server_port, msg_count),
     )
     thread.start()
@@ -52,7 +53,7 @@ def cache_proxy_start(server_host, real_port, server_port, msg_count):
 
 
 def gen_control_msg(config, dummy_mode, speedup):
-    control_msg = unit_cooler.control.engine.gen_control_msg(config, dummy_mode, speedup)
+    control_msg = unit_cooler.controller.engine.gen_control_msg(config, dummy_mode, speedup)
     my_lib.footprint.update(pathlib.Path(config["controller"]["liveness"]["file"]))
 
     return control_msg
@@ -60,7 +61,7 @@ def gen_control_msg(config, dummy_mode, speedup):
 
 def control_server_start(config, real_port, dummy_mode, speedup, msg_count):
     thread = threading.Thread(
-        target=unit_cooler.control.publish.start_server,
+        target=unit_cooler.pubsub.publish.start_server,
         args=(
             real_port,
             lambda: gen_control_msg(config, dummy_mode, speedup),
@@ -73,7 +74,19 @@ def control_server_start(config, real_port, dummy_mode, speedup, msg_count):
     return thread
 
 
-def start(config, setting):
+def start(config, arg):
+    setting = {
+        "server_host": "localhost",
+        "server_port": 2222,
+        "real_port": 2200,
+        "dummy_mode": False,
+        "disable_proxy": False,
+        "speedup": 1,
+        "msg_count": 0,
+        "debug_mode": False,
+    }
+    setting.update(arg)
+
     logging.info("Start controller (port: %d", setting["server_port"])
 
     if setting["dummy_mode"]:
@@ -100,7 +113,6 @@ def start(config, setting):
     except Exception:
         logging.exception("Failed to start controller")
         unit_cooler.util.notify_error(config, traceback.format_exc())
-        pass
 
     return (control_thread, proxy_thread)
 
@@ -136,7 +148,7 @@ if __name__ == "__main__":
 
     my_lib.logger.init("hems.unit_cooler", level=logging.DEBUG if debug_mode else logging.INFO)
 
-    config = my_lib.config.load(config_file)
+    config = my_lib.config.load(config_file, pathlib.Path(SCHEMA_CONFIG))
 
     sys.exit(
         wait_and_term(

@@ -14,8 +14,8 @@ import copy
 import logging
 
 import my_lib.notify.slack
-import unit_cooler.control.message
-import unit_cooler.control.sensor
+import unit_cooler.controller.message
+import unit_cooler.controller.sensor
 import unit_cooler.util
 
 # 最低でもこの時間は ON にする (テスト時含む)
@@ -25,7 +25,9 @@ OFF_SEC_MIN = 5
 
 
 def dummy_cooling_mode():
-    cooling_mode = (dummy_cooling_mode.prev_mode + 1) % len(unit_cooler.control.message.CONTROL_MESSAGE_LIST)
+    cooling_mode = (dummy_cooling_mode.prev_mode + 1) % len(
+        unit_cooler.controller.message.CONTROL_MESSAGE_LIST
+    )
     dummy_cooling_mode.prev_mode = cooling_mode
 
     logging.info("cooling_mode: %d", cooling_mode)
@@ -39,10 +41,10 @@ dummy_cooling_mode.prev_mode = 0
 def judge_cooling_mode(config):
     logging.info("Judge cooling mode")
 
-    sense_data = unit_cooler.control.sensor.get_sense_data(config)
+    sense_data = unit_cooler.controller.sensor.get_sense_data(config)
 
     try:
-        cooler_activity = unit_cooler.control.sensor.get_cooler_activity(sense_data)
+        cooler_activity = unit_cooler.controller.sensor.get_cooler_activity(sense_data)
     except RuntimeError as e:
         unit_cooler.util.notify_error(config, e.args[0])
         cooler_activity = {"status": 0, "message": None}
@@ -51,7 +53,7 @@ def judge_cooling_mode(config):
         outdoor_status = {"status": None, "message": None}
         cooling_mode = 0
     else:
-        outdoor_status = unit_cooler.control.sensor.get_outdoor_status(sense_data)
+        outdoor_status = unit_cooler.controller.sensor.get_outdoor_status(sense_data)
         cooling_mode = max(cooler_activity["status"] + outdoor_status["status"], 0)
 
     if cooler_activity["message"] is not None:
@@ -76,8 +78,8 @@ def judge_cooling_mode(config):
 
 def gen_control_msg(config, dummy_mode=False, speedup=1):
     mode = dummy_cooling_mode() if dummy_mode else judge_cooling_mode(config)
-    mode_index = min(mode["cooling_mode"], len(unit_cooler.control.message.CONTROL_MESSAGE_LIST) - 1)
-    control_msg = copy.deepcopy(unit_cooler.control.message.CONTROL_MESSAGE_LIST[mode_index])
+    mode_index = min(mode["cooling_mode"], len(unit_cooler.controller.message.CONTROL_MESSAGE_LIST) - 1)
+    control_msg = copy.deepcopy(unit_cooler.controller.message.CONTROL_MESSAGE_LIST[mode_index])
 
     # NOTE: 参考として、どのモードかも通知する
     control_msg["mode_index"] = mode_index
@@ -85,6 +87,8 @@ def gen_control_msg(config, dummy_mode=False, speedup=1):
     if dummy_mode:
         control_msg["duty"]["on_sec"] = max(control_msg["duty"]["on_sec"] / speedup, ON_SEC_MIN)
         control_msg["duty"]["off_sec"] = max(control_msg["duty"]["off_sec"] / speedup, OFF_SEC_MIN)
+
+    logging.info(control_msg)
 
     return control_msg
 

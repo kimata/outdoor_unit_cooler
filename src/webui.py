@@ -3,7 +3,7 @@
 エアコン室外機冷却システムの Web UI です。
 
 Usage:
-  webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-n COUNT] [-d] [-D]
+  webapp.py [-c CONFIG] [-s CONTROL_HOST] [-p PUB_PORT] [-a ACTUATOR_HOST] [-n COUNT] [-D] [-d]
 
 Options:
   -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します。 [default: config.yaml]
@@ -15,76 +15,52 @@ Options:
   -D                : デバッグモードで動作します。
 """
 
+import atexit
 import logging
+import multiprocessing
 import os
 import pathlib
 import threading
-from multiprocessing import Queue
 
-import control_pubsub
-import logger
-import unit_cooler_info
-import webapp_base
-import webapp_log_proxy
-import webapp_util
-from config import load_config
-from flask import Flask
-from flask_cors import CORS
+import flask
+import flask_cors
 
-watch_thread = None
-
-
-def queuing_message(config, message_queue, message):
-    if message_queue.full():
-        message_queue.get()
-
-    # NOTE: 初回、強制的に関数を呼んで、キャッシュさせる
-    if unit_cooler_info.get_last_message.last_message is None:
-        unit_cooler_info.get_last_message(config, message_queue)
-
-    logging.debug("receive control message")
-    message_queue.put(message)
-    pathlib.Path(config["web"]["liveness"]["file"]).touch()
-
-
-def watch_client(config, server_host, server_port, message_queue, msg_count):
-    logging.info("Start watch client (host: {host}:{port})".format(host=server_host, port=server_port))
-    control_pubsub.start_client(
-        server_host,
-        server_port,
-        lambda message: queuing_message(config, message_queue, message),
-        msg_count,
-    )
+SCHEMA_CONFIG = "config.schema"
 
 
 def create_app(config, setting):
-    global watch_thread
-
-    logging.info(
-        "Using ZMQ server of {control_host}:{control_port}".format(
-            control_host=setting["control_host"],
-            control_port=setting["pub_port"],
-        )
-    )
+    logging.info("Using ZMQ server of %s:%d", setting["control_host"], setting["pub_port"])
 
     # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
-    if setting["dummy_mode"]:
+    if dummy_mode:
         os.environ["DUMMY_MODE"] = "true"
-    else:
+    else:  # pragma: no cover
         os.environ["DUMMY_MODE"] = "false"
 
-    message_queue = Queue(10)
-    watch_thread = threading.Thread(
-        target=watch_client,
+    # NOTE: テストのため、環境変数 DUMMY_MODE をセットしてからロードしたいのでこの位置
+    import my_lib.webapp.config
+
+    my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
+    my_lib.webapp.config.init(config["webui"])
+
+    import my_lib.webapp.base
+    import my_lib.webapp.log_proxy
+    import my_lib.webapp.util
+    import unit_cooler.webui.cooler_stat
+
+    message_queue = multiprocessing.Queue(10)
+    worker_thread = threading.Thread(
+        target=unit_cooler.webui.worker.subscribe_worker,
         args=(
             config,
             setting["control_host"],
             setting["pub_port"],
             message_queue,
+            pathlib.Path(config["webui"]["subscribe"]["liveness"]["file"]),
             setting["msg_count"],
         ),
     )
-    watch_thread.start()
+    worker_thread.start()
 
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
@@ -95,25 +71,44 @@ def create_app(config, setting):
     else:  # pragma: no cover
         pass
 
-    app = Flask("unit_cooler")
+    app = flask.Flask("unit-cooler-webui")
 
-    CORS(app)
+    # NOTE: アクセスログは無効にする
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        if dummy_mode:
+            logging.warning("Set dummy mode")
+        else:  # pragma: no cover
+            pass
+
+        # rasp_water.webapp_schedule.init(config)
+        # rasp_water.webapp_valve.init(config)
+
+        def notify_terminate():  # pragma: no cover
+            pass
+            # rasp_water.valve.set_state(rasp_water.valve.VALVE_STATE.CLOSE)
+            # my_lib.webapp.log.info("🏃 アプリを再起動します。")
+            # my_lib.webapp.log.term()
+
+        atexit.register(notify_terminate)
+    else:  # pragma: no cover
+        pass
+
+    flask_cors.CORS(app)
 
     app.config["CONFIG"] = config
-    app.config["SERVER_HOST"] = setting["control_host"]
-    app.config["SERVER_PORT"] = setting["pub_port"]
     app.config["MESSAGE_QUEUE"] = message_queue
 
-    app.config["JSONIFY_PRETTYPRINT_REGULAR"] = True
+    app.json.compat = True
 
-    app.register_blueprint(unit_cooler_info.blueprint)
+    app.register_blueprint(my_lib.webapp.base.blueprint_default)
+    app.register_blueprint(my_lib.webapp.base.blueprint)
+    app.register_blueprint(my_lib.webapp.log_proxy.blueprint)
+    app.register_blueprint(my_lib.webapp.util.blueprint)
+    app.register_blueprint(unit_cooler.webui.cooler_stat.blueprint)
 
-    app.register_blueprint(webapp_base.blueprint_default)
-    app.register_blueprint(webapp_base.blueprint)
-    app.register_blueprint(webapp_log_proxy.blueprint)
-    app.register_blueprint(webapp_util.blueprint)
-
-    webapp_log_proxy.init("http://{host}:5001/unit_cooler".format(host=setting["actuator_host"]))
+    my_lib.webapp.log_proxy.init("http://{host}:5001/unit_cooler".format(host=setting["actuator_host"]))
 
     # app.debug = True
 
@@ -137,7 +132,7 @@ if __name__ == "__main__":
 
     my_lib.logger.init("hems.unit_cooler", level=logging.DEBUG if debug_mode else logging.INFO)
 
-    config = my_lib.config.load(config_file)
+    config = my_lib.config.load(config_file, pathlib.Path(SCHEMA_CONFIG))
 
     app = create_app(
         config,
@@ -151,4 +146,4 @@ if __name__ == "__main__":
     )
 
     # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
-    app.run(host="0.0.0.0", threaded=True, use_reloader=True)
+    app.run(host="0.0.0.0", threaded=True, use_reloader=True)  # noqa: S104

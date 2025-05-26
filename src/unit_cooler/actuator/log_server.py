@@ -1,19 +1,37 @@
 #!/usr/bin/env python3
+"""
+電磁弁の作動ログを WebUI で提供します。
+
+Usage:
+  log_server.py [-c CONFIG] [-D]
+
+Options:
+  -c CONFIG         : CONFIG を設定ファイルとして読み込んで実行します。[default: config.yaml]
+  -D                : デバッグモードで動作します。
+"""
+
 import logging
 import threading
 
 import flask
 import flask_cors
-import my_lib.webapp.event
-import my_lib.webapp.log
 import werkzeug.serving
 
 
 def create_app(config, event_queue):
+    import my_lib.webapp.config
+
+    my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
+    my_lib.webapp.config.init(config["actuator"]["log_server"])
+
+    import my_lib.webapp.base
+    import my_lib.webapp.event
+    import my_lib.webapp.log
+
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    app = flask.Flask("unit_cooler_log")
+    app = flask.Flask("unit-cooler-log")
 
     flask_cors.CORS(app)
 
@@ -53,6 +71,8 @@ def start(config, event_queue):
 
 
 def term(handle):
+    import my_lib.webapp.event
+
     logging.warning("Stop log server")
 
     my_lib.webapp.event.term()
@@ -62,3 +82,25 @@ def term(handle):
     handle["thread"].join()
 
     my_lib.webapp.log.term()
+
+
+if __name__ == "__main__":
+    # TEST Code
+    import multiprocessing
+
+    import docopt
+    import my_lib.config
+    import my_lib.logger
+    import my_lib.pretty
+
+    args = docopt.docopt(__doc__)
+
+    config_file = args["-c"]
+    debug_mode = args["-D"]
+
+    my_lib.logger.init("test", level=logging.DEBUG if debug_mode else logging.INFO)
+
+    config = my_lib.config.load(config_file)
+    event_queue = multiprocessing.Queue()
+
+    log_server_handle = start(config, event_queue)
