@@ -77,7 +77,7 @@ get_mist_condition.last_flow = 0
 def hazard_notify(config, message):
     hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
     if not my_lib.footprint.exists(hazard_file):
-        unit_cooler.actuator.work_log.add(message, unit_cooler.const.WORK_LOG_LEVEL.ERROR)
+        unit_cooler.actuator.work_log.add(message, unit_cooler.const.LOG_LEVEL.ERROR)
         my_lib.footprint.update(hazard_file)
 
     unit_cooler.actuator.valve.set_state(unit_cooler.const.VALVE_STATE.CLOSE)
@@ -90,10 +90,10 @@ def check_sensing(handle, mist_condition):
         handle["flow_unknown"] = 0
 
     if handle["flow_unknown"] > handle["config"]["actuator"]["monitor"]["sense"]["giveup"]:
-        unit_cooler.actuator.work_log.add("流量計が使えません。", unit_cooler.const.WORK_LOG_LEVEL.ERROR)
+        unit_cooler.actuator.work_log.add("流量計が使えません。", unit_cooler.const.LOG_LEVEL.ERROR)
     elif handle["flow_unknown"] > (handle["config"]["actuator"]["monitor"]["sense"]["giveup"] / 2):
         unit_cooler.actuator.work_log.add(
-            "流量計が応答しないので一旦、リセットします。", unit_cooler.const.WORK_LOG_LEVEL.WARN
+            "流量計が応答しないので一旦、リセットします。", unit_cooler.const.LOG_LEVEL.WARN
         )
         unit_cooler.actuator.sensor.stop()
 
@@ -125,7 +125,7 @@ def check_mist_condition(handle, mist_condition):
                     "元栓が閉じています。"
                     "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
                 ).format(duration=mist_condition["valve"]["duration"], flow=mist_condition["flow"]),
-                unit_cooler.const.WORK_LOG_LEVEL.ERROR,
+                unit_cooler.const.LOG_LEVEL.ERROR,
             )
     else:
         logging.debug("Valve is close for %.1f sec", mist_condition["valve"]["duration"])
@@ -134,7 +134,8 @@ def check_mist_condition(handle, mist_condition):
             >= handle["config"]["actuator"]["monitor"]["flow"]["power_off_sec"]
         ) and (mist_condition["flow"] == 0):
             # バルブが閉じてから長い時間が経っていて流量も 0 の場合、センサーを停止する
-            if unit_cooler.actuator.valve.get_power_state():
+            logging.error(unit_cooler.actuator.sensor.get_power_state())
+            if unit_cooler.actuator.sensor.get_power_state():
                 unit_cooler.actuator.work_log.add(
                     "長い間バルブが閉じられていますので、流量計の電源を OFF します。"
                 )

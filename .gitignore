@@ -1,4 +1,5 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# Python
+__pycache__/
 
 # Compiled output
 /dist
@@ -29,6 +30,7 @@ yarn-error.log
 .history/*
 
 # Miscellaneous
+.coverage
 /.angular/cache
 .sass-cache/
 /connect.lock

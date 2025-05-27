@@ -2,7 +2,6 @@
 import logging
 import os
 import pathlib
-import time
 
 import my_lib.time
 import unit_cooler.actuator.valve
@@ -21,6 +20,13 @@ def gen_handle(config, message_queue):
     }
 
 
+def hazard_register(config):
+    hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
+
+    hazard_file.parent.mkdir(parents=True, exist_ok=True)
+    hazard_file.touch()
+
+
 def hazard_clear(config):
     pathlib.Path(config["actuator"]["control"]["hazard"]["file"]).unlink(missing_ok=True)
 
@@ -28,13 +34,11 @@ def hazard_clear(config):
 def hazard_notify(config, message):
     hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
     if (not hazard_file.exists()) or (
-        (time.time() - pathlib.Path(config["actuator"]["control"]["hazard"]["file"]).stat().st_mtime) / 60
-        > HAZARD_NOTIFY_INTERVAL_MIN
+        my_lib.footprint.elapsed(hazard_file) / 60 > HAZARD_NOTIFY_INTERVAL_MIN
     ):
-        unit_cooler.actuator.work_log.add(message, unit_cooler.const.WORK_LOG_LEVEL.ERROR)
+        unit_cooler.actuator.work_log.add(message, unit_cooler.const.LOG_LEVEL.ERROR)
 
-        hazard_file.parent.mkdir(parents=True, exist_ok=True)
-        hazard_file.touch()
+        hazard_register(config)
 
     unit_cooler.actuator.valve.set_state(unit_cooler.const.VALVE_STATE.CLOSE)
 
@@ -53,7 +57,7 @@ def get_control_message_impl(handle, last_message):
             "interval_sec"
         ] * 3:
             unit_cooler.actuator.work_log.add(
-                "冷却モードの指示を受信できません。", unit_cooler.const.WORK_LOG_LEVEL.ERROR
+                "冷却モードの指示を受信できません。", unit_cooler.const.LOG_LEVEL.ERROR
             )
 
         return last_message

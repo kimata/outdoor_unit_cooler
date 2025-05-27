@@ -28,14 +28,23 @@ import flask_cors
 SCHEMA_CONFIG = "config.schema"
 
 
-def create_app(config, setting):
+def create_app(config, arg):
+    setting = {
+        "control_host": "localhost",
+        "pub_port": 2222,
+        "actuator_host": "localhost",
+        "dummy_mode": False,
+        "msg_count": 0,
+    }
+
+    setting.update(arg)
+
     logging.info("Using ZMQ server of %s:%d", setting["control_host"], setting["pub_port"])
 
     # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
-    if dummy_mode:
+    if setting["dummy_mode"]:
+        logging.warning("Set dummy mode")
         os.environ["DUMMY_MODE"] = "true"
-    else:  # pragma: no cover
-        os.environ["DUMMY_MODE"] = "false"
 
     # NOTE: テストのため、環境変数 DUMMY_MODE をセットしてからロードしたいのでこの位置
     import my_lib.webapp.config
@@ -47,6 +56,7 @@ def create_app(config, setting):
     import my_lib.webapp.log_proxy
     import my_lib.webapp.util
     import unit_cooler.webui.cooler_stat
+    import unit_cooler.webui.worker
 
     message_queue = multiprocessing.Queue(10)
     worker_thread = threading.Thread(
@@ -107,6 +117,8 @@ def create_app(config, setting):
     app.register_blueprint(my_lib.webapp.log_proxy.blueprint)
     app.register_blueprint(my_lib.webapp.util.blueprint)
     app.register_blueprint(unit_cooler.webui.cooler_stat.blueprint)
+
+    my_lib.webapp.config.show_handler_list(app)
 
     my_lib.webapp.log_proxy.init("http://{host}:5001/unit_cooler".format(host=setting["actuator_host"]))
 

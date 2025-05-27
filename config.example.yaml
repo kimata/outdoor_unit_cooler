@@ -1,84 +1,119 @@
 controller:
-  influxdb:
-    url: http://proxy.green-rabbit.net:8086
-    token: strBCB9segqccgxsR5Xe_9RnCqkBFYX9aOKvxVR4lr3iLEb7HXuGqsN40YU6DIb6TZm9bvKLW5OWQS7sB8AQbQ==
-    org: home
-    bucket: sensor
-  sensor:
-    temp:
-      - name: 屋外の気温
-        measure: sensor.esp32
-        hostname: ESP32-outdoor-1
-    humi:
-      - name: 屋外の湿度
-        measure: sensor.esp32
-        hostname: ESP32-outdoor-1
-    lux:
-      - name: 屋外の照度
+    influxdb:
+        url: http://proxy.green-rabbit.net:8086
+        token: strBCB9segqccgxsR5Xe_9RnCqkBFYX9aOKvxVR4lr3iLEb7HXuGqsN40YU6DIb6TZm9bvKLW5OWQS7sB8AQbQ==
+        org: home
+        bucket: sensor
+    sensor:
+        temp:
+            - name: 屋外の気温
+              # measure: sensor.esp32
+              # hostname: ESP32-outdoor-1
+              measure: sensor.rasp
+              hostname: rasp-storeroom
+        humi:
+            - name: 屋外の湿度
+              # measure: sensor.esp32
+              # hostname: ESP32-outdoor-1
+              measure: sensor.rasp
+              hostname: rasp-storeroom
+        lux:
+            - name: 屋外の照度
+              measure: sensor.rasp
+              hostname: rasp-weather-1
+        solar_rad:
+            - name: 太陽の日射量
+              measure: sensor.rasp
+              hostname: rasp-weather-1
+        power:
+            - name: リビング
+              measure: hems.sharp
+              hostname: リビングエアコン
+            - name: 書斎
+              measure: hems.sharp
+              hostname: 書斎エアコン
+            - name: 和室
+              measure: hems.sharp
+              hostname: 和室エアコン
+            - name: 祐翔
+              measure: hems.sharp
+              hostname: 祐翔エアコン
+            - name: 絢香
+              measure: hems.sharp
+              hostname: 絢香エアコン
+    watering:
         measure: sensor.rasp
-        hostname: rasp-meter-8
-    solar_rad:
-      - name: 太陽の日射量
-        measure: sensor.rasp
-        hostname: rasp-storeroom
-    power:
-      - name: リビング
-        measure: hems.sharp
-        hostname: リビングエアコン
-      - name: 書斎
-        measure: hems.sharp
-        hostname: 書斎エアコン
-      - name: 和室
-        measure: hems.sharp
-        hostname: 和室エアコン
-  watering:
-    measure: sensor.rasp
-    hostname: rasp-cooler-1
-    # 水道料金の単価 1m^2 あたり
-    unit_price: 251.9
-  interval_sec: 60
-  liveness:
-    file: /dev/shm/healthz.controller
+        hostname: rasp-cooler-1
+        # 水道料金の単価 1m^2 あたり
+        unit_price: 251.9
+    interval_sec: 60
+    liveness:
+        file: /dev/shm/healthz.controller
 actuator:
-  valve:
-    pin_no: 17 # BCM で指定
-    "on":
-      # ON にしたときの最低流量．実際の流量がこれ未満になっている場合，
-      # 元栓が閉じている可能性あり．
-      min: 0.02
-      # ON にした時の最大流量．実際の流量がこれより大きくになっている場合，
-      # 水漏れしている可能性あり．
-      max: 3.5
-    "off":
-      # OFF にした時の最大流量．実際の流量がこれより大きくなっている場合，
-      # 水漏れしている可能性あり．
-      max: 0.01
-    # 元栓を閉じてからこの時間経過したら，流量センサの電源を落とす
-    power_off_sec: 7200
-  interval_sec: 30
-  hazard:
-    file: /dev/shm/unit_cooler.hazard
-  liveness:
-    file: /dev/shm/healthz.actuator
-monitor:
-  fluent:
-    host: proxy.green-rabbit.net
-  sense:
-    giveup: 10
-  interval_sec: 30
-  liveness:
-    file: /dev/shm/healthz.monitor
-receiver:
-  liveness:
-    file: /dev/shm/healthz.receiver
-web:
-  liveness:
-    file: /dev/shm/healthz.web
+    subscribe:
+        liveness:
+            file: /dev/shm/healthz.actuator.subscribe
+    control:
+        valve:
+            # 電磁弁制御用の GPIO 端子番号のデフォルト値。
+            # この端子が H になった場合に、水が出るように回路を組んでおく。
+            pin_no: 17 # BCM で指定
+            "on":
+                # ON にしたときの最低流量。実際の流量がこれ未満になっている場合、
+                # 元栓が閉じている可能性あり。
+                min: 0.02
+                # ON にした時の最大流量。実際の流量がこれより大きくになっている場合、
+                # 水漏れしている可能性あり。
+                max: 3.8
+            "off":
+                # OFF にした時の最大流量。実際の流量がこれより大きくなっている場合、
+                # 水漏れしている可能性あり。
+                max: 0.01
+            # 元栓を閉じてからこの時間経過したら、流量センサの電源を落とす
+            power_off_sec: 7200
+        interval_sec: 30
+        hazard:
+            file: /dev/shm/unit_cooler.hazard
+        liveness:
+            file: /dev/shm/healthz.actuator.control
+    monitor:
+        flow:
+            "on":
+                # ON にしたときの最低流量。実際の流量がこれ未満になっている場合、
+                # 元栓が閉じている可能性あり。
+                min: 0.02
+                # ON にした時の最大流量。実際の流量がこれより大きくになっている場合、
+                # 水漏れしている可能性あり。
+                max: 3.8
+            "off":
+                # OFF にした時の最大流量。実際の流量がこれより大きくなっている場合、
+                # 水漏れしている可能性あり。
+                max: 0.01
+            # 元栓を閉じてからこの時間経過したら、流量センサの電源を落とす
+            power_off_sec: 7200
+        fluent:
+            host: proxy.green-rabbit.net
+        sense:
+            giveup: 10
+        interval_sec: 5
+        liveness:
+            file: /dev/shm/healthz.actuator.monitor
+    log_server:
+        webapp:
+            port: 5001
+            data:
+                log_file_path: data/hems.unit_cooler.log
+webui:
+    webapp:
+        static_dir_path: react/dist
+    subscribe:
+        liveness:
+            file: /dev/shm/healthz.webui.subscribe
 slack:
-  bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
-  from: Outdoor Unit Cooler
-  error:
-    channel:
-      name: "#error"
-      id: C04Q1CEGW9K
-    interval_min: 180
+    bot_token: xoxb-XXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
+    from: Outdoor Unit Cooler
+    error:
+        channel:
+            name: "#error"
+            id: C04Q1CEGW9K
+        interval_min: 180

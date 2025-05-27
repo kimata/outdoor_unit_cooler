@@ -58,7 +58,7 @@ COOLER_ACTIVITY_LIST = [
     },
     {
         "judge": lambda mode_map: (mode_map[unit_cooler.const.AIRCON_MODE.FULL] >= 1)
-        and (mode_map[unit_cooler.controller.sensor.AIRCON_MODE.NORMAL] >= 1),
+        and (mode_map[unit_cooler.const.AIRCON_MODE.NORMAL] >= 1),
         "message": "複数台ののエアコンがフル稼働もしくは平常運転しています。(cooler_status: 5)",
         "status": 5,
     },

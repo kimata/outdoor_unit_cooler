@@ -80,7 +80,7 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
         logging.exception("Failed to create handle")
 
         unit_cooler.actuator.work_log.add(
-            "流量のロギングを開始できません。", unit_cooler.const.WORK_LOG_LEVEL.ERROR
+            "流量のロギングを開始できません。", unit_cooler.const.LOG_LEVEL.ERROR
         )
         logging.warning("Stop monitor worker")
         return -1
@@ -91,10 +91,6 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
         while True:
             start_time = time.time()
 
-            if should_terminate:
-                logging.info("Terminate monitor worker")
-                break
-
             need_logging = (i % handle["log_period"]) == 0
             i += 1
 
@@ -104,6 +100,12 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
                 handle, mist_condition, last_control_message, dummy_mode
             )
 
+            my_lib.footprint.update(liveness_file)
+
+            if should_terminate:
+                logging.info("Terminate monitor worker")
+                break
+
             if msg_count != 0:
                 logging.debug("(monitor_count, msg_count) = (%d, %d)", handle["monitor_count"], msg_count)
                 if handle["monitor_count"] >= msg_count:
@@ -111,8 +113,6 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
                         "Terminate monitor worker, because the specified number of times has been reached."
                     )
                     break
-
-            my_lib.footprint.update(liveness_file)
 
             sleep_until_next_iter(start_time, interval_sec)
     except Exception:
@@ -140,16 +140,18 @@ def control_worker(config, message_queue, liveness_file, dummy_mode=False, speed
     try:
         while True:
             start_time = time.time()
-            if should_terminate:
-                logging.info("Terminate control worker")
-                break
 
             last_control_message = unit_cooler.actuator.control.get_control_message(
                 handle, last_control_message
             )
+
             unit_cooler.actuator.control.execute(config, last_control_message)
 
             my_lib.footprint.update(liveness_file)
+
+            if should_terminate:
+                logging.info("Terminate control worker")
+                break
 
             if msg_count != 0:
                 logging.debug("(receive_count, msg_count) = (%d, %d)", handle["receive_count"], msg_count)
@@ -211,6 +213,9 @@ def get_worker_def(config, message_queue, setting):
 
 
 def start(executor, worker_def):
+    global should_terminate  # noqa: PLW0603
+
+    should_terminate = False
     thread_list = []
 
     for worker_info in worker_def:

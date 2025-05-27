@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from playwright.sync_api import expect
 
 APP_URL_TMPL = "http://{host}:{port}/unit_cooler/"
@@ -11,7 +9,7 @@ def app_url(host, port):
 
 
 def init(page):
-    page.on("console", lambda msg: print(msg.text))
+    page.on("console", lambda msg: print(msg.text))  # noqa: T201
     page.set_viewport_size({"width": 2400, "height": 1600})
 
 

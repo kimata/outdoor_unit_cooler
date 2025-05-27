@@ -42,6 +42,8 @@ def create_app(config, event_queue):
     app.register_blueprint(my_lib.webapp.log.blueprint)
     app.register_blueprint(my_lib.webapp.event.blueprint)
 
+    my_lib.webapp.config.show_handler_list(app)
+
     my_lib.webapp.log.init(config)
     my_lib.webapp.event.start(event_queue)
 

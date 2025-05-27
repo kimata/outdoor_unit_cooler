@@ -23,6 +23,7 @@ def queue_put(message_queue, message, liveness_file):
 def subscribe_worker(config, control_host, pub_port, message_queue, liveness_file, msg_count=0):  # noqa: PLR0913
     logging.info("Start subscribe worker (%s:%d)", control_host, pub_port)
 
+    ret = 0
     try:
         unit_cooler.pubsub.subscribe.start_client(
             control_host,
@@ -36,4 +37,5 @@ def subscribe_worker(config, control_host, pub_port, message_queue, liveness_fil
         ret = -1
 
     logging.warning("Stop subscribe worker")
+
     return ret
