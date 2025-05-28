@@ -94,7 +94,7 @@ actuator:
         fluent:
             host: proxy.green-rabbit.net
         sense:
-            giveup: 10
+            giveup: 5
         interval_sec: 5
         liveness:
             file: /dev/shm/healthz.actuator.monitor

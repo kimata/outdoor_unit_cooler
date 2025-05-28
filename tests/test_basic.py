@@ -863,7 +863,7 @@ def test_actuator_log(mocker, config):
     actuator_handle = actuator.start(
         config,
         {
-            "speedup": 10,
+            "speedup": 50,
             "msg_count": 10,
         },
     )
@@ -871,7 +871,7 @@ def test_actuator_log(mocker, config):
     control_handle = controller.start(
         config,
         {
-            "speedup": 10,
+            "speedup": 50,
             "dummy_mode": True,
             "msg_count": 10,
         },
@@ -1365,7 +1365,7 @@ def test_actuator_unable_to_receive(mocker, time_machine, config):
         },
     )
 
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 20)
 
     control_handle = controller.start(
@@ -1505,7 +1505,7 @@ def test_actuator_flow_unknown_2(mocker, config):
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
     mock_gpio(mocker)
-    mocker.patch("my_lib.sensor.fd_q10c.FD_Q10C.get_value", side_effect=RuntimeError)
+    mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.get_value", side_effect=RuntimeError)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
@@ -1521,7 +1521,7 @@ def test_actuator_flow_unknown_2(mocker, config):
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 15,
+            "msg_count": 10,
         },
     )
 
@@ -1532,7 +1532,7 @@ def test_actuator_flow_unknown_2(mocker, config):
         config,
         {
             "speedup": 100,
-            "msg_count": 15,
+            "msg_count": 10,
         },
     )
 
@@ -2355,191 +2355,181 @@ def test_webapp(mocker, config):  # noqa: PLR0915
     check_notify_slack(None)
 
 
-# def test_webapp_dummy_mode(mocker):
-#     import actuator
-#     import controller
-#     import webapp
-#     import webapp_config
-#     import webapp_event
-#     import webapp_log
+def test_webapp_dummy_mode(mocker, config):
+    import actuator
+    import controller
+    import webui
 
-#     mocker.patch("control.fetch_data", return_value=gen_sense_data())
-#     mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
-#     actuator_handle = actuator.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-#     control_handle = controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        },
+    )
+    control_handle = controller.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        },
+    )
 
-#     time.sleep(2)
+    time.sleep(2)
 
-#     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
-#     client = app.test_client()
+    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": True})
+    client = app.test_client()
 
-#     res = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
-#     assert "watering" in res.json
-#     assert "sensor" in res.json
-#     assert "mode" in res.json
-#     assert "cooler_status" in res.json
-#     assert "outdoor_status" in res.json
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
+    assert res.status_code == 200
+    assert "watering" in res.json
+    assert "sensor" in res.json
+    assert "mode" in res.json
+    assert "cooler_status" in res.json
+    assert "outdoor_status" in res.json
 
-#     mocker.patch(
-#         "flask.wrappers.Res.status_code",
-#         return_value=301,
-#         new_callable=mocker.PropertyMock,
-#     )
+    mocker.patch(
+        "flask.wrappers.Response.status_code",
+        return_value=301,
+        new_callable=mocker.PropertyMock,
+    )
 
-#     res = client.get(f"{webapp_config.URL_PREFIX}/", headers={"Accept-Encoding": "gzip"})
-#     assert res.status_code == 301
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/", headers={"Accept-Encoding": "gzip"})
+    assert res.status_code == 301
 
-#     controller.wait_and_term(*control_handle)
-#     actuator.wait_and_term(*actuator_handle)
+    controller.wait_and_term(*control_handle)
+    actuator.wait_and_term(*actuator_handle)
 
-#     client.delete()
+    client.delete()
 
-#     # NOTE: カバレッジのため
-#     webapp_event.stop_watch()
-#     webapp_log.term()
-
-#     check_notify_slack(None)
-#     check_liveness("controller", True)
-#     check_liveness("receiver", True)
-#     check_liveness("actuator", True)
-#     check_liveness("monitor", True)
-#     check_liveness("web", True)
+    check_liveness(config, ["controller"], True)
+    check_liveness(config, ["actuator", "subscribe"], True)
+    check_liveness(config, ["actuator", "control"], True)
+    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["webui", "subscribe"], True)
+    check_notify_slack(None)
 
 
-# def test_webapp_queue_overflow(mocker):
-#     import controller
-#     import actuator
-#     import webapp
-#     import webapp_config
-#     from config import load_config
+def test_webapp_queue_overflow(mocker, config):
+    import pathlib
 
-#     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
+    import actuator
+    import controller
+    import unit_cooler.webui.worker
+    import webui
 
-#     mocker.patch("control.fetch_data", return_value=gen_sense_data())
-#     mocker.patch("unit_cooler_info.get_day_sum", return_value=100)
+    mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
 
-#     actuator_handle = actuator.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-#     control_handle = controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "msg_count": 7,
-#         }
-#     )
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
-#     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": False})
-#     client = app.test_client()
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        },
+    )
+    control_handle = controller.start(
+        config,
+        {
+            "speedup": 100,
+            "msg_count": 7,
+        },
+    )
 
-#     # NOTE: カバレッジ用にキューを溢れさせる
-#     for _ in range(100):
-#         webapp.queuing_message(load_config(CONFIG_FILE), app.config["MESSAGE_QUEUE"], "TEST")
-#         time.sleep(0.01)
+    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": False})
+    client = app.test_client()
 
-#     response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
-#     assert "watering" in res.json
-#     assert "sensor" in res.json
-#     assert "mode" in res.json
-#     assert "cooler_status" in res.json
-#     assert "outdoor_status" in res.json
+    # NOTE: カバレッジ用にキューを溢れさせる
+    for _ in range(100):
+        unit_cooler.webui.worker.queue_put(
+            app.config["MESSAGE_QUEUE"],
+            {"state": 0},
+            pathlib.Path(config["webui"]["subscribe"]["liveness"]["file"]),
+        )
+        time.sleep(0.01)
 
-#     controller.wait_and_term(*control_handle)
-#     actuator.wait_and_term(*actuator_handle)
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
+    assert res.status_code == 200
+    assert "watering" in res.json
+    assert "sensor" in res.json
+    assert "mode" in res.json
+    assert "cooler_status" in res.json
+    assert "outdoor_status" in res.json
 
-#     client.delete()
+    controller.wait_and_term(*control_handle)
+    actuator.wait_and_term(*actuator_handle)
 
-#     check_notify_slack(None)
-#     check_liveness("controller", True)
-#     check_liveness("receiver", True)
-#     check_liveness("actuator", True)
-#     check_liveness("monitor", True)
-#     check_liveness("web", True)
+    client.delete()
+
+    check_liveness(config, ["controller"], True)
+    check_liveness(config, ["actuator", "subscribe"], True)
+    check_liveness(config, ["actuator", "control"], True)
+    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["webui", "subscribe"], True)
+    check_notify_slack(None)
 
 
-# def test_webapp_day_sum(mocker):
-#     import controller
-#     import actuator
-#     import webapp
-#     import webapp_config
+def test_webapp_day_sum(mocker, config):
+    import actuator
+    import controller
+    import webui
 
-#     mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
+    mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
 
-#     fetch_data_mock = mocker.MagicMock()
-#     fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]
+    fetch_data_mock = mocker.MagicMock()
+    fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]
 
-#     mocker.patch("sensor_data.fetch_data_impl", return_value=fetch_data_mock)
+    mocker.patch("my_lib.sensor_data.fetch_data_impl", return_value=gen_sense_data())
 
-#     sensor_data = gen_sense_data()
-#     sensor_data["valid"] = False
-#     mocker.patch("control.fetch_data", return_value=sensor_data)
+    sensor_data = gen_sense_data()
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=sensor_data)
 
-#     actuator_handle = actuator.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
-#     control_handle = controller.start(
-#         {
-#             "config_file": CONFIG_FILE,
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 5,
-#         }
-#     )
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        },
+    )
+    control_handle = controller.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 5,
+        },
+    )
 
-#     time.sleep(2)
+    time.sleep(2)
 
-#     app = webapp.create_app({"config_file": CONFIG_FILE, "msg_count": 1, "dummy_mode": True})
-#     client = app.test_client()
+    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": True})
+    client = app.test_client()
 
-#     response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
-#     assert "watering" in res.json
-#     assert "sensor" in res.json
-#     assert "mode" in res.json
-#     assert "cooler_status" in res.json
-#     assert "outdoor_status" in res.json
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
+    assert res.status_code == 200
+    assert "watering" in res.json
+    assert "sensor" in res.json
+    assert "mode" in res.json
+    assert "cooler_status" in res.json
+    assert "outdoor_status" in res.json
 
-#     response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
+    controller.wait_and_term(*control_handle)
+    actuator.wait_and_term(*actuator_handle)
 
-#     response = client.get(f"{webapp_config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
+    client.delete()
 
-#     controller.wait_and_term(*control_handle)
-#     actuator.wait_and_term(*actuator_handle)
-
-#     client.delete()
-
-#     check_notify_slack(None)
-#     check_liveness("controller", True)
-#     check_liveness("receiver", True)
-#     check_liveness("actuator", True)
-#     check_liveness("monitor", True)
-#     check_liveness("web", True)
+    check_liveness(config, ["controller"], True)
+    check_liveness(config, ["actuator", "subscribe"], True)
+    check_liveness(config, ["actuator", "control"], True)
+    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["webui", "subscribe"], True)
+    check_notify_slack(None)

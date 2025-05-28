@@ -41,11 +41,6 @@ def create_app(config, arg):
 
     logging.info("Using ZMQ server of %s:%d", setting["control_host"], setting["pub_port"])
 
-    # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
-    if setting["dummy_mode"]:
-        logging.warning("Set dummy mode")
-        os.environ["DUMMY_MODE"] = "true"
-
     # NOTE: テストのため、環境変数 DUMMY_MODE をセットしてからロードしたいのでこの位置
     import my_lib.webapp.config
 
@@ -75,31 +70,22 @@ def create_app(config, arg):
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if setting["dummy_mode"]:
-            logging.warning("Set dummy mode")
-    else:  # pragma: no cover
-        pass
-
     app = flask.Flask("unit-cooler-webui")
 
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        if dummy_mode:
+        if setting["dummy_mode"]:
             logging.warning("Set dummy mode")
+            # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
+            os.environ["DUMMY_MODE"] = "true"
         else:  # pragma: no cover
             pass
 
-        # rasp_water.webapp_schedule.init(config)
-        # rasp_water.webapp_valve.init(config)
-
         def notify_terminate():  # pragma: no cover
-            pass
-            # rasp_water.valve.set_state(rasp_water.valve.VALVE_STATE.CLOSE)
-            # my_lib.webapp.log.info("🏃 アプリを再起動します。")
-            # my_lib.webapp.log.term()
+            my_lib.webapp.log.info("🏃 アプリを再起動します。")
+            my_lib.webapp.log.term()
 
         atexit.register(notify_terminate)
     else:  # pragma: no cover
