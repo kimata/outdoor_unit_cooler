@@ -227,9 +227,7 @@ test-healthz-docker:
 test-walk-through:
     stage: test
 
-    needs: ["build-react"]
-
-    dependencies:
+    needs:
         - build-react
         - test-prepare
 
