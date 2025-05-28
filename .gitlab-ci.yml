@@ -151,8 +151,6 @@ test-webui-docker:
         - build-image
         - test-prepare
 
-    image: registry.green-rabbit.net:5000/kimata/local_ubuntu:230812D
-
     script:
         # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
         - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
