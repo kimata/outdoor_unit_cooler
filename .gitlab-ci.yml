@@ -50,6 +50,7 @@ test-prepare:
 
     script:
         - rye sync
+        - python3 -m playwright install
 
     artifacts:
         paths:
