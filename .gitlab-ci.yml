@@ -226,10 +226,13 @@ test-healthz-docker:
 
 test-walk-through:
     stage: test
+
     needs: ["build-react"]
+
     dependencies:
         - build-react
-    image: registry.green-rabbit.net:5000/kimata/local_ubuntu:230812D
+        - test-prepare
+
     script:
         - rye run pytest tests/test_basic.py
 
@@ -237,12 +240,11 @@ test-walk-through:
         key: "${CI_JOB_NAME}"
         paths:
             - .venv
-            - .poetry
+
     artifacts:
         when: always
         paths:
             - tests/evidence/**
-
 
 deploy-controller:
     stage: deploy
