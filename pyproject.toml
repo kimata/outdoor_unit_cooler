@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">= 3.10"
 
 dependencies = [
-    "rpi-gpio>=0.7.1",
+    "rpi-lgpio>=0.6",
     "flask>=3.1.0",
     "flask-cors>=5.0.1",
     "docopt-ng>=0.9.0",
