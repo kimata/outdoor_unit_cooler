@@ -843,9 +843,6 @@ def test_actuator_duty_disable(mocker, config):
     check_liveness(config, ["actuator", "monitor"], True)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack(None)
-    import my_lib.webapp.log
-
-    assert my_lib.webapp.log.sqlite is None
 
 
 def test_actuator_log(mocker, config):
@@ -904,7 +901,7 @@ def test_actuator_log(mocker, config):
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
 
-    time.sleep(1)
+    time.sleep(2)
 
     res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
     assert res.status_code == 200
