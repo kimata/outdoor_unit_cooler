@@ -134,7 +134,6 @@ def check_mist_condition(handle, mist_condition):
             >= handle["config"]["actuator"]["monitor"]["flow"]["power_off_sec"]
         ) and (mist_condition["flow"] == 0):
             # バルブが閉じてから長い時間が経っていて流量も 0 の場合、センサーを停止する
-            logging.error(unit_cooler.actuator.sensor.get_power_state())
             if unit_cooler.actuator.sensor.get_power_state():
                 unit_cooler.actuator.work_log.add(
                     "長い間バルブが閉じられていますので、流量計の電源を OFF します。"
