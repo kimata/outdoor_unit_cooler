@@ -99,11 +99,11 @@ test-actuator-sample:
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 1 -d -c config.example.yaml -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
         - sleep 10
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
     artifacts:
         when: always
@@ -129,13 +129,13 @@ test-actuator-regular:
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 1 -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
         - sleep 10
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
         - 'echo "Actuator: ${ACT_IP}"'
         - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
     artifacts:
         when: always
