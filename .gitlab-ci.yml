@@ -265,7 +265,9 @@ deploy-controller:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
@@ -282,7 +284,9 @@ deploy-actuator:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
@@ -299,7 +303,9 @@ deploy-webui:
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webui
     rules:
         # NOTE: 自動実行ではデプロイしない
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
@@ -315,7 +321,12 @@ deploy-webui-demo:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webui-demo
     rules:
-        - if: '$CI_PIPELINE_SOURCE == "push"'
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+          when: never
+        - when: on_success
 
 
 renovate:
