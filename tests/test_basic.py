@@ -906,10 +906,7 @@ def test_actuator_log(mocker, config):
     res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
-
-    logging.error(json.loads(res.text)["data"])
-
-    assert json.loads(res.text)["data"][0]["message"].find("ログがクリアされました。") != -1
+    assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
     assert "last_time" in json.loads(res.text)
 
     res = requests.get(  # noqa: S113
