@@ -186,12 +186,23 @@ OUTDOOR_CONDITION_LIST = [
 # NOTE: 外部環境の状況を評価する。
 # (数字が大きいほど冷却を強める)
 def get_outdoor_status(sense_data):
+    temp_str = (
+        f"{sense_data['temp'][0]['value']:.1f}" if sense_data["temp"][0]["value"] is not None else "？",
+    )
+    humi_str = (
+        f"{sense_data['humi'][0]['value']:.1f}" if sense_data["humi"][0]["value"] is not None else "？",
+    )
+    solar_rad_str = (
+        f"{sense_data['solar_rad'][0]['value']:,.0f}"
+        if sense_data["solar_rad"][0]["value"] is not None
+        else "？",
+    )
+    lux_str = (
+        f"{sense_data['lux'][0]['value']:,.0f}" if sense_data["lux"][0]["value"] is not None else "？",
+    )
+
     logging.info(
-        "気温: %.1f ℃, 湿度: %.1f %%, 日射量: %s W/m^2, 照度: %s LUX",
-        sense_data["temp"][0]["value"],
-        sense_data["humi"][0]["value"],
-        f"{sense_data['solar_rad'][0]['value']:,.0f}",
-        f"{sense_data['lux'][0]['value']:,.0f}",
+        "気温: %s ℃, 湿度: %s %, 日射量: %s W/m^2, 照度: %s LUX", temp_str, humi_str, solar_rad_str, lux_str
     )
     for condition in OUTDOOR_CONDITION_LIST:
         if condition["judge"](sense_data):
