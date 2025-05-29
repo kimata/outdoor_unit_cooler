@@ -56,6 +56,10 @@ def init(pin):
     my_lib.footprint.clear(STAT_PATH_VALVE_STATE_WORKING)
     my_lib.footprint.update(STAT_PATH_VALVE_STATE_IDLE)
 
+    my_lib.rpi.gpio.setwarnings(False)
+    my_lib.rpi.gpio.setmode(my_lib.rpi.gpio.BCM)
+    my_lib.rpi.gpio.setup(pin_no, my_lib.rpi.gpio.OUT)
+
     set_state(unit_cooler.const.VALVE_STATE.CLOSE)
 
 
@@ -91,9 +95,6 @@ def set_state(valve_state):
             logging.info("VALVE: %s -> %s", curr_state.name, valve_state.name)
             ctrl_hist.append(curr_state)
 
-        my_lib.rpi.gpio.setwarnings(False)
-        my_lib.rpi.gpio.setmode(my_lib.rpi.gpio.BCM)
-        my_lib.rpi.gpio.setup(pin_no, my_lib.rpi.gpio.OUT)
         my_lib.rpi.gpio.output(pin_no, valve_state.value)
 
         if valve_state == unit_cooler.const.VALVE_STATE.OPEN:
