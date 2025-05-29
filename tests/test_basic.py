@@ -863,7 +863,7 @@ def test_actuator_log(mocker, config):
     actuator_handle = actuator.start(
         config,
         {
-            "speedup": 50,
+            "speedup": 100,
             "msg_count": 10,
         },
     )
@@ -871,7 +871,7 @@ def test_actuator_log(mocker, config):
     control_handle = controller.start(
         config,
         {
-            "speedup": 50,
+            "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
         },
@@ -898,7 +898,16 @@ def test_actuator_log(mocker, config):
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
     assert len(json.loads(res.text)["data"]) != 0
-    assert "last_time" in json.loads(res.text)
+    assert (
+        datetime.datetime.strptime(json.loads(res.text)["data"][0]["date"], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=my_lib.time.get_zoneinfo()
+        )
+        - my_lib.time.now()
+    ).total_seconds() < 5
+    assert (
+        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+        - my_lib.time.now()
+    ).total_seconds() < 5
 
     res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_clear")  # noqa: S113
     assert res.status_code == 200
@@ -909,8 +918,18 @@ def test_actuator_log(mocker, config):
     res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
+    logging.error(json.loads(res.text)["data"])
     assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
-    assert "last_time" in json.loads(res.text)
+    assert (
+        datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=my_lib.time.get_zoneinfo()
+        )
+        - my_lib.time.now()
+    ).total_seconds() < 5
+    assert (
+        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+        - my_lib.time.now()
+    ).total_seconds() < 5
 
     res = requests.get(  # noqa: S113
         f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
