@@ -42,7 +42,7 @@ spec:
                 - name: unit-cooler-controller
                   image: registry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
                   imagePullPolicy: Always
-                  command: ["./app/cooler_controller.py"]
+                  command: ["./src/controller.py"]
                   ports:
                     - containerPort: 2222
                   resources:
@@ -96,7 +96,7 @@ spec:
                 - name: unit-cooler-actuator
                   image: registry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
                   imagePullPolicy: Always
-                  command: ["./app/unit_cooler.py"]
+                  command: ["./src/actuator.py"]
                   env:
                     - name: HEMS_SERVER_HOST
                       value: unit-cooler-controller.hems.svc.cluster.local
@@ -134,14 +134,14 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-    name: unit-cooler-webapp
+    name: unit-cooler-webui
     namespace: hems
     annotations:
         metallb.universe.tf/address-pool: default
         external-dns.alpha.kubernetes.io/hostname: unit_cooler.kubernetes.green-rabbit.net
 spec:
     selector:
-        app: unit-cooler-webapp
+        app: unit-cooler-webui
     ports:
         - port: 5000
           targetPort: 5000
@@ -150,25 +150,25 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: unit-cooler-webapp
+    name: unit-cooler-webui
     namespace: hems
     labels:
-        app: unit-cooler-webapp
+        app: unit-cooler-webui
 spec:
     replicas: 1
     selector:
         matchLabels:
-            app: unit-cooler-webapp
+            app: unit-cooler-webui
     template:
         metadata:
             labels:
-                app: unit-cooler-webapp
+                app: unit-cooler-webui
         spec:
             containers:
                 - name: unit-cooler-controller
                   image: registry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
                   imagePullPolicy: Always
-                  command: ["./app/webapp.py"]
+                  command: ["./src/webui.py"]
                   ports:
                     - containerPort: 5000
                   env:
