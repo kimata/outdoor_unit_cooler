@@ -111,7 +111,7 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
         logging.info("Wait %s finish", thread_info["name"])
 
         if thread_info["future"].result() != 0:
-            logging.warning("Error occurred in %s", thread_info["name"])
+            logging.error("Error occurred in %s", thread_info["name"])
             ret = -1
 
     logging.info("Shutdown executor")

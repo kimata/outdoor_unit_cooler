@@ -82,7 +82,6 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
         unit_cooler.actuator.work_log.add(
             "流量のロギングを開始できません。", unit_cooler.const.LOG_LEVEL.ERROR
         )
-        logging.warning("Stop monitor worker")
         return -1
 
     i = 0
@@ -161,6 +160,7 @@ def control_worker(config, message_queue, liveness_file, dummy_mode=False, speed
 
             sleep_until_next_iter(start_time, interval_sec)
     except Exception:
+        logging.exception("Failed to control valve")
         unit_cooler.util.notify_error(config, traceback.format_exc())
         ret = -1
 
