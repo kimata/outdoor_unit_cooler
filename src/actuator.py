@@ -58,11 +58,6 @@ def start(config, arg):
 
     should_terminate = False
 
-    if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):
-        # NOTE: 動作開始前に待つ。これを行わないと、複数の Pod が電磁弁を制御することに
-        # なり、電磁弁の故障を誤判定する可能性がある。
-        wait_before_start(config)
-
     logging.info("Using ZMQ server of %s:%d", setting["control_host"], setting["pub_port"])
 
     # NOTE: オプションでダミーモードが指定された場合、環境変数もそれに揃えておく
@@ -77,6 +72,11 @@ def start(config, arg):
     import unit_cooler.actuator.log_server
 
     log_server_handle = unit_cooler.actuator.log_server.start(config, event_queue)
+
+    if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):
+        # NOTE: 動作開始前に待つ。これを行わないと、複数の Pod が電磁弁を制御することに
+        # なり、電磁弁の故障を誤判定する可能性がある。
+        wait_before_start(config)
 
     import unit_cooler.actuator.work_log
     import unit_cooler.actuator.worker
@@ -106,6 +106,8 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
 
     should_terminate = terminate
 
+    unit_cooler.actuator.log_server.term(log_server_handle)
+
     ret = 0
     for thread_info in thread_list:
         logging.info("Wait %s finish", thread_info["name"])
@@ -117,7 +119,6 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
     logging.info("Shutdown executor")
     executor.shutdown()
 
-    unit_cooler.actuator.log_server.term(log_server_handle)
     unit_cooler.actuator.work_log.term()
 
     logging.warning("Terminate unit_cooler")
