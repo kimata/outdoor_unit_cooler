@@ -23,7 +23,7 @@ const Sensor = ({ isReady, stat }: Props) => {
         );
     };
 
-    const sensorRow = (label: string, sensorData: ApiResponse.SensorData, unit: JSX.Element) => {
+    const sensorRow = (label: string, sensorData: ApiResponse.SensorData, unit: React.JSX.Element) => {
         let date = dayjs(sensorData.time);
 
         return (
