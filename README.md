@@ -8,7 +8,7 @@
 
 エアコンの稼働状況に応じてミスト噴射モードが自動的に変化する様子を確認いただけます．
 
-https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
+https://unit-cooler-webui-demo.kubernetes.green-rabbit.net/unit_cooler/
 
 ## システム構成
 
@@ -37,9 +37,9 @@ https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
 
 ## 準備
 
-`app/unit_cooler.py` を配置する Raspberry Pi で，以下の設定を行います．
+`src/actuator.py` を配置する Raspberry Pi で，以下の設定を行います．
 
--   Bluetooth の無効化
+-   SPI の有効化と Bluetooth の無効化
     `/boot/firmware/config.txt` に下記の設定を追加します．
 
     ```text
@@ -52,15 +52,15 @@ https://unit-cooler-webapp-demo.kubernetes.green-rabbit.net/unit_cooler/
 
 ## 設定
 
-`src/config.example.yml` を `src/config.yml` に名前変更します．
+`config.example.yaml` を `config.yaml` に名前変更します．
 環境に合わせて適宜書き換えてください．
 
 Slack を使っていない場合は，Slack の設定をコメントアウトしてください．
 
 ## 実行
 
-`docker build` でイメージを構築し，`app/cooler_controller.py` と `app/unit_cooler.py`
-を動かします．Web インターフェースが欲しい場合は，`app/webapp.py` も動かします．
+`docker build` でイメージを構築し，`src/controller.py` と `app/uactuator.py`
+を動かします．Web インターフェースが欲しい場合は，`src/webui.py` も動かします．
 
 Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に入っていますので，
 これを参考にしていただくと良いと思います．
@@ -89,7 +89,3 @@ Kubernetes 用の設定ファイルが `kubernetes/outdoor_unit_cooler.yml` に�
 
 -   https://kimata.github.io/outdoor_unit_cooler/
 -   https://kimata.github.io/outdoor_unit_cooler/coverage/
-
-## TODO
-
--   当初つける予定が無かった Web UI (デモモード有)をつけるにあたって，場当たり的な対応を色々してややスパゲッティになっているので再設計要
