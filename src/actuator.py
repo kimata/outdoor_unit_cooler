@@ -106,8 +106,6 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
 
     should_terminate = terminate
 
-    unit_cooler.actuator.log_server.term(log_server_handle)
-
     ret = 0
     for thread_info in thread_list:
         logging.info("Wait %s finish", thread_info["name"])
@@ -119,6 +117,7 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
     logging.info("Shutdown executor")
     executor.shutdown()
 
+    unit_cooler.actuator.log_server.term(log_server_handle)
     unit_cooler.actuator.work_log.term()
 
     logging.warning("Terminate unit_cooler")
