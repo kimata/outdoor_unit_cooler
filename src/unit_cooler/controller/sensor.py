@@ -202,7 +202,7 @@ def get_outdoor_status(sense_data):
     )
 
     logging.info(
-        "気温: %s ℃, 湿度: %s %, 日射量: %s W/m^2, 照度: %s LUX", temp_str, humi_str, solar_rad_str, lux_str
+        "気温: %s ℃, 湿度: %s %%, 日射量: %s W/m^2, 照度: %s LUX", temp_str, humi_str, solar_rad_str, lux_str
     )
     for condition in OUTDOOR_CONDITION_LIST:
         if condition["judge"](sense_data):
