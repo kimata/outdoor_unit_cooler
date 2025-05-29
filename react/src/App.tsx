@@ -179,7 +179,7 @@ function App() {
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                ビルド日時: {buildDate} [{buildDateFrom}]
+                                React ビルド日時: {buildDate} [{buildDateFrom}]
                             </small>
                         </p>
                         <p className="display-6">
