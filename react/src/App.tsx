@@ -70,6 +70,11 @@ function App() {
     const [log, setLog] = useState<ApiResponse.Log>(emptyLog);
     const [updateTime, setUpdateTime] = useState("Unknown");
     const [error, setError] = useState(false);
+    const [imageBuildDate, setImageBuildDate] = useState("?");
+    const [imageBuildDateFrom, setImageBuildDateFrom] = useState("?");
+    const [actuatorLoadAverage, setActuatorLoadAverage] = useState("?");
+    const [actuatorUptime, setActuatorUptime] = useState("?");
+    const [actuatorUptimeFrom, setActuatorUptimeFrom] = useState("?");
     const buildDate = dayjs(preval`module.exports = new Date().toUTCString();`).format("LLL");
     const buildDateFrom = dayjs(preval`module.exports = new Date().toUTCString();`).fromNow();
 
@@ -111,7 +116,20 @@ function App() {
             setStatReady(true);
             setUpdateTime(dayjs().format("LLL"));
         };
+        const loadActuatorInfo = async () => {
+            let res: ApiResponse.SysInfo = (await fetchData(API_ENDPOINT + "/actuator_sysinfo")) as ApiResponse.SysInfo;
+            setActuatorLoadAverage(res.load_average);
 
+            let actuatorUptime = dayjs(res.uptime)
+            setActuatorUptime(actuatorUptime.format("LLL"));
+            setActuatorUptimeFrom(actuatorUptime.fromNow());
+        };
+        const loadSysInfo = async () => {
+            let res: ApiResponse.SysInfo = (await fetchData(API_ENDPOINT + "/sysinfo")) as ApiResponse.SysInfo;
+            let imageBuildDate = dayjs(res.image_build_date)
+            setImageBuildDate(imageBuildDate.format("LLL"));
+            setImageBuildDateFrom(imageBuildDate.fromNow());
+        };
         const loadLog = async () => {
             let res: ApiResponse.Log = (await fetchData(API_ENDPOINT + "/log_view")) as ApiResponse.Log;
             setLog(res);
@@ -139,12 +157,15 @@ function App() {
         };
 
         loadStat();
+        loadActuatorInfo();
+        loadSysInfo();
         watchEvent();
 
         // NOTE: 更新日時表記が，「1分前」になる前に更新を終えれる
         // タイミングで規定する
         const intervalId = setInterval(() => {
             loadStat();
+            loadActuatorInfo();
         }, 58000);
 
         return () => {
@@ -179,7 +200,22 @@ function App() {
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                React ビルド日時: {buildDate} [{buildDateFrom}]
+                                アクチュエータ起動時刻: {actuatorUptime} [{actuatorUptimeFrom}]
+                            </small>
+                        </p>
+                        <p className="text-muted m-0">
+                            <small>
+                                アクチュエータ load average: {actuatorLoadAverage}
+                            </small>
+                        </p>
+                        <p className="text-muted m-0">
+                            <small>
+                                イメージビルド: {imageBuildDate} [{imageBuildDateFrom}]
+                            </small>
+                        </p>
+                        <p className="text-muted m-0">
+                            <small>
+                                React ビルド: {buildDate} [{buildDateFrom}]
                             </small>
                         </p>
                         <p className="display-6">

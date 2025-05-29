@@ -49,4 +49,11 @@ export namespace ApiResponse {
         };
         watering: Watering[];
     }
+
+    export interface SysInfo {
+        date: string;
+        image_build_date: string;
+        load_average: string;
+        uptime: string;
+   }
 }

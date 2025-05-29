@@ -106,7 +106,9 @@ def create_app(config, arg):
 
     my_lib.webapp.config.show_handler_list(app)
 
-    my_lib.webapp.log_proxy.init("http://{host}:5001/unit_cooler".format(host=setting["actuator_host"]))
+    api_base_url = "http://{host}:5001/unit_cooler".format(host=setting["actuator_host"])
+    my_lib.webapp.log_proxy.init(api_base_url)
+    unit_cooler.webui.cooler_stat.init(api_base_url)
 
     # app.debug = True
 
