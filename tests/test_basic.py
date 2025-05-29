@@ -48,6 +48,7 @@ def config():
 def _clear(config):
     import my_lib.config
     import my_lib.footprint
+    import my_lib.webapp.log
 
     with mock.patch.dict("os.environ", {"DUMMY_MODE": "true"}):
         import unit_cooler.actuator.control
@@ -68,6 +69,8 @@ def _clear(config):
     unit_cooler.actuator.control.hazard_clear(config)
     unit_cooler.actuator.valve.clear_stat()
     unit_cooler.actuator.work_log.hist_clear()
+
+    my_lib.webapp.log.term()
 
     my_lib.notify.slack.interval_clear()
     my_lib.notify.slack.hist_clear()
