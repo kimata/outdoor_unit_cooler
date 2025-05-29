@@ -1,0 +1,53 @@
+services:
+    controller:
+        build:
+            context: .
+            dockerfile: Dockerfile
+
+        command: ./src/controller.py
+
+        tty: true
+        stdin_open: true
+
+        ports:
+            - "2222:2222"
+
+    actuator:
+        build:
+            context: .
+            dockerfile: Dockerfile
+
+        command: ./src/actuator.py
+
+        tty: true
+        stdin_open: true
+
+        ports:
+            - "5001:5001"
+
+        environment:
+            - HEMS_CONTROL_HOST=controller
+
+        privileged: true
+        devices:
+            - "/dev/gpiomem:/dev/gpiomem"
+            - "/dev/spidev0.0:/dev/spidev0.0"
+            - "/dev/ttyAMA0:/dev/ttyAMA0"
+
+    webui:
+        build:
+            context: .
+            dockerfile: Dockerfile
+
+        command: ./src/webui.py
+
+        tty: true
+        stdin_open: true
+        volumes:
+            - ./data:/opt/unit_cooler/data
+        ports:
+            - "5000:5000"
+
+        environment:
+            - HEMS_CONTROL_HOST=controller
+            - HEMS_ACTUATOR_HOST=actuator
