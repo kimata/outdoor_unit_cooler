@@ -108,7 +108,8 @@ test-actuator-sample:
     artifacts:
         when: always
         paths:
-            - controller_log.txt
+            - controller_log_1.txt
+            - controller_log_2.txt
             - actuator_log.txt
 
 test-actuator-regular:
@@ -140,7 +141,8 @@ test-actuator-regular:
     artifacts:
         when: always
         paths:
-            - controller_log.txt
+            - controller_log_1.txt
+            - controller_log_2.txt
             - actuator_log.txt
 
 
