@@ -21,10 +21,7 @@ def gen_handle(config, message_queue):
 
 
 def hazard_register(config):
-    hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
-
-    hazard_file.parent.mkdir(parents=True, exist_ok=True)
-    hazard_file.touch()
+    my_lib.footprint.update(pathlib.Path(config["actuator"]["control"]["hazard"]["file"]))
 
 
 def hazard_clear(config):
