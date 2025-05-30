@@ -103,20 +103,24 @@ def check_mist_condition(handle, mist_condition):
 
     if mist_condition["valve"]["state"] == unit_cooler.const.VALVE_STATE.OPEN:
         logging.debug("Valve is open for %.1f sec", mist_condition["valve"]["duration"])
-        if (mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"]) and (
-            mist_condition["valve"]["duration"] > 15
-        ):
-            hazard_notify(
-                handle["config"],
-                (
-                    "水漏れしています。"
-                    "(バルブを開いてから{duration:.1f}秒経過しても流量が {flow:.1f} L/min)"
-                ).format(
-                    duration=mist_condition["valve"]["duration"],
-                    flow=mist_condition["flow"],
-                ),
-            )
-        elif (mist_condition["flow"] < handle["config"]["actuator"]["monitor"]["flow"]["on"]["min"]) and (
+        for i in range(len(handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"])):
+            if (
+                mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i]
+            ) and (mist_condition["valve"]["duration"] > 10 * (i + 1)):
+                hazard_notify(
+                    handle["config"],
+                    (
+                        "水漏れしています。"
+                        "(バルブを開いてから{duration:.1f}秒経過しても流量が "
+                        "{flow:.1f} L/min [> {threshold:.1f} L/min])"
+                    ).format(
+                        duration=mist_condition["valve"]["duration"],
+                        flow=mist_condition["flow"],
+                        threshold=handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i],
+                    ),
+                )
+
+        if (mist_condition["flow"] < handle["config"]["actuator"]["monitor"]["flow"]["on"]["min"]) and (
             mist_condition["valve"]["duration"] > 5
         ):
             # NOTE: ハザード扱いにはしない

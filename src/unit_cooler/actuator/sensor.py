@@ -20,7 +20,7 @@ else:
         def get_value(self, force_power_on=True):  # noqa: ARG002
             global pin_no
             if my_lib.rpi.gpio.input(pin_no) == unit_cooler.const.VALVE_STATE.OPEN.value:
-                return 1 + random.random() * 2  # noqa: S311
+                return 1 + random.random() * 1.5  # noqa: S311
             else:
                 return 0
 
