@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PaginationControl } from "react-bootstrap-pagination-control";
-import { ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from "react-bootstrap-icons";
+import { IoIosWarning, ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from "react-bootstrap-icons";
 
 import "dayjs/locale/ja";
 import dayjs, { locale, extend } from "dayjs";
@@ -28,7 +28,13 @@ const Log = ({ isReady, log }: Props) => {
     };
 
     const messageIcon = (message: string) => {
-        if (message.match(/開始/)) {
+        if (message.mxatch(/故障/)) {
+            return (
+                <span className="me-2 text-danger">
+                    <IoIosWarning />
+                </span>
+            );
+        } else if (message.mxatch(/開始/)) {
             return (
                 <span className="me-2 text-danger">
                     <SunriseFill />
