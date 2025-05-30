@@ -78,7 +78,7 @@ def get_control_message_impl(handle, last_message):
     if control_message["mode_index"] != last_message["mode_index"]:
         unit_cooler.actuator.work_log.add(
             ("冷却モードが変更されました。({before} → {after})").format(
-                before="init" if last_message["mode_index"] == -1 else control_message["mode_index"],
+                before="init" if last_message["mode_index"] == -1 else last_message["mode_index"],
                 after=control_message["mode_index"],
             )
         )
