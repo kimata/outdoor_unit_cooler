@@ -106,7 +106,7 @@ def check_mist_condition(handle, mist_condition):
         for i in range(len(handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"])):
             if (
                 mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i]
-            ) and (mist_condition["valve"]["duration"] > 10 * (i + 1)):
+            ) and (mist_condition["valve"]["duration"] > 5 * (i + 1)):
                 hazard_notify(
                     handle["config"],
                     (
