@@ -1577,7 +1577,7 @@ def test_actuator_leak(mocker, time_machine, config):
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
     mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=10)
+    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=15)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
