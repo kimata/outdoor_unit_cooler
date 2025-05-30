@@ -4,6 +4,7 @@
 import datetime
 import json
 import logging
+import pathlib
 import time
 from unittest import mock
 
@@ -14,6 +15,7 @@ import pytest
 my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
 
 CONFIG_FILE = "config.example.yaml"
+SCHEMA_CONFIG = "config.schema"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -41,7 +43,7 @@ def slack_mock():
 def config():
     import my_lib.config
 
-    return my_lib.config.load(CONFIG_FILE)
+    return my_lib.config.load(CONFIG_FILE, pathlib.aPth(SCHEMA_CONFIG))
 
 
 @pytest.fixture(autouse=True)
