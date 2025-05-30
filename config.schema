@@ -306,7 +306,10 @@
                                             "type": "number"
                                         },
                                         "max": {
-                                            "type": "number"
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number"
+                                            }
                                         }
                                     },
                                     "required": [
