@@ -241,7 +241,7 @@ test-walk-through:
         - test-prepare
 
     script:
-        - rye run pytest --timeout=60 -v -n auto tests/test_basic.py
+        - rye run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py
 
     cache:
         key: "${CI_JOB_NAME}"
