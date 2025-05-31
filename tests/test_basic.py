@@ -1721,6 +1721,8 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     time.sleep(1)
     move_to(time_machine, 3)
     time.sleep(1)
+    move_to(time_machine, 4)
+    time.sleep(1)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
