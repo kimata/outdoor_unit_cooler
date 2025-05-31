@@ -102,11 +102,6 @@ def check_mist_condition(handle, mist_condition):
     logging.debug("Check mist condition")
 
     if mist_condition["valve"]["state"] == unit_cooler.const.VALVE_STATE.OPEN:
-        logging.debug(
-            "Valve is open for %.1f sec (flow: %.1f L/min)",
-            mist_condition["valve"]["duration"],
-            mist_condition["flow"],
-        )
         for i in range(len(handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"])):
             logging.error(
                 [

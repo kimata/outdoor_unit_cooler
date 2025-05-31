@@ -2669,17 +2669,15 @@ def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
     fetch_data_mock = mocker.MagicMock()
     fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]
 
-    mocker.patch("my_lib.sensor_data.fetch_data_impl", return_value=gen_sense_data())
-
-    sensor_data = gen_sense_data()
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=sensor_data)
+    mocker.patch("my_lib.sensor_data.fetch_data_impl", return_value=fetch_data_mock)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
 
     actuator_handle = actuator.start(
         config,
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -2689,13 +2687,13 @@ def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
     )
 
-    time.sleep(3)
+    time.sleep(1)
 
     app = webui.create_app(
         config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
