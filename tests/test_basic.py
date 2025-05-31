@@ -1698,7 +1698,7 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
         config,
         {
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 20,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1708,16 +1708,16 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 20,
             "server_port": server_port,
             "real_port": real_port,
         },
     )
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 1)
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 2)
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 3)
     time.sleep(1)
 
