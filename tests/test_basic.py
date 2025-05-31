@@ -1715,7 +1715,7 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     )
     time.sleep(3)
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(3)
     move_to(time_machine, 2)
     time.sleep(1)
 
