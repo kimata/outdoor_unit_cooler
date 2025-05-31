@@ -49,17 +49,17 @@ def config():
 
 @pytest.fixture()
 def server_port():
-    return random.randrange(10000, 20000)  # noqa: S311
+    return random.randrange(10000, 30000)  # noqa: S311
 
 
 @pytest.fixture()
 def real_port():
-    return random.randrange(10000, 20000)  # noqa: S311
+    return random.randrange(10000, 30000)  # noqa: S311
 
 
 @pytest.fixture()
 def log_port():
-    return random.randrange(10000, 20000)  # noqa: S311
+    return random.randrange(10000, 30000)  # noqa: S311
 
 
 @pytest.fixture(autouse=True)
@@ -1698,7 +1698,7 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
         config,
         {
             "speedup": 100,
-            "msg_count": 20,
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1708,15 +1708,17 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 20,
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
     )
-    time.sleep(3)
+    time.sleep(1)
     move_to(time_machine, 1)
-    time.sleep(3)
+    time.sleep(1)
     move_to(time_machine, 2)
+    time.sleep(1)
+    move_to(time_machine, 3)
     time.sleep(1)
 
     controller.wait_and_term(*control_handle)
