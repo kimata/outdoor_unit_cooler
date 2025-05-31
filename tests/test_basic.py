@@ -2599,8 +2599,6 @@ def test_webapp_queue_overflow(mocker, config, server_port, real_port, log_port)
     import unit_cooler.webui.worker
     import webui
 
-    mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
-
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
@@ -2664,11 +2662,10 @@ def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
     import controller
     import webui
 
-    mocker.patch.dict("os.environ", {"WERKZEUG_RUN_MAIN": "true"})
-
     fetch_data_mock = mocker.MagicMock()
     fetch_data_mock.to_values.side_effect = [[[None, 10]], [], RuntimeError()]
 
+    mock_fd_q10c(mocker)
     mocker.patch("my_lib.sensor_data.fetch_data_impl", return_value=fetch_data_mock)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
 
