@@ -103,17 +103,6 @@ def check_mist_condition(handle, mist_condition):
 
     if mist_condition["valve"]["state"] == unit_cooler.const.VALVE_STATE.OPEN:
         for i in range(len(handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"])):
-            logging.error(
-                [
-                    mist_condition["flow"],
-                    handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i],
-                    mist_condition["valve"]["duration"],
-                    5 * (i + 1),
-                    mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i],
-                    mist_condition["valve"]["duration"] > 5 * (i + 1),
-                ]
-            )
-
             if (
                 mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i]
             ) and (mist_condition["valve"]["duration"] > 5 * (i + 1)):
