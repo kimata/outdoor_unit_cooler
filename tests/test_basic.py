@@ -2699,7 +2699,7 @@ def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
         },
     )
 
-    time.sleep(2)
+    time.sleep(3)
 
     app = webui.create_app(
         config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
