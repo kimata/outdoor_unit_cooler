@@ -1472,8 +1472,10 @@ def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, r
         },
     )
 
-    time.sleep(3)
+    time.sleep(2)
     move_to(time_machine, 20)
+
+    time.sleep(1)
 
     control_handle = controller.start(
         config,
@@ -1485,8 +1487,6 @@ def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, r
             "real_port": real_port,
         },
     )
-
-    time.sleep(1)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
