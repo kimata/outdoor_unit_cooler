@@ -1472,7 +1472,7 @@ def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, r
         },
     )
 
-    time.sleep(2)
+    time.sleep(3)
     move_to(time_machine, 20)
 
     control_handle = controller.start(
@@ -2440,6 +2440,7 @@ def test_webapp(mocker, config, server_port, real_port, log_port):  # noqa: PLR0
     import requests
     import webui
 
+    mock_fd_q10c(mocker)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
@@ -2464,7 +2465,7 @@ def test_webapp(mocker, config, server_port, real_port, log_port):  # noqa: PLR0
         },
     )
 
-    time.sleep(1)
+    time.sleep(2)
 
     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
