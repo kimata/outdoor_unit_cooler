@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import pathlib
+import random
 import time
 from unittest import mock
 
@@ -44,6 +45,21 @@ def config():
     import my_lib.config
 
     return my_lib.config.load(CONFIG_FILE, pathlib.Path(SCHEMA_CONFIG))
+
+
+@pytest.fixture()
+def server_port():
+    return random.randrange(10000, 20000)  # noqa: S311
+
+
+@pytest.fixture()
+def real_port():
+    return random.randrange(10000, 20000)  # noqa: S311
+
+
+@pytest.fixture()
+def log_port():
+    return random.randrange(10000, 20000)  # noqa: S311
 
 
 @pytest.fixture(autouse=True)
@@ -247,7 +263,7 @@ def mock_gpio(mocker):
 
 
 ######################################################################
-def test_controller(mocker, config):
+def test_controller(mocker, config, server_port, real_port):
     import controller
 
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
@@ -259,6 +275,8 @@ def test_controller(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -274,7 +292,7 @@ def test_controller(mocker, config):
     assert my_lib.webapp.log.sqlite is None
 
 
-def test_controller_influxdb_dummy(mocker, config):
+def test_controller_influxdb_dummy(mocker, config, server_port, real_port):
     import controller
 
     def value_mock():
@@ -314,6 +332,8 @@ def test_controller_influxdb_dummy(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -329,7 +349,7 @@ def test_controller_influxdb_dummy(mocker, config):
     assert my_lib.webapp.log.sqlite is None
 
 
-def test_controller_start_error_1(mocker, config):
+def test_controller_start_error_1(mocker, config, server_port, real_port):
     from threading import Thread as Thread_orig
 
     import controller
@@ -352,6 +372,8 @@ def test_controller_start_error_1(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -367,7 +389,7 @@ def test_controller_start_error_1(mocker, config):
     assert my_lib.webapp.log.sqlite is None
 
 
-def test_controller_start_error_2(mocker, config):
+def test_controller_start_error_2(mocker, config, server_port, real_port):
     from threading import Thread as Thread_orig
 
     import controller
@@ -390,6 +412,8 @@ def test_controller_start_error_2(mocker, config):
                 "disable_proxy": False,  # NOTE: Proxy をエラーにするテストなので動かして OK
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -406,7 +430,7 @@ def test_controller_start_error_2(mocker, config):
     assert my_lib.webapp.log.sqlite is None
 
 
-def test_controller_influxdb_error(mocker, config):
+def test_controller_influxdb_error(mocker, config, server_port, real_port):
     import controller
 
     mocker.patch("influxdb_client.InfluxDBClient.query_api", side_effect=RuntimeError())
@@ -418,6 +442,8 @@ def test_controller_influxdb_error(mocker, config):
                 "disable_proxy": True,
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -430,7 +456,7 @@ def test_controller_influxdb_error(mocker, config):
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
-def test_controller_outdoor_normal(mocker, config):
+def test_controller_outdoor_normal(mocker, config, server_port, real_port):
     import controller
 
     def fetch_data_mock(  # noqa: PLR0913
@@ -465,6 +491,8 @@ def test_controller_outdoor_normal(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -477,7 +505,7 @@ def test_controller_outdoor_normal(mocker, config):
     check_notify_slack(None)
 
 
-def test_controller_aircon_mode(mocker, config):
+def test_controller_aircon_mode(mocker, config, server_port, real_port):
     import controller
 
     def fetch_data_mock(  # noqa: PLR0913, PLR0911
@@ -520,6 +548,8 @@ def test_controller_aircon_mode(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -532,7 +562,7 @@ def test_controller_aircon_mode(mocker, config):
     check_notify_slack(None)
 
 
-def test_controller_aircon_invalid(mocker, config):
+def test_controller_aircon_invalid(mocker, config, server_port, real_port):
     import controller
 
     def fetch_data_mock(  # noqa: PLR0913
@@ -563,6 +593,8 @@ def test_controller_aircon_invalid(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -575,7 +607,7 @@ def test_controller_aircon_invalid(mocker, config):
     check_notify_slack("データを取得できませんでした。")
 
 
-def test_controller_temp_invalid(mocker, config):
+def test_controller_temp_invalid(mocker, config, server_port, real_port):
     import controller
 
     def fetch_data_mock(  # noqa: PLR0913
@@ -606,6 +638,8 @@ def test_controller_temp_invalid(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -618,7 +652,7 @@ def test_controller_temp_invalid(mocker, config):
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
-def test_controller_temp_low(mocker, config):
+def test_controller_temp_low(mocker, config, server_port, real_port):
     import controller
 
     def fetch_data_mock(  # noqa: PLR0913
@@ -647,6 +681,8 @@ def test_controller_temp_low(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -659,7 +695,7 @@ def test_controller_temp_low(mocker, config):
     check_notify_slack(None)
 
 
-def test_controller_sensor_error(mocker, config):
+def test_controller_sensor_error(mocker, config, server_port, real_port):
     import controller
 
     mocker.patch("influxdb_client.InfluxDBClient.query_api", side_effect=RuntimeError())
@@ -671,6 +707,8 @@ def test_controller_sensor_error(mocker, config):
                 "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
                 "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -683,7 +721,7 @@ def test_controller_sensor_error(mocker, config):
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
-def test_controller_dummy_error(mocker, config):
+def test_controller_dummy_error(mocker, config, server_port, real_port):
     import controller
 
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
@@ -708,6 +746,8 @@ def test_controller_dummy_error(mocker, config):
                 "speedup": 100,
                 "msg_count": 1,
                 "dummy_mode": True,
+                "server_port": server_port,
+                "real_port": real_port,
             },
         )
     )
@@ -720,7 +760,7 @@ def test_controller_dummy_error(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator(mocker, config):
+def test_actuator(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -735,6 +775,8 @@ def test_actuator(mocker, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -743,6 +785,8 @@ def test_actuator(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -757,7 +801,7 @@ def test_actuator(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_normal(mocker, config):
+def test_actuator_normal(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import unit_cooler.controller.message
@@ -778,6 +822,8 @@ def test_actuator_normal(mocker, config):
         {
             "speedup": 20,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -786,6 +832,8 @@ def test_actuator_normal(mocker, config):
             "speedup": 20,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -800,7 +848,7 @@ def test_actuator_normal(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_duty_disable(mocker, config):
+def test_actuator_duty_disable(mocker, config, server_port, real_port, log_port):
     import copy
 
     import actuator
@@ -828,6 +876,8 @@ def test_actuator_duty_disable(mocker, config):
         {
             "speedup": 100,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -836,6 +886,8 @@ def test_actuator_duty_disable(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -850,7 +902,7 @@ def test_actuator_duty_disable(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_log(mocker, config):
+def test_actuator_log(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import requests
@@ -867,6 +919,8 @@ def test_actuator_log(mocker, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -876,6 +930,8 @@ def test_actuator_log(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -894,7 +950,7 @@ def test_actuator_log(mocker, config):
     time.sleep(3)
 
     res = requests.get(  # noqa: S113
-        f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
     )
     assert res.status_code == 200
@@ -911,13 +967,13 @@ def test_actuator_log(mocker, config):
         - my_lib.time.now()
     ).total_seconds() < 5
 
-    res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_clear")  # noqa: S113
+    res = requests.get(f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear")  # noqa: S113
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
 
     time.sleep(2)
 
-    res = requests.get(f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
+    res = requests.get(f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
     logging.error(json.loads(res.text)["data"])
@@ -934,7 +990,7 @@ def test_actuator_log(mocker, config):
     ).total_seconds() < 5
 
     res = requests.get(  # noqa: S113
-        f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
         params={
             "callback": "TEST",
@@ -944,7 +1000,7 @@ def test_actuator_log(mocker, config):
     assert res.text.find("TEST(") == 0
 
     res = requests.get(  # noqa: S113
-        f"http://localhost:5001/{my_lib.webapp.config.URL_PREFIX}/api/event",
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
         params={"count": "1"},
     )
     assert res.status_code == 200
@@ -961,7 +1017,7 @@ def test_actuator_log(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_send_error(mocker, config):
+def test_actuator_send_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -979,6 +1035,8 @@ def test_actuator_send_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -988,6 +1046,8 @@ def test_actuator_send_error(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1002,7 +1062,7 @@ def test_actuator_send_error(mocker, config):
     check_notify_slack("流量のロギングを開始できません。")
 
 
-def test_actuator_mode_const(mocker, config):
+def test_actuator_mode_const(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -1019,6 +1079,8 @@ def test_actuator_mode_const(mocker, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1028,6 +1090,8 @@ def test_actuator_mode_const(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1042,7 +1106,7 @@ def test_actuator_mode_const(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_power_off_1(mocker, time_machine, config):
+def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import actuator
     import controller
 
@@ -1072,6 +1136,8 @@ def test_actuator_power_off_1(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 15,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1081,6 +1147,8 @@ def test_actuator_power_off_1(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 15,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1113,7 +1181,7 @@ def test_actuator_power_off_1(mocker, time_machine, config):
     check_work_log("長い間バルブが閉じられていますので、流量計の電源を OFF します。")
 
 
-def test_actuator_power_off_2(mocker, time_machine, config):
+def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import actuator
     import controller
 
@@ -1144,6 +1212,8 @@ def test_actuator_power_off_2(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1153,6 +1223,8 @@ def test_actuator_power_off_2(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1176,7 +1248,7 @@ def test_actuator_power_off_2(mocker, time_machine, config):
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_fd_q10c_stop_error(mocker, time_machine, config):
+def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import inspect
 
     import actuator
@@ -1214,6 +1286,8 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1223,6 +1297,8 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1246,7 +1322,7 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config):
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config):
+def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import inspect
 
     import actuator
@@ -1284,6 +1360,8 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1293,6 +1371,8 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1316,7 +1396,7 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config):
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_no_test(mocker, config):
+def test_actuator_no_test(mocker, config, server_port, real_port, log_port):
     import signal
 
     import actuator
@@ -1336,6 +1416,8 @@ def test_actuator_no_test(mocker, config):
         {
             "speedup": 100,
             "msg_count": 2,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1345,6 +1427,8 @@ def test_actuator_no_test(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 2,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1365,7 +1449,7 @@ def test_actuator_no_test(mocker, config):
     # NOTE: 正常終了すれば OK
 
 
-def test_actuator_unable_to_receive(mocker, time_machine, config):
+def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import actuator
     import controller
 
@@ -1383,6 +1467,8 @@ def test_actuator_unable_to_receive(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1395,6 +1481,8 @@ def test_actuator_unable_to_receive(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1411,7 +1499,7 @@ def test_actuator_unable_to_receive(mocker, time_machine, config):
     check_notify_slack("冷却モードの指示を受信できません。")
 
 
-def test_actuator_open(mocker, time_machine, config):
+def test_actuator_open(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import actuator
     import controller
 
@@ -1431,6 +1519,8 @@ def test_actuator_open(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 15,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1440,6 +1530,8 @@ def test_actuator_open(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 15,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
     time.sleep(2)
@@ -1466,7 +1558,7 @@ def test_actuator_open(mocker, time_machine, config):
     check_notify_slack("電磁弁が壊れていますので制御を停止します。")
 
 
-def test_actuator_flow_unknown_1(mocker, config):
+def test_actuator_flow_unknown_1(mocker, config, server_port, real_port, log_port):
     import copy
 
     import actuator
@@ -1495,6 +1587,8 @@ def test_actuator_flow_unknown_1(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 15,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1503,6 +1597,8 @@ def test_actuator_flow_unknown_1(mocker, config):
         {
             "speedup": 100,
             "msg_count": 15,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1517,7 +1613,7 @@ def test_actuator_flow_unknown_1(mocker, config):
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_flow_unknown_2(mocker, config):
+def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_port):
     import copy
 
     import actuator
@@ -1543,6 +1639,8 @@ def test_actuator_flow_unknown_2(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1554,6 +1652,8 @@ def test_actuator_flow_unknown_2(mocker, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1568,7 +1668,7 @@ def test_actuator_flow_unknown_2(mocker, config):
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_leak(mocker, time_machine, config):
+def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import copy
 
     import actuator
@@ -1577,7 +1677,7 @@ def test_actuator_leak(mocker, time_machine, config):
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
     mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=15)
+    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
@@ -1599,6 +1699,8 @@ def test_actuator_leak(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 15,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -1607,16 +1709,18 @@ def test_actuator_leak(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 15,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 1)
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 2)
-    time.sleep(2)
+    time.sleep(1)
     move_to(time_machine, 3)
-    time.sleep(2)
+    time.sleep(1)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
@@ -1626,13 +1730,14 @@ def test_actuator_leak(mocker, time_machine, config):
     check_liveness(config, ["actuator", "control"], True)
     check_liveness(config, ["actuator", "monitor"], True)
     check_liveness(config, ["webui", "subscribe"], False)
+
     assert (
         my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
         or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
     )
 
 
-def test_actuator_speedup(mocker, config):
+def test_actuator_speedup(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -1648,6 +1753,8 @@ def test_actuator_speedup(mocker, config):
         {
             "speedup": 100,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1657,6 +1764,8 @@ def test_actuator_speedup(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1671,7 +1780,7 @@ def test_actuator_speedup(mocker, config):
     # NOTE: 正常終了すれば OK
 
 
-def test_actuator_monitor_error(mocker, config):
+def test_actuator_monitor_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -1688,6 +1797,8 @@ def test_actuator_monitor_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 2,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1696,6 +1807,8 @@ def test_actuator_monitor_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 2,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1712,7 +1825,7 @@ def test_actuator_monitor_error(mocker, config):
     check_notify_slack("Traceback")
 
 
-def test_actuator_slack_error(mocker, config):
+def test_actuator_slack_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import slack_sdk
@@ -1736,6 +1849,8 @@ def test_actuator_slack_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 2,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1744,6 +1859,8 @@ def test_actuator_slack_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 2,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1758,7 +1875,7 @@ def test_actuator_slack_error(mocker, config):
     check_notify_slack("Traceback")
 
 
-def test_actuator_close(mocker, time_machine, config):
+def test_actuator_close(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import copy
 
     import actuator
@@ -1787,6 +1904,8 @@ def test_actuator_close(mocker, time_machine, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1796,6 +1915,8 @@ def test_actuator_close(mocker, time_machine, config):
             "dummy_mode": True,
             "speedup": 100,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
     move_to(time_machine, 1)
@@ -1818,7 +1939,7 @@ def test_actuator_close(mocker, time_machine, config):
     check_notify_slack("元栓が閉じています。")
 
 
-def test_actuator_emit_error(mocker, config):
+def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -1837,6 +1958,8 @@ def test_actuator_emit_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -1845,6 +1968,8 @@ def test_actuator_emit_error(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1859,7 +1984,7 @@ def test_actuator_emit_error(mocker, config):
     check_notify_slack(None)
 
 
-def test_actuator_notify_hazard(mocker, time_machine, config):
+def test_actuator_notify_hazard(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
     import actuator
     import controller
     import unit_cooler.actuator.control
@@ -1883,6 +2008,8 @@ def test_actuator_notify_hazard(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1892,6 +2019,8 @@ def test_actuator_notify_hazard(mocker, time_machine, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1908,7 +2037,7 @@ def test_actuator_notify_hazard(mocker, time_machine, config):
     check_notify_slack("過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています。")
 
 
-def test_actuator_ctrl_error(mocker, config):
+def test_actuator_ctrl_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -1926,6 +2055,8 @@ def test_actuator_ctrl_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1934,6 +2065,8 @@ def test_actuator_ctrl_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1948,7 +2081,7 @@ def test_actuator_ctrl_error(mocker, config):
     check_notify_slack("Traceback")
 
 
-def test_actuator_recv_error(mocker, config):
+def test_actuator_recv_error(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     from unit_cooler.pubsub.subscribe import start_client as start_client_orig
@@ -1971,6 +2104,8 @@ def test_actuator_recv_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -1979,6 +2114,8 @@ def test_actuator_recv_error(mocker, config):
         {
             "speedup": 100,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -1993,7 +2130,7 @@ def test_actuator_recv_error(mocker, config):
     check_notify_slack("Traceback")
 
 
-def test_actuator_iolink_short(mocker, config):
+def test_actuator_iolink_short(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -2015,6 +2152,8 @@ def test_actuator_iolink_short(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -2024,6 +2163,8 @@ def test_actuator_iolink_short(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -2240,7 +2381,7 @@ def test_fd_q10c_timeout(mocker):
     assert FD_Q10C().get_value() is None
 
 
-def test_actuator_restart(config):
+def test_actuator_restart(config, server_port, real_port, log_port):
     import actuator
     import controller
 
@@ -2250,13 +2391,17 @@ def test_actuator_restart(config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
         config,
         {
             "speedup": 100,
-            "msg_count": 6,
+            "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -2268,6 +2413,8 @@ def test_actuator_restart(config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 1,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
 
@@ -2282,7 +2429,7 @@ def test_actuator_restart(config):
     check_notify_slack(None)
 
 
-def test_webapp(mocker, config):  # noqa: PLR0915
+def test_webapp(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
     import gzip
     import re
 
@@ -2300,6 +2447,8 @@ def test_webapp(mocker, config):  # noqa: PLR0915
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -2308,6 +2457,8 @@ def test_webapp(mocker, config):  # noqa: PLR0915
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
@@ -2316,7 +2467,7 @@ def test_webapp(mocker, config):  # noqa: PLR0915
     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    app = webui.create_app(config, {"msg_count": 1})
+    app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
     client = app.test_client()
 
     res = client.get("/")
@@ -2376,7 +2527,7 @@ def test_webapp(mocker, config):  # noqa: PLR0915
     check_notify_slack(None)
 
 
-def test_webapp_dummy_mode(mocker, config):
+def test_webapp_dummy_mode(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import webui
@@ -2390,6 +2541,8 @@ def test_webapp_dummy_mode(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -2398,12 +2551,16 @@ def test_webapp_dummy_mode(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
     time.sleep(2)
 
-    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": True})
+    app = webui.create_app(
+        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+    )
     client = app.test_client()
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
@@ -2436,7 +2593,7 @@ def test_webapp_dummy_mode(mocker, config):
     check_notify_slack(None)
 
 
-def test_webapp_queue_overflow(mocker, config):
+def test_webapp_queue_overflow(mocker, config, server_port, real_port, log_port):
     import pathlib
 
     import actuator
@@ -2455,6 +2612,8 @@ def test_webapp_queue_overflow(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -2462,10 +2621,14 @@ def test_webapp_queue_overflow(mocker, config):
         {
             "speedup": 100,
             "msg_count": 7,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
-    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": False})
+    app = webui.create_app(
+        config, {"msg_count": 1, "dummy_mode": False, "pub_port": server_port, "log_port": log_port}
+    )
     client = app.test_client()
 
     # NOTE: カバレッジ用にキューを溢れさせる
@@ -2498,7 +2661,7 @@ def test_webapp_queue_overflow(mocker, config):
     check_notify_slack(None)
 
 
-def test_webapp_day_sum(mocker, config):
+def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import webui
@@ -2519,6 +2682,8 @@ def test_webapp_day_sum(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "pub_port": server_port,
+            "log_port": log_port,
         },
     )
     control_handle = controller.start(
@@ -2527,12 +2692,16 @@ def test_webapp_day_sum(mocker, config):
             "speedup": 100,
             "dummy_mode": True,
             "msg_count": 5,
+            "server_port": server_port,
+            "real_port": real_port,
         },
     )
 
     time.sleep(2)
 
-    app = webui.create_app(config, {"msg_count": 1, "dummy_mode": True})
+    app = webui.create_app(
+        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+    )
     client = app.test_client()
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")

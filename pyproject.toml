@@ -15,7 +15,7 @@ dependencies = [
     "flask-cors>=5.0.1",
     "docopt-ng>=0.9.0",
     "influxdb-client[ciso]>=1.44.0",
-    "my-lib @ git+https://github.com/kimata/my-py-lib@aa451c3b586ac7d94f2bda95275f1e742e9e1738",
+    "my-lib @ git+https://github.com/kimata/my-py-lib@bdd92d2b35149bc2d9aaae0521a6d36677f10224",
     "zmq>=0.0.0",
     "spidev>=3.7",
     "fluent-logger>=0.11.1",
@@ -43,6 +43,7 @@ dev-dependencies = [
     "pytest-xdist>=3.6.1",
     "time-machine>=2.15.0",
     "pytest>=8.3.2",
+    "pytest-timeout>=2.4.0",
 ]
 
 [tool.pytest.ini_options]

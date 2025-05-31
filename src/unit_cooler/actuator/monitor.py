@@ -2,7 +2,6 @@
 import logging
 import math
 import os
-import pathlib
 import socket
 
 import fluent.sender
@@ -75,7 +74,8 @@ get_mist_condition.last_flow = 0
 
 
 def hazard_notify(config, message):
-    hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
+    hazard_file = config["actuator"]["control"]["hazard"]["file"]
+    logging.error(my_lib.footprint.exists(hazard_file))
     if not my_lib.footprint.exists(hazard_file):
         unit_cooler.actuator.work_log.add(message, unit_cooler.const.LOG_LEVEL.ERROR)
         my_lib.footprint.update(hazard_file)
@@ -102,8 +102,23 @@ def check_mist_condition(handle, mist_condition):
     logging.debug("Check mist condition")
 
     if mist_condition["valve"]["state"] == unit_cooler.const.VALVE_STATE.OPEN:
-        logging.debug("Valve is open for %.1f sec", mist_condition["valve"]["duration"])
+        logging.debug(
+            "Valve is open for %.1f sec (flow: %.1f L/min)",
+            mist_condition["valve"]["duration"],
+            mist_condition["flow"],
+        )
         for i in range(len(handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"])):
+            logging.error(
+                [
+                    mist_condition["flow"],
+                    handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i],
+                    mist_condition["valve"]["duration"],
+                    5 * (i + 1),
+                    mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i],
+                    mist_condition["valve"]["duration"] > 5 * (i + 1),
+                ]
+            )
+
             if (
                 mist_condition["flow"] > handle["config"]["actuator"]["monitor"]["flow"]["on"]["max"][i]
             ) and (mist_condition["valve"]["duration"] > 5 * (i + 1)):

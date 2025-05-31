@@ -54,11 +54,11 @@ def create_app(config, event_queue):
     return app
 
 
-def start(config, event_queue):
+def start(config, event_queue, port):
     # NOTE: Flask は別のプロセスで実行
     server = werkzeug.serving.make_server(
         "0.0.0.0",  # noqa: S104
-        config["actuator"]["log_server"]["webapp"]["port"],
+        port,
         create_app(config, event_queue),
         threaded=True,
     )

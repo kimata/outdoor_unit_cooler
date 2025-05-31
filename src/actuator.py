@@ -49,6 +49,7 @@ def start(config, arg):
     setting = {
         "control_host": "localhost",
         "pub_port": 2222,
+        "log_port": 5001,
         "dummy_mode": False,
         "speedup": 1,
         "msg_count": 0,
@@ -71,7 +72,7 @@ def start(config, arg):
     # NOTE: Blueprint のパス指定を YAML で行いたいので、my_lib.webapp の import 順を制御
     import unit_cooler.actuator.log_server
 
-    log_server_handle = unit_cooler.actuator.log_server.start(config, event_queue)
+    log_server_handle = unit_cooler.actuator.log_server.start(config, event_queue, setting["log_port"])
 
     if not setting["dummy_mode"] and (os.environ.get("TEST", "false") != "true"):
         # NOTE: 動作開始前に待つ。これを行わないと、複数の Pod が電磁弁を制御することに
@@ -155,6 +156,7 @@ if __name__ == "__main__":
                 {
                     "control_host": control_host,
                     "pub_port": pub_port,
+                    "log_port": config["actuator"]["log_server"]["webapp"]["port"],
                     "dummy_mode": dummy_mode,
                     "speedup": speedup,
                     "msg_count": msg_count,

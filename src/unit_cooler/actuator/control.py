@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import logging
 import os
-import pathlib
 
 import my_lib.time
 import unit_cooler.actuator.valve
@@ -21,17 +20,17 @@ def gen_handle(config, message_queue):
 
 
 def hazard_register(config):
-    my_lib.footprint.update(pathlib.Path(config["actuator"]["control"]["hazard"]["file"]))
+    my_lib.footprint.update(config["actuator"]["control"]["hazard"]["file"])
 
 
 def hazard_clear(config):
-    pathlib.Path(config["actuator"]["control"]["hazard"]["file"]).unlink(missing_ok=True)
+    my_lib.footprint.clear(config["actuator"]["control"]["hazard"]["file"])
 
 
 def hazard_notify(config, message):
-    hazard_file = pathlib.Path(config["actuator"]["control"]["hazard"]["file"])
-    if (not hazard_file.exists()) or (
-        my_lib.footprint.elapsed(hazard_file) / 60 > HAZARD_NOTIFY_INTERVAL_MIN
+    if (
+        my_lib.footprint.elapsed(config["actuator"]["control"]["hazard"]["file"]) / 60
+        > HAZARD_NOTIFY_INTERVAL_MIN
     ):
         unit_cooler.actuator.work_log.add(message, unit_cooler.const.LOG_LEVEL.ERROR)
 
@@ -41,7 +40,7 @@ def hazard_notify(config, message):
 
 
 def hazard_check(config):
-    if pathlib.Path(config["actuator"]["control"]["hazard"]["file"]).exists():
+    if my_lib.footprint.exists(config["actuator"]["control"]["hazard"]["file"]):
         hazard_notify(config, "過去に水漏れもしくは電磁弁の故障が検出されているので制御を停止しています。")
         return True
     else:

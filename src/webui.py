@@ -33,6 +33,7 @@ def create_app(config, arg):
         "control_host": "localhost",
         "pub_port": 2222,
         "actuator_host": "localhost",
+        "log_port": 5001,
         "dummy_mode": False,
         "msg_count": 0,
     }
@@ -106,7 +107,7 @@ def create_app(config, arg):
 
     my_lib.webapp.config.show_handler_list(app)
 
-    api_base_url = "http://{host}:5001/unit_cooler".format(host=setting["actuator_host"])
+    api_base_url = f'http://{setting["actuator_host"]}:{setting["log_port"]}/unit_cooler'
     my_lib.webapp.log_proxy.init(api_base_url)
     unit_cooler.webui.cooler_stat.init(api_base_url)
 
@@ -140,6 +141,7 @@ if __name__ == "__main__":
             "control_host": control_host,
             "pub_port": pub_port,
             "actuator_host": actuator_host,
+            "log_port": config["actuator"]["log_server"]["webapp"]["port"],
             "dummy_mode": dummy_mode,
             "msg_count": msg_count,
         },
