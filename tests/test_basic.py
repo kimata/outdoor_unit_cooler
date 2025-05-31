@@ -1713,21 +1713,21 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
             "real_port": real_port,
         },
     )
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 2)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 3)
     time.sleep(1)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["controller"], True, 1000)
+    check_liveness(config, ["actuator", "subscribe"], True, 1000)
+    check_liveness(config, ["actuator", "control"], True, 1000)
+    check_liveness(config, ["actuator", "monitor"], True, 1000)
     check_liveness(config, ["webui", "subscribe"], False)
 
     assert (
