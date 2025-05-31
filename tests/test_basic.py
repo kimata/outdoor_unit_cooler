@@ -1685,7 +1685,7 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     )
 
     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 100
+    message_list_orig[-1]["duty"]["on_sec"] = 1000
     message_list_orig[-1]["duty"]["off_sec"] = 100000
     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
@@ -1697,8 +1697,8 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     actuator_handle = actuator.start(
         config,
         {
-            "speedup": 100,
-            "msg_count": 20,
+            "speedup": 50,
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1706,9 +1706,9 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     control_handle = controller.start(
         config,
         {
-            "speedup": 100,
+            "speedup": 50,
             "dummy_mode": True,
-            "msg_count": 20,
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
