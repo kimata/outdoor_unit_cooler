@@ -15,10 +15,10 @@ dependencies = [
     "flask-cors>=5.0.1",
     "docopt-ng>=0.9.0",
     "influxdb-client[ciso]>=1.44.0",
-    "my-lib @ git+https://github.com/kimata/my-py-lib@bdd92d2b35149bc2d9aaae0521a6d36677f10224",
-    "zmq>=0.0.0",
+    "my-lib @ git+https://github.com/kimata/my-py-lib@8a6a1f32acce7cb06a847f7876c3fffd982db636",
     "spidev>=3.7",
     "fluent-logger>=0.11.1",
+    "pyzmq>=26.4.0",
 ]
 
 [build-system]
