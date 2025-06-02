@@ -20,7 +20,7 @@ import unit_cooler.const
 import unit_cooler.controller.message
 
 ############################################################
-# 屋外の状況を判断する際に参照する閾値
+# 屋外の状況を判断する際に参照する閾値 (判定対象は過去一時間の平均)
 #
 # 屋外の照度がこの値未満の場合、冷却の強度を弱める
 LUX_THRESHOLD = 300
@@ -38,6 +38,9 @@ TEMP_THRESHOLD_HIGH_H = 35
 TEMP_THRESHOLD_HIGH_L = 32
 # 屋外の温度がこの値を超えていたら、冷却の強度を少し強める
 TEMP_THRESHOLD_MID = 29
+# 降雨量がこの値を超えていたら、冷却を停止する
+RAIN_THRESHOLD_MID = 0.01
+
 
 # クーラーの状況を判断する際に参照する閾値
 #
@@ -97,9 +100,16 @@ COOLER_ACTIVITY_LIST = [
 
 OUTDOOR_CONDITION_LIST = [
     {
+        "judge": lambda sense_data: sense_data["rain"][0]["value"] > RAIN_THRESHOLD_MID,
+        "message": lambda sense_data: (
+            "雨が降っているので ({rain:.1f} mm/h) 冷却を停止します。(outdoor_status: -4)"
+        ).format(rain=sense_data["rain"][0]["value"]),
+        "status": -4,
+    },
+    {
         "judge": lambda sense_data: sense_data["humi"][0]["value"] > HUMI_THRESHOLD,
         "message": lambda sense_data: (
-            "湿度 ({humi:.1f} %) が " + "{threshold:.1f} % より高いので冷却を停止します。(outdoor_status: -2)"
+            "湿度 ({humi:.1f} %) が " + "{threshold:.1f} % より高いので冷却を停止します。(outdoor_status: -4)"
         ).format(humi=sense_data["humi"][0]["value"], threshold=HUMI_THRESHOLD),
         "status": -4,
     },
@@ -110,7 +120,7 @@ OUTDOOR_CONDITION_LIST = [
             "日射量 ({solar_rad:,.0f} W/m^2) が "
             "{solar_rad_threshold:,.0f} W/m^2 より大きく、"
             "外気温 ({temp:.1f} ℃) が "
-            "{threshold:.1f} ℃ より高いので冷却を大きく強化します。(outdoor_status: 2)"
+            "{threshold:.1f} ℃ より高いので冷却を大きく強化します。(outdoor_status: 3)"
         ).format(
             solar_rad=sense_data["solar_rad"][0]["value"],
             solar_rad_threshold=SOLAR_RAD_THRESHOLD_DAYTIME,

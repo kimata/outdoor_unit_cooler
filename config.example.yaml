@@ -25,6 +25,11 @@ controller:
             - name: 太陽の日射量
               measure: sensor.rasp
               hostname: rasp-weather-1
+        rain:
+            - name: 降雨量
+              measure: sensor.rasp
+              hostname: rasp-weather-1
+
         power:
             - name: リビング
               measure: hems.sharp
