@@ -39,7 +39,7 @@ TEMP_THRESHOLD_HIGH_L = 32
 # 屋外の温度がこの値を超えていたら、冷却の強度を少し強める
 TEMP_THRESHOLD_MID = 29
 # 降雨量がこの値を超えていたら、冷却を停止する
-RAIN_THRESHOLD_MID = 0.01
+RAIN_THRESHOLD_MID = 0.05
 
 
 # クーラーの状況を判断する際に参照する閾値
