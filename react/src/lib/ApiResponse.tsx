@@ -44,6 +44,7 @@ export namespace ApiResponse {
             temp: SensorData[];
             humi: SensorData[];
             lux: SensorData[];
+            rain: SensorData[];
             solar_rad: SensorData[];
             power: SensorData[];
         };

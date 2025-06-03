@@ -38,8 +38,8 @@ TEMP_THRESHOLD_HIGH_H = 35
 TEMP_THRESHOLD_HIGH_L = 32
 # 屋外の温度がこの値を超えていたら、冷却の強度を少し強める
 TEMP_THRESHOLD_MID = 29
-# 降雨量がこの値を超えていたら、冷却を停止する
-RAIN_THRESHOLD_MID = 0.05
+# 降雨量〔mm/h〕がこの値を超えていたら、冷却を停止する
+RAIN_THRESHOLD_MID = 0.1
 
 
 # クーラーの状況を判断する際に参照する閾値
@@ -303,11 +303,16 @@ def get_sense_data(config):
                 last=True,
             )
             if data["valid"]:
+                value = data["value"][0]
+                if kind == "rain":
+                    # NOTE: 観測している雨量は1分間の降水量なので、1時間雨量に換算
+                    value *= 60
+
                 kind_data.append(
                     {
                         "name": sensor["name"],
                         "time": data["time"][0].replace(tzinfo=zoneinfo),
-                        "value": data["value"][0],
+                        "value": value,
                     }
                 )
             else:

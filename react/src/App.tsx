@@ -50,6 +50,7 @@ function App() {
             humi: [],
             lux: [],
             solar_rad: [],
+            rain: [],
             power: [],
         },
         watering: [

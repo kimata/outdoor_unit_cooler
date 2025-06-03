@@ -83,6 +83,7 @@ const Sensor = ({ isReady, stat }: Props) => {
                                 W/m<sup>2</sup>
                             </span>
                         )}
+                        {sensorRow("rain", stat.sensor.rain[0], <span>mm/h</span>)}
                     </tbody>
                 </table>
                 <div className="text-start">{outdoorStatus(stat)}</div>
