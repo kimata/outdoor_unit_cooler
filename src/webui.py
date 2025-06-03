@@ -54,7 +54,7 @@ def create_app(config, arg):
     import unit_cooler.webui.cooler_stat
     import unit_cooler.webui.worker
 
-    message_queue = multiprocessing.Queue(10)
+    message_queue = multiprocessing.Manager().Queue(10)
     worker_thread = threading.Thread(
         target=unit_cooler.webui.worker.subscribe_worker,
         args=(
