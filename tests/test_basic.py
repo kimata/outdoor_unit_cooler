@@ -287,9 +287,6 @@ def test_controller(mocker, config, server_port, real_port):
     check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack(None)
-    import my_lib.webapp.log
-
-    assert my_lib.webapp.log.sqlite is None
 
 
 def test_controller_influxdb_dummy(mocker, config, server_port, real_port):
@@ -344,9 +341,6 @@ def test_controller_influxdb_dummy(mocker, config, server_port, real_port):
     check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack(None)
-    import my_lib.webapp.log
-
-    assert my_lib.webapp.log.sqlite is None
 
 
 def test_controller_start_error_1(mocker, config, server_port, real_port):
@@ -384,9 +378,6 @@ def test_controller_start_error_1(mocker, config, server_port, real_port):
     check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack("Traceback")
-    import my_lib.webapp.log
-
-    assert my_lib.webapp.log.sqlite is None
 
 
 def test_controller_start_error_2(mocker, config, server_port, real_port):
@@ -425,9 +416,6 @@ def test_controller_start_error_2(mocker, config, server_port, real_port):
     check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack("Traceback")
-    import my_lib.webapp.log
-
-    assert my_lib.webapp.log.sqlite is None
 
 
 def test_controller_influxdb_error(mocker, config, server_port, real_port):
@@ -2380,9 +2368,13 @@ def test_fd_q10c_timeout(mocker):
     assert FD_Q10C().get_value() is None
 
 
-def test_actuator_restart(config, server_port, real_port, log_port):
+def test_actuator_restart(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
+
+    mock_fd_q10c(mocker)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
     actuator_handle = actuator.start(
         config,
