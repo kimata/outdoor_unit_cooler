@@ -1718,6 +1718,8 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     check_liveness(config, ["actuator", "monitor"], True, 1000)
     check_liveness(config, ["webui", "subscribe"], False)
 
+    logging.info(my_lib.notify.slack.hist_get(False))
+
     assert (
         my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
         or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
