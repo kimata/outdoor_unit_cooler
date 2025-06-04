@@ -2428,7 +2428,7 @@ def test_actuator_restart(config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
-def test_webapp(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
+def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
     import gzip
     import re
 
@@ -2527,7 +2527,7 @@ def test_webapp(mocker, config, server_port, real_port, log_port):  # noqa: PLR0
     check_notify_slack(None)
 
 
-def test_webapp_dummy_mode(mocker, config, server_port, real_port, log_port):
+def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import webui
@@ -2593,7 +2593,7 @@ def test_webapp_dummy_mode(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
-def test_webapp_queue_overflow(mocker, config, server_port, real_port, log_port):
+def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
     import pathlib
 
     import actuator
@@ -2659,7 +2659,7 @@ def test_webapp_queue_overflow(mocker, config, server_port, real_port, log_port)
     check_notify_slack(None)
 
 
-def test_webapp_day_sum(mocker, config, server_port, real_port, log_port):
+def test_webui_day_sum(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
     import webui
