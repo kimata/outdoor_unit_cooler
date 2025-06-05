@@ -2456,7 +2456,7 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
         },
     )
 
-    time.sleep(2)
+    time.sleep(1)
 
     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
@@ -2556,7 +2556,7 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
         },
     )
 
-    time.sleep(2)
+    time.sleep(1)
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
     assert res.status_code == 200
