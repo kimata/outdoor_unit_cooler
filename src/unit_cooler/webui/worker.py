@@ -21,7 +21,7 @@ def queue_put(message_queue, message, liveness_file):
 
 # NOTE: 制御メッセージを Subscribe して、キューに積み、cooler_stat.py で WebUI に渡すワーカ
 def subscribe_worker(config, control_host, pub_port, message_queue, liveness_file, msg_count=0):  # noqa: PLR0913
-    logging.info("Start subscribe worker (%s:%d)", control_host, pub_port)
+    logging.info("Start webui subscribe worker (%s:%d)", control_host, pub_port)
 
     ret = 0
     try:
