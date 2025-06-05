@@ -48,7 +48,7 @@ def sleep_until_next_iter(start_time, interval_sec):
 
 # NOTE: コントローラから制御指示を受け取ってキューに積むワーカ
 def subscribe_worker(config, control_host, pub_port, message_queue, liveness_file, msg_count=0):  # noqa: PLR0913
-    logging.info("Start Actuator subscribe worker (%s:%d)", control_host, pub_port)
+    logging.info("Start actuator subscribe worker (%s:%d)", control_host, pub_port)
     ret = 0
     try:
         unit_cooler.pubsub.subscribe.start_client(
