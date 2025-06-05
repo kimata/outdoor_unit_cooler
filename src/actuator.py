@@ -66,8 +66,9 @@ def start(config, arg):
         logging.warning("Set dummy mode")
         os.environ["DUMMY_MODE"] = "true"
 
-    message_queue = multiprocessing.Queue()
-    event_queue = multiprocessing.Queue()
+    manager = multiprocessing.Manager()
+    message_queue = manager.Queue()
+    event_queue = manager.Queue()
 
     # NOTE: Blueprint のパス指定を YAML で行いたいので、my_lib.webapp の import 順を制御
     import unit_cooler.actuator.log_server

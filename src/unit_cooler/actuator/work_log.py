@@ -33,7 +33,6 @@ def init(config_, event_queue_):
 
 def term():
     global event_queue
-    event_queue.close()
     my_lib.webapp.log.term()
 
 
