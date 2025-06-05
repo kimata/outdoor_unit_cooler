@@ -2539,6 +2539,12 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+
+    app = webui.create_app(
+        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+    )
+    client = app.test_client()
+
     control_handle = controller.start(
         config,
         {
@@ -2551,11 +2557,6 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     )
 
     time.sleep(2)
-
-    app = webui.create_app(
-        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
-    )
-    client = app.test_client()
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
     assert res.status_code == 200
