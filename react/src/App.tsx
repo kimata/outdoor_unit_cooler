@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -16,6 +16,9 @@ dayjs.extend(localizedFormat);
 import preval from "preval.macro";
 
 import { ApiResponse } from "./lib/ApiResponse";
+import { useApi } from "./hooks/useApi";
+import { useEventSource } from "./hooks/useEventSource";
+import { ErrorMessage } from "./components/common/ErrorMessage";
 
 import { Watering } from "./components/Watering";
 import { History } from "./components/History";
@@ -65,115 +68,80 @@ function App() {
         last_time: 0,
     };
 
-    const [isStatReady, setStatReady] = useState(false);
-    const [isLogReady, setLogReady] = useState(false);
-    const [stat, setStat] = useState<ApiResponse.Stat>(emptyStat);
-    const [log, setLog] = useState<ApiResponse.Log>(emptyLog);
+    const emptySysInfo: ApiResponse.SysInfo = {
+        date: "",
+        image_build_date: "",
+        load_average: "?",
+        uptime: ""
+    };
+
     const [updateTime, setUpdateTime] = useState("Unknown");
-    const [error, setError] = useState(false);
-    const [imageBuildDate, setImageBuildDate] = useState("?");
-    const [imageBuildDateFrom, setImageBuildDateFrom] = useState("?");
-    const [actuatorLoadAverage, setActuatorLoadAverage] = useState("?");
-    const [actuatorUptime, setActuatorUptime] = useState("?");
-    const [actuatorUptimeFrom, setActuatorUptimeFrom] = useState("?");
     const buildDate = dayjs(preval`module.exports = new Date().toUTCString();`).format("LLL");
     const buildDateFrom = dayjs(preval`module.exports = new Date().toUTCString();`).fromNow();
 
-    const fetchData = (url: string) => {
-        return new Promise((resolve) => {
-            fetch(url)
-                .then((res) => res.json())
-                .then((resJson) => resolve(resJson))
-                .catch((e) => {
-                    setError(true);
-                    console.error("通信に失敗しました．", e);
-                });
-        });
-    };
+    // API calls using custom hooks
+    const {
+        data: stat,
+        loading: statLoading,
+        error: statError,
+        refetch: refetchStat
+    } = useApi(`${API_ENDPOINT}/stat`, emptyStat, { interval: 58000 });
 
-    const errorMessage = (message: string) => {
-        return (
-            <div className="row justify-content-center" data-testid="error">
-                <div className="col-11 text-end">
-                    <div className="alert alert-danger d-flex align-items-center" role="alert">
-                        <div>{message}</div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    const {
+        data: log,
+        loading: logLoading,
+        error: logError,
+        refetch: refetchLog
+    } = useApi(`${API_ENDPOINT}/log_view`, emptyLog);
 
-    const showError = (error: boolean) => {
-        if (error) {
-            return errorMessage("データの読み込みに失敗しました．");
+    const {
+        data: sysInfo,
+        error: sysInfoError
+    } = useApi(`${API_ENDPOINT}/sysinfo`, emptySysInfo, { interval: 58000 });
+
+    const {
+        data: actuatorSysInfo,
+        error: actuatorSysInfoError
+    } = useApi(`${API_ENDPOINT}/actuator_sysinfo`, emptySysInfo, { interval: 58000 });
+
+    // EventSource for real-time updates
+    useEventSource(`${API_ENDPOINT}/event`, {
+        onMessage: (e) => {
+            if (e.data === "log") {
+                refetchLog();
+                setUpdateTime(dayjs().format("llll"));
+            }
         }
+    });
+
+    // Update time when stat data changes
+    if (!statLoading && stat && updateTime === "Unknown") {
+        setUpdateTime(dayjs().format("LLL"));
+    }
+
+    const hasError = statError || logError || sysInfoError || actuatorSysInfoError;
+    const isReady = !statLoading && !logLoading;
+
+    const getErrorMessage = () => {
+        if (statError) return `統計データ: ${statError}`;
+        if (logError) return `ログデータ: ${logError}`;
+        if (sysInfoError) return `システム情報: ${sysInfoError}`;
+        if (actuatorSysInfoError) return `アクチュエータ情報: ${actuatorSysInfoError}`;
+        return "データの読み込みに失敗しました";
     };
 
-    useEffect(() => {
-        const loadStat = async () => {
-            let res: ApiResponse.Stat = (await fetchData(API_ENDPOINT + "/stat")) as ApiResponse.Stat;
-            setError(false);
-            setStat(res);
-            setStatReady(true);
-            setUpdateTime(dayjs().format("LLL"));
-        };
-        const loadActuatorInfo = async () => {
-            let res: ApiResponse.SysInfo = (await fetchData(API_ENDPOINT + "/actuator_sysinfo")) as ApiResponse.SysInfo;
-            setActuatorLoadAverage(res.load_average);
+    const handleRetry = () => {
+        refetchStat();
+        refetchLog();
+    };
 
-            let actuatorUptime = dayjs(res.uptime)
-            setActuatorUptime(actuatorUptime.format("LLL"));
-            setActuatorUptimeFrom(actuatorUptime.fromNow());
-        };
-        const loadSysInfo = async () => {
-            let res: ApiResponse.SysInfo = (await fetchData(API_ENDPOINT + "/sysinfo")) as ApiResponse.SysInfo;
-            let imageBuildDate = dayjs(res.image_build_date)
-            setImageBuildDate(imageBuildDate.format("LLL"));
-            setImageBuildDateFrom(imageBuildDate.fromNow());
-        };
-        const loadLog = async () => {
-            let res: ApiResponse.Log = (await fetchData(API_ENDPOINT + "/log_view")) as ApiResponse.Log;
-            setLog(res);
-            setLogReady(true);
-            setError(false);
-            setUpdateTime(dayjs().format("llll"));
-        };
+    // Format system info data
+    const imageBuildDate = sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).format("LLL") : "?";
+    const imageBuildDateFrom = sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).fromNow() : "?";
+    const actuatorUptime = actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).format("LLL") : "?";
+    const actuatorUptimeFrom = actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).fromNow() : "?";
+    const actuatorLoadAverage = actuatorSysInfo?.load_average || "?";
 
-        let eventSource: EventSource;
-        const watchEvent = async () => {
-            loadLog();
-            eventSource = new EventSource(API_ENDPOINT + "/event");
-            eventSource.addEventListener("message", (e) => {
-                if (e.data === "log") {
-                    loadLog();
-                }
-            });
-            eventSource.onerror = () => {
-                if (eventSource.readyState === 2) {
-                    console.warn("EventSource が閉じられました．再接続します．");
-                    eventSource.close();
-                    setTimeout(watchEvent, 1000);
-                }
-            };
-        };
-
-        loadStat();
-        loadActuatorInfo();
-        loadSysInfo();
-        watchEvent();
-
-        // NOTE: 更新日時表記が，「1分前」になる前に更新を終えれる
-        // タイミングで規定する
-        const intervalId = setInterval(() => {
-            loadStat();
-            loadActuatorInfo();
-        }, 58000);
-
-        return () => {
-            clearInterval(intervalId);
-            eventSource.close();
-        };
-    }, []);
 
     return (
         <>
@@ -181,16 +149,21 @@ function App() {
                 <div className="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
                     <h1 className="display-6 my-0 mr-md-auto font-weight-normal">室外機自動冷却システム</h1>
                 </div>
-                {showError(error)}
+                {hasError && (
+                    <ErrorMessage
+                        message={getErrorMessage()}
+                        onRetry={handleRetry}
+                    />
+                )}
                 <div>
                     <div className="container">
                         <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3">
-                            <Watering isReady={isStatReady} stat={stat} />
-                            <History isReady={isStatReady} stat={stat} />
-                            <CoolingMode isReady={isStatReady} stat={stat} />
-                            <AirConditioner isReady={isStatReady} stat={stat} />
-                            <Sensor isReady={isStatReady} stat={stat} />
-                            <Log isReady={isLogReady} log={log} />
+                            <Watering isReady={isReady} stat={stat} />
+                            <History isReady={isReady} stat={stat} />
+                            <CoolingMode isReady={isReady} stat={stat} />
+                            <AirConditioner isReady={isReady} stat={stat} />
+                            <Sensor isReady={isReady} stat={stat} />
+                            <Log isReady={!logLoading} log={log} />
                         </div>
                     </div>
                 </div>

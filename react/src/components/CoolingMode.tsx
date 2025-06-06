@@ -1,4 +1,5 @@
 import { ApiResponse } from "../lib/ApiResponse";
+import { Loading } from "./common/Loading";
 
 type Props = {
     isReady: boolean;
@@ -27,7 +28,7 @@ const CoolingMode = ({ isReady, stat }: Props) => {
 
     const modeInfo = (mode: ApiResponse.Mode) => {
         if (mode == null) {
-            return loading();
+            return <Loading size="large" />;
         }
 
         return (
@@ -39,13 +40,6 @@ const CoolingMode = ({ isReady, stat }: Props) => {
             </div>
         );
     };
-    const loading = () => {
-        return (
-            <span className="display-1 align-middle ms-4">
-                <span className="display-5">Loading...</span>
-            </span>
-        );
-    };
 
     return (
         <div className="col">
@@ -54,7 +48,7 @@ const CoolingMode = ({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">現在の冷却モード</h4>
                     </div>
-                    <div className="card-body">{isReady ? modeInfo(stat.mode) : loading()}</div>
+                    <div className="card-body">{isReady ? modeInfo(stat.mode) : <Loading size="large" />}</div>
                 </div>
             </div>
         </div>

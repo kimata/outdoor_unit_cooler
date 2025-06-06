@@ -1,13 +1,10 @@
 import watering_icon from "../assets/watering.png";
 
 import { ApiResponse } from "../lib/ApiResponse";
+import { Loading } from "./common/Loading";
+import { StatComponentProps } from "../types/common";
 
-type Props = {
-    isReady: boolean;
-    stat: ApiResponse.Stat;
-};
-
-const Watering = ({ isReady, stat }: Props) => {
+const Watering = ({ isReady, stat }: StatComponentProps) => {
     const amount = (watering: ApiResponse.Watering) => {
         return (
             <div className="card-body outdoor_unit">
@@ -45,15 +42,6 @@ const Watering = ({ isReady, stat }: Props) => {
             </div>
         );
     };
-    const loading = () => {
-        return (
-            <div className="card-body outdoor_unit">
-                <span className="display-1 align-middle ms-4">
-                    <span className="display-5">Loading...</span>
-                </span>
-            </div>
-        );
-    };
 
     return (
         <div className="col">
@@ -62,7 +50,11 @@ const Watering = ({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">本日の散水量</h4>
                     </div>
-                    {isReady ? amount(stat.watering[0]) : loading()}
+                    {isReady ? amount(stat.watering[0]) : (
+                        <div className="card-body outdoor_unit">
+                            <Loading size="large" />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

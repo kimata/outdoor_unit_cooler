@@ -6,6 +6,7 @@ extend(relativeTime);
 
 import { valueText, dateText } from "../lib/Util";
 import { ApiResponse } from "../lib/ApiResponse";
+import { Loading } from "./common/Loading";
 
 type Props = {
     isReady: boolean;
@@ -13,13 +14,6 @@ type Props = {
 };
 
 const AirConditioner = ({ isReady, stat }: Props) => {
-    const loading = () => {
-        return (
-            <span className="display-1 align-middle ms-4">
-                <span className="display-5">Loading...</span>
-            </span>
-        );
-    };
 
     const valueInt = (value: number | null) => {
         if (value == null) {
@@ -102,7 +96,7 @@ const AirConditioner = ({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">エアコン稼働状況</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(stat) : loading()}</div>
+                    <div className="card-body">{isReady ? sensorInfo(stat) : <Loading size="large" />}</div>
                 </div>
             </div>
         </div>
