@@ -1,0 +1,90 @@
+name: Security Scan
+on:
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
+    schedule:
+        # Run weekly security scans
+        - cron: '0 2 * * 1'
+
+permissions:
+    contents: read
+    security-events: write
+
+jobs:
+    dependency-scan:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: "3.12"
+
+            - name: Install Rye
+              run: |
+                curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_INSTALL_OPTION="--yes" bash
+                echo "$HOME/.rye/shims" >> $GITHUB_PATH
+
+            - name: Install Dependencies
+              run: rye sync
+
+            - name: Run pip-audit for Python dependencies
+              run: |
+                rye add --dev pip-audit
+                rye run pip-audit --format=json --output=python-audit.json || true
+                rye run pip-audit
+              continue-on-error: true
+
+            - name: Upload Python audit results
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                name: python-security-audit
+                path: python-audit.json
+
+    npm-audit:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20.x'
+                cache: 'npm'
+                cache-dependency-path: 'react/package-lock.json'
+
+            - name: Install Dependencies
+              run: npm ci
+              working-directory: ./react
+
+            - name: Run npm audit
+              run: npm audit --audit-level=moderate
+              working-directory: ./react
+              continue-on-error: true
+
+    codeql:
+        runs-on: ubuntu-latest
+        permissions:
+            actions: read
+            contents: read
+            security-events: write
+        strategy:
+            matrix:
+                language: ['javascript', 'python']
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v3
+              with:
+                languages: ${{ matrix.language }}
+
+            - name: Autobuild
+              uses: github/codeql-action/autobuild@v3
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v3

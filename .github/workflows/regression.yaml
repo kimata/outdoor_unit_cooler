@@ -1,6 +1,8 @@
 name: Regression
 on:
     push:
+    pull_request:
+        branches: [master]
 permissions:
     contents: read
     pages: write
@@ -12,34 +14,22 @@ jobs:
             matrix:
                 node-version: [20.x]
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
                 node-version: ${{ matrix.node-version }}
-            - name: Cache node modules
-              id: cache-node-modules
-              uses: actions/cache@v3
-              env:
-                cache-name: cache-node-modules
-              with:
-                path: node_modules
-                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-                restore-keys: |
-                    ${{ runner.os }}-build-${{ env.cache-name }}-
-                    ${{ runner.os }}-build-
-                    ${{ runner.os }}-
+                cache: 'npm'
+                cache-dependency-path: 'react/package-lock.json'
+
             - name: Install Dependencies
-              if: steps.cache-nodemodules.outputs.cache-hit != 'true'
-              run: |
-                npm ci
+              run: npm ci
               working-directory: ./react
             - name: Build
-              run: |
-                npm run build
+              run: npm run build
               working-directory: ./react
             - name: Upload built file
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                 name: react-dist
                 path: react/dist
@@ -48,58 +38,78 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ["3.10"]
+                python-version: ["3.12"]
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ matrix.python-version }}
             - name: Download react built files
-              uses: actions/download-artifact@v3
+              uses: actions/download-artifact@v4
               with:
                 name: react-dist
                 path: react/dist
             - name: Set locale
-              run: |
-                sudo locale-gen ja_JP.UTF-8
+              run: sudo locale-gen ja_JP.UTF-8
 
             - name: Install Rye
               run: |
                 curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_INSTALL_OPTION="--yes" bash
-
-            - name: Add path of Rye
-              run: echo "$HOME/.rye/shims" >> $GITHUB_PATH
+                echo "$HOME/.rye/shims" >> $GITHUB_PATH
 
             - name: Cache python modules
-              id: cache-python-modules
               uses: actions/cache@v4
-              env:
-                cache-name: cache-python-modules
               with:
-                path: $HOME/.cache
-                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('pyproject.toml') }}
+                path: ~/.cache/rye
+                key: ${{ runner.os }}-rye-${{ hashFiles('pyproject.toml', 'requirements*.lock') }}
                 restore-keys: |
-                    ${{ runner.os }}-build-${{ env.cache-name }}-
-                    ${{ runner.os }}-build-
-                    ${{ runner.os }}-
+                    ${{ runner.os }}-rye-
 
             - name: Install Dependencies
+              run: rye sync
+
+            - name: Install Playwright browsers
+              run: rye run playwright install --with-deps
+
+            - name: Run unit tests
+              run: rye run pytest --cov-report=html --junit-xml=tests/evidence/junit.xml tests/test_basic.py tests/test_error_handling.py
+
+            - name: Start web server for integration tests
               run: |
-                rye sync
+                # Copy example config
+                cp config.example.yaml config.yaml
+                # Start web server in background
+                rye run python src/webui.py -c config.yaml &
+                echo $! > webserver.pid
+                # Wait for server to start
+                sleep 10
+                # Check if server is running
+                curl -f http://127.0.0.1:5000/unit_cooler/ || echo "Web server failed to start"
+              continue-on-error: true
 
-            - name: Run Tests
-              run: rye run pytest --cov-report=html tests/test_basic.py
+            - name: Run Playwright integration tests
+              run: rye run pytest tests/test_playwright.py
+              continue-on-error: true
 
-            - name: Upload coverage file
-              uses: actions/upload-artifact@v3
+            - name: Stop web server
+              run: |
+                if [ -f webserver.pid ]; then
+                  kill $(cat webserver.pid) || true
+                  rm webserver.pid
+                fi
+              if: always()
+
+            - name: Upload test results
+              uses: actions/upload-artifact@v4
               if: always()
               with:
-                name: pytest
+                name: test-results
                 path: tests/evidence
 
-            - name: Upload artifact
-              uses: actions/upload-pages-artifact@v2
+            - name: Upload coverage artifact for GitHub Pages
+              uses: actions/upload-pages-artifact@v3
+              if: github.ref == 'refs/heads/master'
               with:
                 path: tests/evidence
     deploy:
@@ -110,6 +120,6 @@ jobs:
         needs: test
         if: github.ref == 'refs/heads/master'
         steps:
-            - name: Download test results
+            - name: Deploy to GitHub Pages
               id: deployment
-              uses: actions/deploy-pages@v2
+              uses: actions/deploy-pages@v4

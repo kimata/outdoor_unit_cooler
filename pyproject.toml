@@ -15,7 +15,7 @@ dependencies = [
     "flask-cors>=5.0.1",
     "docopt-ng>=0.9.0",
     "influxdb-client[ciso]>=1.44.0",
-    "my-lib @ git+https://github.com/kimata/my-py-lib@a290a98b50a009e9e7bf4f04f8e423009f7c5ffd",
+    "my-lib @ git+https://github.com/kimata/my-py-lib@f2f34cffe286f5d634eacecb3bb5c58129288e16",
     "spidev>=3.7",
     "fluent-logger>=0.11.1",
     "pyzmq>=26.4.0",
@@ -53,7 +53,7 @@ minversion = "6.0"
 
 # addopts = "--verbose --log-cli-level=DEBUG --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys  --html=tests/evidence/index.htm --self-contained-html --cov=flask --cov-report=html -vv"
 
-addopts = "--verbose --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys  --html=tests/evidence/index.htm --self-contained-html --cov=src --cov-report=html -vv"
+addopts = "--verbose --log-file-level=DEBUG --log-format=\"%(asctime)s %(levelname)s %(message)s\" --log-format=\"%(asctime)s %(levelname)s [%(filename)s:%(lineno)s %(funcName)s] %(message)s\" --capture=sys --html=tests/evidence/index.htm --self-contained-html --cov=src --cov-report=html -vv"
 
 
 testpaths = [
