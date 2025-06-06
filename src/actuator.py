@@ -117,7 +117,7 @@ def wait_and_term(executor, thread_list, log_server_handle, terminate=True):
             ret = -1
 
     logging.info("Shutdown executor")
-    executor.shutdown(wait=True, timeout=60)
+    executor.shutdown(wait=True)
 
     unit_cooler.actuator.log_server.term(log_server_handle)
     unit_cooler.actuator.work_log.term()

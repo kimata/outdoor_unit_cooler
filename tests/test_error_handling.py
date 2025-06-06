@@ -151,12 +151,8 @@ def test_thread_termination_timeout(mocker, config):
     # Test timeout handling
     unit_cooler.actuator.worker.should_terminate = True
 
-    # This should timeout and handle gracefully
-    try:
-        executor.shutdown(wait=True, timeout=1)
-    except TypeError:
-        # Fallback for Python < 3.9
-        executor.shutdown(wait=False)
+    # This should shutdown gracefully
+    executor.shutdown(wait=True)
 
 
 def test_influxdb_connection_error(mocker, config):
