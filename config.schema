@@ -119,6 +119,28 @@
                                 ]
                             }
                         },
+                        "rain": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "measure": {
+                                        "type": "string"
+                                    },
+                                    "hostname": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "hostname",
+                                    "measure",
+                                    "name"
+                                ]
+                            }
+                        },
                         "power": {
                             "type": "array",
                             "items": {
@@ -146,6 +168,7 @@
                         "humi",
                         "lux",
                         "power",
+                        "rain",
                         "solar_rad",
                         "temp"
                     ]
@@ -430,9 +453,13 @@
                     "properties": {
                         "static_dir_path": {
                             "type": "string"
+                        },
+                        "port": {
+                            "type": "integer"
                         }
                     },
                     "required": [
+                        "port",
                         "static_dir_path"
                     ]
                 },

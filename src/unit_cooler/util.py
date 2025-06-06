@@ -15,10 +15,13 @@ def notify_error(config, message, is_logging=True):
         # NOTE: テストではなく、ダミーモードで実行している時は Slack 通知しない
         return
 
-    my_lib.notify.slack.error(
-        config["slack"]["bot_token"],
-        config["slack"]["error"]["channel"]["name"],
-        config["slack"]["from"],
-        message,
-        config["slack"]["error"]["interval_min"],
-    )
+    try:
+        my_lib.notify.slack.error(
+            config["slack"]["bot_token"],
+            config["slack"]["error"]["channel"]["name"],
+            config["slack"]["from"],
+            message,
+            config["slack"]["error"]["interval_min"],
+        )
+    except Exception:
+        logging.exception("Failed to Notify via Slack")

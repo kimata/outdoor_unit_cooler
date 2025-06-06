@@ -111,6 +111,8 @@ actuator:
 webui:
     webapp:
         static_dir_path: react/dist
+        port: 5000
+
     subscribe:
         liveness:
             file: /dev/shm/healthz.webui.subscribe
