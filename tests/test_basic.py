@@ -263,24 +263,20 @@ def mock_gpio(mocker):
 
 
 ######################################################################
-def test_controller(mocker, config, server_port, real_port):
-    import controller
-
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    controller.wait_and_term(
-        *controller.start(
-            config,
-            {
-                "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
-                "speedup": 100,
-                "msg_count": 1,
-                "server_port": server_port,
-                "real_port": real_port,
-            },
-        )
+def test_controller(config, server_port, real_port, component_manager):
+    # Start controller with standard mocks already applied
+    component_manager.start_controller(
+        config,
+        server_port,
+        real_port,
+        disable_proxy=True,  # NOTE: subscriber がいないので、proxy を無効化
+        msg_count=1,
     )
 
+    # Wait for controller to complete and then terminate
+    component_manager.wait_and_term_controller()
+
+    # Check liveness - controller should be up, others down
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], False)
     check_liveness(config, ["actuator", "control"], False)
