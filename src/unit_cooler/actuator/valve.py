@@ -93,7 +93,11 @@ def set_state(valve_state):
 
         if valve_state != curr_state:
             logging.info("VALVE: %s -> %s", curr_state.name, valve_state.name)
-            ctrl_hist.append(curr_state)
+            # NOTE: テスト時のみ履歴を記録
+            import os
+
+            if os.environ.get("TEST") == "true":
+                ctrl_hist.append(curr_state)
 
         my_lib.rpi.gpio.output(pin_no, valve_state.value)
 
