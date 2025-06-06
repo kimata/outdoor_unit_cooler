@@ -73,7 +73,7 @@ jobs:
               run: rye run playwright install --with-deps
 
             - name: Run unit tests
-              run: rye run pytest --cov-report=html --junit-xml=tests/evidence/junit.xml tests/test_basic.py tests/test_error_handling.py
+              run: rye run pytest --cov-report=html --junit-xml=tests/evidence/junit.xml --numprocesses=auto tests/test_basic.py tests/test_error_handling.py
 
             - name: Start web server for integration tests
               run: |
