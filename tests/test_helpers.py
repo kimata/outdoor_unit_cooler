@@ -1,4 +1,5 @@
-"""Test helper functions and fixtures for outdoor unit cooler tests.
+"""
+Test helper functions and fixtures for outdoor unit cooler tests.
 
 This module contains common patterns extracted from test_basic.py to reduce code duplication.
 """
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ComponentManager:
-    """Manages component startup and teardown for tests."""
+    """Manages component startup and teardown for tests."""  # noqa: D203
 
     def __init__(self):
         """Initialize ComponentManager with empty handles."""
@@ -107,7 +108,7 @@ class ComponentManager:
             webui.wait_and_term(*self.handles["webui"])
 
 
-@pytest.fixture
+@pytest.fixture()
 def component_manager():
     """Fixture providing component management functionality."""
     manager = ComponentManager()
@@ -115,9 +116,9 @@ def component_manager():
     manager.teardown_all()
 
 
-@pytest.fixture
+@pytest.fixture()
 def standard_mocks(mocker):
-    """Standard mock setup for most actuator tests."""
+    """Provide standard mock setup for most actuator tests."""
     from tests.test_basic import gen_sense_data, mock_fd_q10c, mock_gpio
 
     mock_gpio(mocker)
@@ -127,16 +128,16 @@ def standard_mocks(mocker):
     return mocker
 
 
-@pytest.fixture
+@pytest.fixture()
 def controller_mocks(mocker):
-    """Standard mock setup for controller tests."""
+    """Provide standard mock setup for controller tests."""
     from tests.test_basic import gen_sense_data
 
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     return mocker
 
 
-@pytest.fixture
+@pytest.fixture()
 def webapp_client(config, server_port, log_port):
     """Create a webapp test client with standard configuration."""
     import webui
@@ -171,7 +172,7 @@ def check_standard_liveness(
 
 
 def check_controller_only_liveness(config: dict[str, Any]):
-    """Common pattern for controller-only tests."""
+    """Apply common pattern for controller-only tests."""
     check_standard_liveness(
         config,
         {
@@ -183,7 +184,7 @@ def check_controller_only_liveness(config: dict[str, Any]):
 
 
 def check_standard_post_test(config: dict[str, Any]):
-    """Standard post-test checks (liveness + slack notification)."""
+    """Perform standard post-test checks (liveness + slack notification)."""
     from tests.test_basic import check_notify_slack
 
     check_standard_liveness(config)
@@ -194,18 +195,7 @@ def create_fetch_data_mock(field_mappings: dict[str, Any]) -> Callable:
     """Create a fetch_data mock with custom field mappings."""
     from tests.test_basic import gen_sense_data
 
-    def fetch_data_mock(
-        db_config,  # noqa: ARG001
-        measure,  # noqa: ARG001
-        hostname,  # noqa: ARG001
-        field,
-        start="-30h",  # noqa: ARG001
-        stop="now()",  # noqa: ARG001
-        every_min=1,  # noqa: ARG001
-        window_min=3,  # noqa: ARG001
-        create_empty=True,  # noqa: ARG001
-        last=False,  # noqa: ARG001
-    ):
+    def fetch_data_mock(db_config, measure, hostname, field, **kwargs):  # noqa: ARG001
         return field_mappings.get(field, gen_sense_data())
 
     return fetch_data_mock
@@ -223,9 +213,9 @@ def advance_time_sequence(time_machine, minutes: list[int], sleep_duration: floa
         time.sleep(sleep_duration)
 
 
-@pytest.fixture
+@pytest.fixture()
 def control_message_modifier(mocker):
-    """Helper to modify control message list settings."""
+    """Provide helper to modify control message list settings."""
 
     def modify_duty_settings(**kwargs):
         import unit_cooler.controller.message
@@ -251,36 +241,29 @@ def control_message_modifier(mocker):
 
 def assert_standard_api_response(response, required_fields: list[str] | None = None):
     """Assert standard API response structure."""
-    assert response.status_code == 200
+    if response.status_code != 200:
+        msg = f"Expected status 200, got {response.status_code}"
+        raise AssertionError(msg)
     json_data = response.json
 
     default_fields = ["watering", "sensor", "mode", "cooler_status", "outdoor_status"]
     fields_to_check = required_fields or default_fields
 
     for field in fields_to_check:
-        assert field in json_data
+        if field not in json_data:
+            msg = f"Required field '{field}' not found in response"
+            raise AssertionError(msg)
 
 
-def run_standard_test_sequence(
-    component_manager: ComponentManager,
-    config: dict[str, Any],
-    server_port: int,
-    real_port: int,
-    log_port: int,
-    test_func: Callable,
-    controller_kwargs: dict[str, Any] | None = None,
-    actuator_kwargs: dict[str, Any] | None = None,
-):
+def run_standard_test_sequence(component_manager, test_func, config, server_port, real_port, **kwargs):
     """Run a standard test sequence with component startup, test execution, and teardown."""
-
     # Start components
-    actuator_handle = component_manager.start_actuator(
-        config, server_port, log_port, **(actuator_kwargs or {})
-    )
+    log_port = kwargs.get("log_port", 5001)
+    actuator_kwargs = kwargs.get("actuator_kwargs", {})
+    controller_kwargs = kwargs.get("controller_kwargs", {})
 
-    controller_handle = component_manager.start_controller(
-        config, server_port, real_port, **(controller_kwargs or {})
-    )
+    component_manager.start_actuator(config, server_port, log_port, **actuator_kwargs)
+    component_manager.start_controller(config, server_port, real_port, **controller_kwargs)
 
     # Run the test function
     test_func(config, server_port, real_port, log_port)
