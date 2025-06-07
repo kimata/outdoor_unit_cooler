@@ -1,0 +1,9 @@
+formatter:
+  type: basic
+  indent: 4
+  retain_line_breaks: true
+  retain_line_breaks_single: true
+  max_width: 0
+  scan_folded_as_literal: false
+  include_document_start: false
+  pad_line_comments: 1

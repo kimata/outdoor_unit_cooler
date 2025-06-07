@@ -1502,7 +1502,7 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
         config,
         {
             "speedup": 100,
-            "msg_count": 5,  # Reduced from 15 for testing
+            "msg_count": 6,  # Adjusted for error detection timing
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1513,23 +1513,23 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,  # Reduced from 15 for testing
+            "msg_count": 6,  # Adjusted for error detection timing
             "server_port": server_port,
             "real_port": real_port,
         },
     )
-    time.sleep(0.5)  # Reduced from 2 for testing
+    time.sleep(1)  # Keep original timing for error detection
     move_to(time_machine, 1)
 
     mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 0})
 
-    time.sleep(0.3)  # Reduced from 1 for testing
+    time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 2)
-    time.sleep(0.3)  # Reduced from 1 for testing
+    time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 3)
-    time.sleep(0.3)  # Reduced from 1 for testing
+    time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 4)
-    time.sleep(0.3)  # Reduced from 1 for testing
+    time.sleep(0.5)  # Slightly reduced from 1 for testing
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)

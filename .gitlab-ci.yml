@@ -1,6 +1,7 @@
 image: registry.green-rabbit.net:5000/kimata/local_ubuntu:241105B
 
 stages:
+    - security
     - build-webapp
     - build-image
     - pre-test
@@ -8,10 +9,66 @@ stages:
     - deploy
     - renovate
 
+variables:
+    # Cache settings
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    DOCKER_BUILDKIT: 1
+    DOCKER_CLI_EXPERIMENTAL: enabled
+    # Test settings
+    PYTEST_ADDOPTS: "--tb=short --strict-markers"
 
+# Global cache settings
+.cache_template: &cache_template
+    cache:
+        key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
+        paths:
+            - .venv/
+            - .cache/
+            - .npm/
+
+# Cleanup template for Docker containers
+.cleanup_template: &cleanup_template
+    before_script:
+        - docker ps --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
+    after_script:
+        - docker ps --filter "label=job=${CI_JOB_NAME}" -q | while read id; do docker stop -t 5 $id; done || true
+
+# Security scanning
+security-python:
+    stage: security
+    image: python:3.12-alpine
+    script:
+        - pip install safety bandit
+        - rye sync
+        - safety check --json || true
+        - bandit -r src/ -f json -o bandit-report.json || true
+    artifacts:
+        reports:
+            security:
+                - bandit-report.json
+        expire_in: 1 week
+    rules:
+        - changes:
+            - "**/*.py"
+            - "requirements.txt"
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+security-docker:
+    stage: security
+    image: docker:stable
+    services:
+        - docker:dind
+    script:
+        - docker run --rm -v "$PWD":/app -w /app hadolint/hadolint hadolint Dockerfile
+    rules:
+        - changes:
+            - "Dockerfile"
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Build stages
 build-react:
     stage: build-webapp
-    image: node:24.1
+    image: node:24-alpine
     script:
         - cd react
         - npm ci --cache .npm --prefer-offline
@@ -19,19 +76,22 @@ build-react:
     artifacts:
         paths:
             - react/dist
+        expire_in: 1 hour
     cache:
-        key: "${CI_JOB_NAME}"
+        key: "react-${CI_COMMIT_REF_SLUG}"
         paths:
+            - react/node_modules/
             - .npm/
-
+    rules:
+        - changes:
+            - "react/**/*"
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 build-image:
     stage: build-image
     needs: ["build-react"]
-
     variables:
-        BUILDER: arm_builder
-
+        BUILDER: arm_builder_${CI_JOB_ID}
     script:
         - export GIT_SSL_NO_VERIFY=1
         - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
@@ -39,69 +99,79 @@ build-image:
         - docker buildx create --driver docker-container --name ${BUILDER} --use --config /etc/buildkitd.toml
         - docker buildx use ${BUILDER}
         - docker buildx inspect --bootstrap
-        - docker buildx build --provenance=false --progress=plain --platform linux/amd64,linux/arm64/v8 --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache,mode=max --build-arg IMAGE_BUILD_DATE=$(date --iso-8601=seconds) --push --tag ${CI_REGISTRY_IMAGE} .
-
+        - |
+          docker buildx build \
+              --provenance=false \
+              --progress=plain \
+              --platform linux/amd64,linux/arm64/v8 \
+              --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache \
+              --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache,mode=max \
+              --build-arg IMAGE_BUILD_DATE=$(date --iso-8601=seconds) \
+              --push \
+              --tag ${CI_REGISTRY_IMAGE} .
     dependencies:
         - build-react
+    after_script:
+        - docker buildx rm ${BUILDER} || true
 
-
+# Test preparation
 test-prepare:
     stage: pre-test
-
     script:
         - rye sync
-
     artifacts:
         paths:
             - .venv
-            - /root/.cache
+        expire_in: 1 hour
+    <<: *cache_template
 
-    cache:
-        key: ${CI_JOB_NAME}
+# Unit tests with improved parallel execution
+test-unit:
+    stage: test
+    needs: ["test-prepare"]
+    script:
+        - rye run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 --html=tests/evidence/index.htm --self-contained-html tests/test_basic.py tests/test_error_handling.py
+    <<: *cache_template
+    artifacts:
+        when: always
         paths:
-            - .venv
-            - /root/.cache
+            - tests/evidence/**
+        reports:
+            junit: tests/evidence/junit.xml
+        expire_in: 1 week
+    coverage: '/TOTAL.*\s+(\d+%)$/'
 
-
-
+# Integration tests
 test-controller-sample:
     stage: test
     needs: ["build-image"]
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
         - docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py -c config.example.yaml -N -n 1
-
 
 test-controller-regular:
     stage: test
     needs: ["build-image"]
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
         - docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py -N -n 1
 
 test-actuator-sample:
     stage: test
     needs: ["build-image"]
     variables:
-        CONTROL_HOST: 192.168.0.20
         CURL_IMAGE: curlimages/curl:8.1.2
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py -d
         - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - 'echo "Controller: ${CTRL_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 3 -d -c config.example.yaml -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - echo "Controller IP: ${CTRL_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 3 -d -c config.example.yaml -s ${CTRL_IP}
         - sleep 10
-        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - docker run --rm ${CURL_IMAGE} --head http://${ACT_IP}:5001/unit_cooler/api/log_view
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
@@ -111,30 +181,25 @@ test-actuator-sample:
             - controller_log_1.txt
             - controller_log_2.txt
             - actuator_log.txt
+        expire_in: 1 week
 
 test-actuator-regular:
     stage: test
-
-    needs:
-        - build-image
-
+    needs: ["build-image"]
     variables:
         CURL_IMAGE: curlimages/curl:8.1.2
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py -d
         - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - 'echo "Controller: ${CTRL_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 3 -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - echo "Controller IP: ${CTRL_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -n 3 -d -s ${CTRL_IP}
         - sleep 10
-        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
-        - 'echo "Actuator: ${ACT_IP}"'
-        - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - echo "Actuator IP: ${ACT_IP}"
+        - docker run --rm ${CURL_IMAGE} --head http://${ACT_IP}:5001/unit_cooler/api/log_view
         - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
@@ -144,118 +209,112 @@ test-actuator-regular:
             - controller_log_1.txt
             - controller_log_2.txt
             - actuator_log.txt
-
+        expire_in: 1 week
 
 test-webui-docker:
     stage: test
-
     needs:
         - build-image
         - test-prepare
-
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
-        - python3 -m playwright install
-
+        - python3 -m playwright install --with-deps
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py -d
         - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - 'echo "Controller: ${CTRL_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - echo "Controller IP: ${CTRL_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -d -s ${CTRL_IP}
         - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
-        - 'echo "Actuator: ${ACT_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - echo "Actuator IP: ${ACT_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/webui.py -s ${CTRL_IP} -a ${ACT_IP}
         - sleep 10
-        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
         - WEB_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
-        - 'echo "Actuator: ${WEB_IP}"'
-        - rye run pytest tests/test_playwright.py --host $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - echo "WebUI IP: ${WEB_IP}"
+        - rye run pytest tests/test_playwright.py --host ${WEB_IP} --html=tests/evidence/playwright.html
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_final.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log_final.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log_final.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-2
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
     cache:
-        key: "${CI_JOB_NAME}"
+        key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
         paths:
-            - .venv
-
+            - .venv/
+            - .cache/
+            - .npm/
     artifacts:
         when: always
         paths:
-            - controller_log.txt
-            - actuator_log.txt
-            - webui_log.txt
+            - controller_log*.txt
+            - actuator_log*.txt
+            - webui_log*.txt
             - tests/evidence/**
-
+        expire_in: 1 week
 
 test-healthz-docker:
     stage: test
-
-    needs:
-        - build-image
-
+    needs: ["build-image"]
+    <<: *cleanup_template
     script:
-        # NOTE: テストに失敗するとテスト用のコンテナが残るので削除する
-        - docker ps  --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/controller.py
         - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - 'echo "Controller: ${CTRL_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - echo "Controller IP: ${CTRL_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/actuator.py -d -s ${CTRL_IP}
         - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
-        - 'echo "Actuator: ${ACT_IP}"'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - echo "Actuator IP: ${ACT_IP}"
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE} ./src/webui.py -s ${CTRL_IP} -a ${ACT_IP}
         - sleep 120
-        # NOTE: healthz をチェックする前にその時点のログを取得しておく
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-1 ./src/healthz.py -m CTRL
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-2 ./src/healthz.py -m ACT
         - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-3 ./src/healthz.py -m WEB
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_final.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log_final.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log_final.txt
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-2
         - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
     artifacts:
         when: always
         paths:
-            - controller_log.txt
-            - actuator_log.txt
-            - webui_log.txt
+            - controller_log*.txt
+            - actuator_log*.txt
+            - webui_log*.txt
+        expire_in: 1 week
 
-
+# Parallel test execution for faster feedback
 test-walk-through:
     stage: test
-
     needs:
         - build-react
         - test-prepare
-
+    parallel:
+        matrix:
+            - TEST_SUITE: "basic"
+            - TEST_SUITE: "error_handling"
     script:
-        - rye run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py tests/test_error_handling.py
-
-    cache:
-        key: "${CI_JOB_NAME}"
-        paths:
-            - .venv
-
+        - |
+          if [ "$TEST_SUITE" == "basic" ]; then
+              rye run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py
+          elif [ "$TEST_SUITE" == "error_handling" ]; then
+              rye run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_error_handling.py
+          fi
+    <<: *cache_template
     artifacts:
         when: always
         paths:
             - tests/evidence/**
+        expire_in: 1 week
 
+# Deploy jobs (unchanged but with better dependencies)
 deploy-controller:
     stage: deploy
-    needs: ["test-controller-regular", "test-healthz-docker", "test-walk-through"]
+    needs: ["test-controller-regular", "test-healthz-docker", "test-unit"]
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -264,17 +323,15 @@ deploy-controller:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
     rules:
-        # NOTE: 自動実行ではデプロイしない
         - if: $CI_PIPELINE_SOURCE == "schedule"
           when: never
         - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
-
 deploy-actuator:
     stage: deploy
-    needs: ["test-actuator-regular", "test-healthz-docker", "test-walk-through"]
+    needs: ["test-actuator-regular", "test-healthz-docker", "test-unit"]
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -283,17 +340,15 @@ deploy-actuator:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-actuator
     rules:
-        # NOTE: 自動実行ではデプロイしない
         - if: $CI_PIPELINE_SOURCE == "schedule"
           when: never
         - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
-
 deploy-webui:
     stage: deploy
-    needs: ["test-webui-docker", "test-healthz-docker", "test-walk-through"]
+    needs: ["test-webui-docker", "test-healthz-docker", "test-unit"]
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -302,17 +357,15 @@ deploy-webui:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webui
     rules:
-        # NOTE: 自動実行ではデプロイしない
         - if: $CI_PIPELINE_SOURCE == "schedule"
           when: never
         - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
-
 deploy-webui-demo:
     stage: deploy
-    needs: ["test-webui-docker", "test-healthz-docker", "test-walk-through"]
+    needs: ["test-webui-docker", "test-healthz-docker", "test-unit"]
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
@@ -321,14 +374,13 @@ deploy-webui-demo:
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
         - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-webui-demo
     rules:
-        # NOTE: 自動実行ではデプロイしない
         - if: $CI_PIPELINE_SOURCE == "schedule"
           when: never
         - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
           when: never
         - when: on_success
 
-
+# Renovate (improved with better conditions)
 renovate:
     stage: renovate
     image:
@@ -336,10 +388,8 @@ renovate:
         entrypoint: [""]
     script:
         - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
-        # # NOTE: ついでにお掃除
-        #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
     rules:
-        - if: '$CI_COMMIT_BRANCH == "master"'
-        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+        - if: '$CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE == "schedule"'
         - changes:
             - renovate.json
+          if: '$CI_COMMIT_BRANCH == "master"'
