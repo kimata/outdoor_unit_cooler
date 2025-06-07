@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import pytest
 
-# Import test helper fixtures
-from .test_helpers import component_manager, controller_mocks, standard_mocks, webapp_client
+# Import test helper fixtures for use across test modules
+from .test_helpers import component_manager, controller_mocks, standard_mocks, webapp_client  # noqa: F401
 
 
 def pytest_addoption(parser):
