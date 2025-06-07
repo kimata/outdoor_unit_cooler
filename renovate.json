@@ -10,12 +10,33 @@
     "automerge": true,
     "labels": ["renovate"],
     "schedule": ["every weekend"],
+    "platform": "gitlab",
+    "repositories": ["kimata/outdoor_unit_cooler"],
 
     "packageRules": [
         {
             "matchPaths": [".gitlab-ci.yml"],
             "matchPackagePatterns": ["local_playwright"],
             "enabled": false
+        },
+        {
+            "matchManagers": ["pip_requirements"],
+            "matchFiles": ["pyproject.toml"],
+            "rangeStrategy": "bump",
+            "automerge": true,
+            "labels": ["dependencies", "python"]
+        },
+        {
+            "matchManagers": ["npm"],
+            "matchFiles": ["react/package.json", "myappname/package.json"],
+            "rangeStrategy": "bump",
+            "automerge": true,
+            "labels": ["dependencies", "npm"]
+        },
+        {
+            "matchDepTypes": ["devDependencies"],
+            "automerge": true,
+            "labels": ["dependencies", "dev"]
         }
     ]
 }
