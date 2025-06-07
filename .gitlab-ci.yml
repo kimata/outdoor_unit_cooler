@@ -44,8 +44,7 @@ security-python:
         - bandit -r src/ -f json -o bandit-report.json || true
     artifacts:
         reports:
-            security:
-                - bandit-report.json
+            sast: bandit-report.json
         expire_in: 1 week
     rules:
         - changes:
