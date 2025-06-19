@@ -62,8 +62,8 @@ testpaths = [
 ]
 
 filterwarnings = [
-    "ignore:The hookimpl CovPlugin.pytest_configure_node uses",
-    "ignore:The hookimpl CovPlugin.pytest_testnodedown uses",
+    "ignore:datetime\\.datetime\\.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning",
+    "ignore::DeprecationWarning:multiprocessing\\.popen_fork"
 ]
 
 
