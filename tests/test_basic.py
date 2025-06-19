@@ -6,6 +6,7 @@ import json
 import logging
 import pathlib
 import random
+import socket
 import time
 from unittest import mock
 
@@ -45,6 +46,13 @@ def config():
     import my_lib.config
 
     return my_lib.config.load(CONFIG_FILE, pathlib.Path(SCHEMA_CONFIG))
+
+
+def _find_unused_port():
+    """Find an unused port by binding to port 0 and getting the assigned port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("localhost", 0))
+        return sock.getsockname()[1]
 
 
 @pytest.fixture()
@@ -2388,7 +2396,7 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
         config,
         {
             "speedup": 100,
-            "msg_count": 10,
+            "msg_count": 20,  # 2回目のactuatorにも確実にメッセージが届くように増やす
             "server_port": server_port,
             "real_port": real_port,
         },
