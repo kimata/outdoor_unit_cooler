@@ -26,6 +26,9 @@ generate-tag:
 
 build-react:
     stage: build-webapp
+
+    needs: []
+
     image: node:24.1
     script:
         - cd react
