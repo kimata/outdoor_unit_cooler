@@ -69,6 +69,17 @@ jobs:
             - name: Install Dependencies
               run: uv sync --locked --no-editable
 
+            - name: Run Tests
+              run: uv run pytest --numprocesses=auto --junit-xml=tests/evidence/junit.xml tests/test_basic.py
+
+            - name: Publish Test Results
+              uses: dorny/test-reporter@v1
+              if: success() || failure()
+              with:
+                name: test results
+                path: tests/evidence/junit.xml
+                reporter: java-junit
+
             - name: Install Playwright browsers
               run: uv run playwright install --with-deps
 
@@ -77,10 +88,7 @@ jobs:
 
             - name: Start web server for integration tests
               run: |
-                # Copy example config
-                cp config.example.yaml config.yaml
-                # Start web server in background
-                uv run python src/webui.py -c config.yaml &
+                uv run python src/webui.py -c config.example.yaml &
                 echo $! > webserver.pid
                 # Wait for server to start
                 sleep 10
@@ -99,13 +107,6 @@ jobs:
                   rm webserver.pid
                 fi
               if: always()
-
-            - name: Upload test results
-              uses: actions/upload-artifact@v4
-              if: always()
-              with:
-                name: test-results
-                path: tests/evidence
 
             - name: Upload coverage artifact for GitHub Pages
               uses: actions/upload-pages-artifact@v3
