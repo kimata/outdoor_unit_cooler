@@ -1,279 +1,380 @@
 image: registry.green-rabbit.net:5000/kimata/local_ubuntu:250615_38f4fdb9
 
+variables:
+    UV_LINK_MODE: copy
+    UV_PYTHON_INSTALL_DIR: ${CI_PROJECT_DIR}/.uv_python
+
 stages:
-    - security
+    - generate-tag
     - build-webapp
     - build-image
     - pre-test
     - test
+    - tag-latest
     - deploy
     - renovate
 
-variables:
-    # Cache settings
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-    DOCKER_BUILDKIT: 1
-    DOCKER_CLI_EXPERIMENTAL: enabled
-    # Test settings
-    PYTEST_ADDOPTS: "--tb=short --strict-markers"
+generate-tag:
+    stage: generate-tag
+    script:
+        - echo "TAG=$(date +%y%m%d)_${CI_COMMIT_SHORT_SHA}" > tag.env
+    artifacts:
+        reports:
+            dotenv: tag.env
+        expire_in: 1 hour
 
-# Template for cache configuration
-.cache_base:
-    cache:
-        key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
-        paths:
-            - .venv/
-            - .cache/
-            - .npm/
-
-# Template for Docker cleanup
-.docker_cleanup_base:
+# Base templates
+.docker-cleanup-base:
     before_script:
         - docker ps --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-    after_script:
-        - docker ps --filter "label=job=${CI_JOB_NAME}" -q | while read id; do docker stop -t 5 $id; done || true
 
-# Security scanning
-security-python:
-    stage: security
-    image: python:3.12-alpine
-    script:
-        - apk add --no-cache git gcc musl-dev libffi-dev openssl-dev
-        - pip install safety
-        - safety check || true
-    only:
-        - merge_requests
-        - main
-        - develop
+.cache-base:
+    cache:
+        - key:
+            files:
+                - pyproject.toml
+                - .gitlab-ci.yml
+            prefix: ${CI_COMMIT_REF_SLUG}-venv
+          paths:
+            - .venv
+          policy: pull
 
-security-docker:
-    stage: security
-    image: docker:24.0.7
-    services:
-        - docker:24.0.7-dind
-    script:
-        - docker pull registry.green-rabbit.net:5000/unit_cooler:latest || true
-        - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL registry.green-rabbit.net:5000/unit_cooler:latest || true
-    only:
-        - merge_requests
-        - main
-        - develop
+        - key: ${CI_COMMIT_REF_SLUG}-uv-toolchain
+          paths:
+            - .uv_python
+          policy: pull
 
-# Build stages
-build-webapp:
+.docker-test-base:
+    extends: .docker-cleanup-base
+    needs:
+        - generate-tag
+        - build-image
+
+build-react:
     stage: build-webapp
-    extends: .cache_base
+    image: node:24.1
     script:
-        - cd webapp
+        - cd react
         - npm ci --cache .npm --prefer-offline
         - npm run build
     artifacts:
         paths:
-            - lib/webapp/static
-        expire_in: 1 week
+            - react/dist
+    cache:
+        key: "${CI_JOB_NAME}"
+        paths:
+            - .npm/
 
 build-image:
     stage: build-image
-    image: docker:24.0.7
-    services:
-        - docker:24.0.7-dind
-    needs: ["build-webapp"]
-    script:
-        - docker build -t registry.green-rabbit.net:5000/unit_cooler:latest .
-        - docker push registry.green-rabbit.net:5000/unit_cooler:latest
-    only:
-        - main
-        - develop
+    needs:
+        - generate-tag
+        - build-react
 
-# Pre-test stage
-pre-test:
-    stage: pre-test
-    script:
-        - docker pull registry.green-rabbit.net:5000/unit_cooler:latest
-        - uv run black --check app lib tests
-        - uv run isort --check-only app lib tests
+    variables:
+        BUILDER: arm_builder
 
-# Test stages
+    script:
+        - 'echo "Building: ${CI_REGISTRY_IMAGE}:${TAG}"'
+        - export GIT_SSL_NO_VERIFY=1
+        - git clone https://gitlab.green-rabbit.net/kimata/hems_config.git
+        - mv hems_config/unit_cooler.yaml config.yaml
+        - docker buildx create --driver docker-container --name ${BUILDER} --use --config /etc/buildkitd.toml
+        - docker buildx use ${BUILDER}
+        - docker buildx inspect --bootstrap
+        - docker buildx build --provenance=false --progress=plain --platform linux/amd64,linux/arm64/v8 --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:cache --cache-from type=registry,ref=${CI_REGISTRY_IMAGE}:latest --cache-to type=inline --cache-to type=registry,ref=${CI_REGISTRY_IMAGE}:cache,mode=max --build-arg IMAGE_BUILD_DATE=$(date --iso-8601=seconds) --tag ${CI_REGISTRY_IMAGE}:${TAG} --push .
+
+    dependencies:
+        - build-react
+
 test-prepare:
-    stage: test
-    extends: .cache_base
-    script:
-        - uv pip install -r requirements-dev.lock
-        - uv pip install -r requirements.lock
+    stage: pre-test
 
-test-unit:
-    stage: test
-    extends: .cache_base
     script:
-        - uv run pytest tests/test_config.py tests/test_influx.py tests/test_slack.py tests/test_notify.py tests/test_trigger.py --cov=lib --cov-report=html
-    coverage: '/TOTAL.+?\s+(\d+%)$/'
-    parallel: 1
+        - uv sync --locked
+
     artifacts:
-        reports:
-            coverage_report:
-                coverage_format: cobertura
-                path: coverage.xml
         paths:
-            - htmlcov
+            - .venv
+            - .uv_python
+        expire_in: 1 hour
+
+    cache:
+        - key:
+            files:
+                - pyproject.toml
+                - .gitlab-ci.yml
+            prefix: ${CI_COMMIT_REF_SLUG}-venv
+          paths:
+            - .venv
+          policy: pull-push
+
+        - key: ${CI_COMMIT_REF_SLUG}-uv-toolchain
+          paths:
+            - .uv_python
+          policy: pull-push
 
 test-controller-sample:
+    extends: .docker-test-base
     stage: test
-    extends: .docker_cleanup_base
     script:
-        - uv run tests/test_controller.py --log_level WARN --mode sample --duration 2
+        - docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -c config.example.yaml -N -n 1
 
 test-controller-regular:
+    extends: .docker-test-base
     stage: test
-    extends: .docker_cleanup_base
     script:
-        - uv run tests/test_controller.py --log_level INFO --mode regular --duration 45
-    parallel:
-        matrix:
-            - TEST_NAME: [gw0, gw1, gw2, gw3, gw4, gw5, gw6, gw7]
+        - docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID} --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -N -n 1
 
 test-actuator-sample:
+    extends: .docker-test-base
     stage: test
-    extends: .docker_cleanup_base
+    variables:
+        CONTROL_HOST: 192.168.0.20
+        CURL_IMAGE: curlimages/curl:8.1.2
     script:
-        - uv run tests/test_actuator.py --log_level WARN --mode sample --duration 2
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/actuator.py -n 3 -d -c config.example.yaml -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - sleep 10
+        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
+    artifacts:
+        when: always
+        paths:
+            - controller_log_1.txt
+            - controller_log_2.txt
+            - actuator_log.txt
 
 test-actuator-regular:
+    extends: .docker-test-base
     stage: test
-    extends: .docker_cleanup_base
-    script:
-        - uv run tests/test_actuator.py --log_level INFO --mode regular --duration 15
-    artifacts:
-        name: "unit_cooler_test-webui-${CI_PIPELINE_ID}_${CI_JOB_ID}"
-        paths:
-            - data/*.png
-            - data/*.log
-            - data/test_*
-        when: always
-    parallel:
-        matrix:
-            - TEST_NAME: [gw0, gw1, gw2, gw3, gw4, gw5, gw6, gw7]
 
-# Test with webapp
-test-webapp-playwright:
-    stage: test
-    extends: .cache_base
+    variables:
+        CURL_IMAGE: curlimages/curl:8.1.2
     script:
-        - apt-get update && apt-get install -y chromium chromium-driver
-        - pip install pytest-playwright
-        - playwright install chromium
-        - export NO_SYSLOG=true
-        - export CONFIG=tests/data/config.yaml
-        - export DUMMY_MODE=true
-        - export NO_INFLUX=true
-        - export LOG_LEVEL=ERROR
-        - nohup uv run webapp_flask.py > flask.log &
-        - sleep 5
-        - uv run tests/test_webapp_playwright.py --browser chromium
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/actuator.py -n 3 -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - sleep 10
+        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
+        - docker run --rm ${CURL_IMAGE} --head http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
+        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
     artifacts:
-        paths:
-            - "tests/evidence/**"
         when: always
+        paths:
+            - controller_log_1.txt
+            - controller_log_2.txt
+            - actuator_log.txt
 
 test-webui-docker:
+    extends: [.docker-test-base, .cache-base]
     stage: test
-    extends: .docker_cleanup_base
-    script:
-        - docker run --pull=always --rm -e NO_LOG_INIT -e CONFIG -v ${PWD}:/opt/unit_cooler registry.green-rabbit.net:5000/unit_cooler:latest uv run tests/test_webapp_flask.py
-    variables:
-        CONFIG: /opt/unit_cooler/tests/data/config.example.yaml
 
-# Test with docker
-test-docker-basic:
-    stage: test
-    extends: .docker_cleanup_base
+    needs:
+        - generate-tag
+        - build-image
+        - test-prepare
+
     script:
-        - docker run --rm --privileged registry.green-rabbit.net:5000/unit_cooler:latest uv run tests/test_trigger.py
-        - docker run --rm --privileged -v /dev/bus/usb:/dev/bus/usb registry.green-rabbit.net:5000/unit_cooler:latest uv run tests/test_trigger.py
+        - python3 -m playwright install
+
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/actuator.py -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - sleep 10
+        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - WEB_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
+        - 'echo "Actuator: ${WEB_IP}"'
+        - uv run pytest tests/test_playwright.py --host $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-2
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
+
+    artifacts:
+        when: always
+        paths:
+            - controller_log.txt
+            - actuator_log.txt
+            - webui_log.txt
+            - tests/evidence/**
 
 test-healthz-docker:
+    extends: .docker-test-base
     stage: test
-    extends: .docker_cleanup_base
-    script:
-        - |-
-          docker run --rm -d --name unit_cooler --privileged registry.green-rabbit.net:5000/unit_cooler:latest
-          sleep 10
-          wget -q -O - http://$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' unit_cooler):5001/healthz | jq
-          wget -q -O - http://$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' unit_cooler):5001/healthz | jq .result | grep true
 
-# Test playwright (Matrix)
-test-playwright-matrix:
-    stage: test
-    extends: .cache_base
     script:
-        - apt-get update && apt-get install -y firefox-esr chromium chromium-driver
-        - pip install pytest-playwright
-        - playwright install --with-deps firefox chromium
-        - export NO_SYSLOG=true
-        - export CONFIG=tests/data/config.yaml
-        - export DUMMY_MODE=true
-        - export NO_INFLUX=true
-        - export LOG_LEVEL=ERROR
-        - nohup uv run webapp_flask.py > flask.log &
-        - sleep 5
-        - uv run tests/test_webapp_playwright.py --browser ${BROWSER} --gw ${GW}
-    parallel:
-        matrix:
-            - BROWSER: ["firefox", "chromium"]
-              GW: ["gw0", "gw1", "gw2", "gw3"]
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py
+        - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - 'echo "Controller: ${CTRL_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/actuator.py -d -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
+        - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - 'echo "Actuator: ${ACT_IP}"'
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - sleep 120
+        # NOTE: healthz をチェックする前にその時点のログを取得しておく
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-1 ./src/healthz.py -m CTRL
+        - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-2 ./src/healthz.py -m ACT
+        - docker exec ${CI_JOB_NAME}-${CI_JOB_ID}-3 ./src/healthz.py -m WEB
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
+        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-2
+        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-3
     artifacts:
-        paths:
-            - "tests/evidence/**"
         when: always
+        paths:
+            - controller_log.txt
+            - actuator_log.txt
+            - webui_log.txt
 
 test-walk-through:
+    extends: .cache-base
     stage: test
-    extends: .cache_base
-    script:
-        - |-
-          lscpu | grep "Model name" | grep "Neoverse"
-          [ $? -eq 0 ] && export HW_TYPE="OrangePi"
-          lscpu | grep "Model name" | grep "Cortex-A76"
-          [ $? -eq 0 ] && export HW_TYPE="RaspberryPi"
-          echo "Run on ${HW_TYPE:-Unknown}"
-          export NO_SYSLOG=true
-          export CONFIG=tests/data/config.yaml
-          export DUMMY_MODE=true
-          export NO_INFLUX=true
-          export LOG_LEVEL=ERROR
-          export MEASURE_PERIOD_SEC=5
-          export COOLER_DURATION_SEC=20
-          export COOLER_PERIOD_MIN=2
-          nohup uv run webapp_flask.py > flask.log &
-          nohup uv run actuator.py > actuator.log &
-          nohup uv run healthz.py > healthz.log &
-          export LOG_LEVEL=WARN
-          uv run controller.py --duration_sec 65
-    artifacts:
-        paths:
-            - "*.log"
 
-# Deploy stage
-deploy-production:
+    needs:
+        - build-react
+        - test-prepare
+
+    script:
+        - uv run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py
+
+    artifacts:
+        when: always
+        paths:
+            - tests/evidence/**
+
+tag-latest:
+    stage: tag-latest
+
+    needs:
+        - generate-tag
+        - job: test-controller-regular
+          artifacts: false
+        - job: test-actuator-regular
+          artifacts: false
+        - job: test-webui-docker
+          artifacts: false
+        - job: test-healthz-docker
+          artifacts: false
+        - job: test-walk-through
+          artifacts: false
+
+    script:
+        - 'echo "Tagging ${CI_REGISTRY_IMAGE}:${TAG} as latest"'
+        - docker pull ${CI_REGISTRY_IMAGE}:${TAG}
+        - docker tag ${CI_REGISTRY_IMAGE}:${TAG} ${CI_REGISTRY_IMAGE}:latest
+        - docker push ${CI_REGISTRY_IMAGE}:latest
+
+    rules:
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+          when: never
+        - when: on_success
+
+# Base template for deployment jobs
+.deploy-base:
     stage: deploy
-    needs: ["test-controller-regular", "test-healthz-docker", "test-unit"]
     image:
         name: bitnami/kubectl:latest
         entrypoint: [""]
+    needs:
+        - generate-tag
+        - job: test-controller-regular
+          artifacts: false
+        - job: test-actuator-regular
+          artifacts: false
+        - job: test-webui-docker
+          artifacts: false
+        - job: test-healthz-docker
+          artifacts: false
+        - job: test-walk-through
+          artifacts: false
+    rules:
+        # NOTE: 自動実行ではデプロイしない
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+          when: never
+        - when: on_success
+
+deploy-controller:
+    extends: .deploy-base
     script:
+        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
+        - 'echo "Deploying controller image: $IMAGE"'
         - kubectl config get-contexts
         - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-        - kubectl --insecure-skip-tls-verify=true rollout restart -n hems deployment unit-cooler-controller
-    rules:
-        - if: $CI_COMMIT_BRANCH == "main"
-        - when: manual
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-controller unit-cooler-controller=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-controller --timeout=120s
 
-# Renovate
+deploy-actuator:
+    extends: .deploy-base
+    script:
+        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
+        - 'echo "Deploying actuator image: $IMAGE"'
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-actuator unit-cooler-actuator=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-actuator --timeout=120s
+
+deploy-webui:
+    extends: .deploy-base
+    script:
+        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
+        - 'echo "Deploying webui image: $IMAGE"'
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui unit-cooler-webui=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui --timeout=120s
+
+deploy-webui-demo:
+    extends: .deploy-base
+    script:
+        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
+        - 'echo "Deploying webui-demo image: $IMAGE"'
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui-demo unit-cooler-webui-demo=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui-demo --timeout=120s
+
 renovate:
     stage: renovate
-    image: registry.green-rabbit.net:5000/kimata/local_renovate:38
+    image:
+        name: registry.green-rabbit.net:5000/kimata/local_renovate:38
+        entrypoint: [""]
     script:
-        - renovate --platform gitlab --token ${RENOVATE_TOKEN} ${CI_PROJECT_PATH}
+        - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
+        # # NOTE: ついでにお掃除
+        #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
     rules:
+        - if: '$CI_COMMIT_BRANCH == "master"'
         - if: '$CI_PIPELINE_SOURCE == "schedule"'
-        - if: '$CI_COMMIT_BRANCH == "main"'
-          when: manual
+        - changes:
+            - renovate.json
