@@ -155,17 +155,6 @@ uv run python ./src/actuator.py -c config.yaml
 uv run python ./src/webui.py -c config.yaml
 ```
 
-#### Rye を使用（代替）
-
-```bash
-# Ryeのインストール（未インストールの場合）
-curl -sSf https://rye.astral.sh/get | bash
-
-# 依存関係のインストールと実行
-rye sync
-rye run python ./src/controller.py -c config.yaml
-```
-
 ### 開発モード
 
 ```bash
