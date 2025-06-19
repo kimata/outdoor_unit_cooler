@@ -70,7 +70,7 @@ jobs:
               run: uv sync --locked --no-editable
 
             - name: Run Tests
-              run: uv run pytest --numprocesses=auto --junit-xml=tests/evidence/junit.xml tests/test_basic.py
+              run: uv run pytest --numprocesses=auto --junit-xml=tests/evidence/junit.xml tests/test_basic.py tests/test_error_handling.py
 
             - name: Publish Test Results
               uses: dorny/test-reporter@v1
@@ -80,11 +80,20 @@ jobs:
                 path: tests/evidence/junit.xml
                 reporter: java-junit
 
+            - name: Upload coverage file
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                name: pytest
+                path: tests/evidence
+
+            - name: Upload artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                path: tests/evidence
+
             - name: Install Playwright browsers
               run: uv run playwright install --with-deps
-
-            - name: Run unit tests
-              run: uv run pytest --cov-report=html --junit-xml=tests/evidence/junit.xml --numprocesses=auto tests/test_basic.py tests/test_error_handling.py
 
             - name: Start web server for integration tests
               run: |
@@ -108,11 +117,6 @@ jobs:
                 fi
               if: always()
 
-            - name: Upload coverage artifact for GitHub Pages
-              uses: actions/upload-pages-artifact@v3
-              if: github.ref == 'refs/heads/master'
-              with:
-                path: tests/evidence
     deploy:
         environment:
             name: github-pages
