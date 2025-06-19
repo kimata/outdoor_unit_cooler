@@ -304,7 +304,7 @@ tag-latest:
         - when: on_success
 
 # Base template for deployment jobs
-.deploy-base:
+deploy:
     stage: deploy
     image:
         name: bitnami/kubectl:latest
@@ -321,6 +321,23 @@ tag-latest:
           artifacts: false
         - job: test-walk-through
           artifacts: false
+
+    script:
+        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
+        - 'echo "Deploying controller image: $IMAGE"'
+        - kubectl config get-contexts
+        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
+
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-controller unit-cooler-controller=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-actuator unit-cooler-actuator=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui unit-cooler-webui=${IMAGE}
+        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui-demo unit-cooler-webui-demo=${IMAGE}
+
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-controller --timeout=120s
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-actuator --timeout=120s
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui --timeout=120s
+        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui-demo --timeout=120s
+
     rules:
         # NOTE: 自動実行ではデプロイしない
         - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -329,45 +346,6 @@ tag-latest:
           when: never
         - when: on_success
 
-deploy-controller:
-    extends: .deploy-base
-    script:
-        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
-        - 'echo "Deploying controller image: $IMAGE"'
-        - kubectl config get-contexts
-        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-controller unit-cooler-controller=${IMAGE}
-        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-controller --timeout=120s
-
-deploy-actuator:
-    extends: .deploy-base
-    script:
-        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
-        - 'echo "Deploying actuator image: $IMAGE"'
-        - kubectl config get-contexts
-        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-actuator unit-cooler-actuator=${IMAGE}
-        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-actuator --timeout=120s
-
-deploy-webui:
-    extends: .deploy-base
-    script:
-        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
-        - 'echo "Deploying webui image: $IMAGE"'
-        - kubectl config get-contexts
-        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui unit-cooler-webui=${IMAGE}
-        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui --timeout=120s
-
-deploy-webui-demo:
-    extends: .deploy-base
-    script:
-        - 'IMAGE="${CI_REGISTRY_IMAGE}:${TAG}"'
-        - 'echo "Deploying webui-demo image: $IMAGE"'
-        - kubectl config get-contexts
-        - kubectl config use-context kimata/outdoor_unit_cooler:pod-rollout
-        - kubectl --insecure-skip-tls-verify=true -n hems set image deployment/unit-cooler-webui-demo unit-cooler-webui-demo=${IMAGE}
-        - kubectl --insecure-skip-tls-verify=true -n hems rollout status deployment/unit-cooler-webui-demo --timeout=120s
 
 renovate:
     stage: renovate
