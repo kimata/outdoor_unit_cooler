@@ -24,34 +24,6 @@ generate-tag:
             dotenv: tag.env
         expire_in: 1 hour
 
-
-# Base templates
-.docker-cleanup-base:
-    before_script:
-        - docker ps --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
-
-.cache-base:
-    cache:
-        - key:
-            files:
-                - pyproject.toml
-                - .gitlab-ci.yml
-            prefix: ${CI_COMMIT_REF_SLUG}-venv
-          paths:
-            - .venv
-          policy: pull
-
-        - key: ${CI_COMMIT_REF_SLUG}-uv-toolchain
-          paths:
-            - .uv_python
-          policy: pull
-
-.docker-test-base:
-    extends: .docker-cleanup-base
-    needs:
-        - generate-tag
-        - build-image
-
 build-react:
     stage: build-webapp
     image: node:24.1
@@ -93,7 +65,7 @@ test-prepare:
     stage: pre-test
 
     script:
-        - uv sync --locked
+        - uv sync --locked --no-editable
 
     artifacts:
         paths:
@@ -115,6 +87,52 @@ test-prepare:
           paths:
             - .uv_python
           policy: pull-push
+
+
+.cache-base:
+    cache:
+        - key:
+            files:
+                - pyproject.toml
+                - .gitlab-ci.yml
+            prefix: ${CI_COMMIT_REF_SLUG}-venv
+          paths:
+            - .venv
+          policy: pull
+
+        - key: ${CI_COMMIT_REF_SLUG}-uv-toolchain
+          paths:
+            - .uv_python
+          policy: pull
+
+
+test-walk-through:
+    extends: .cache-base
+    stage: test
+
+    needs:
+        - build-react
+        - test-prepare
+
+    script:
+        - uv run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py
+
+    artifacts:
+        when: always
+        paths:
+            - tests/evidence/**
+
+
+# Base templates
+.docker-cleanup-base:
+    before_script:
+        - docker ps --filter "label=job=${CI_JOB_NAME}" | grep hours | cut -d " " -f1 | while read id; do docker stop -t 5 $id; done || true
+
+.docker-test-base:
+    extends: .docker-cleanup-base
+    needs:
+        - generate-tag
+        - build-image
 
 test-controller-sample:
     extends: .docker-test-base
@@ -192,7 +210,7 @@ test-webui-docker:
         - test-prepare
 
     script:
-        - python3 -m playwright install
+        - uv run playwright install
 
         - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
         - CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1)
@@ -257,21 +275,6 @@ test-healthz-docker:
             - actuator_log.txt
             - webui_log.txt
 
-test-walk-through:
-    extends: .cache-base
-    stage: test
-
-    needs:
-        - build-react
-        - test-prepare
-
-    script:
-        - uv run pytest --timeout=60 --forked --reruns 3 --numprocesses=auto --verbosity=1 tests/test_basic.py
-
-    artifacts:
-        when: always
-        paths:
-            - tests/evidence/**
 
 tag-latest:
     stage: tag-latest
