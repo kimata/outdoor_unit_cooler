@@ -171,9 +171,9 @@ def test_slack_notification_error(mocker, config):
     import unit_cooler.util
 
     # Mock Slack to raise error
-    with mocker.patch("my_lib.notify.slack.error", side_effect=Exception("Slack Error")):
-        # Should not raise exception, should handle gracefully
-        unit_cooler.util.notify_error(config, "Test error message")
+    mocker.patch("my_lib.notify.slack.error", side_effect=Exception("Slack Error"))
+    # Should not raise exception, should handle gracefully
+    unit_cooler.util.notify_error(config, "Test error message")
 
 
 def test_concurrent_valve_operations(config):
