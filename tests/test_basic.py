@@ -5,7 +5,6 @@ import datetime
 import json
 import logging
 import pathlib
-import random
 import socket
 import time
 from unittest import mock
@@ -57,17 +56,17 @@ def _find_unused_port():
 
 @pytest.fixture()
 def server_port():
-    return random.randrange(10000, 30000)  # noqa: S311
+    return _find_unused_port()
 
 
 @pytest.fixture()
 def real_port():
-    return random.randrange(10000, 30000)  # noqa: S311
+    return _find_unused_port()
 
 
 @pytest.fixture()
 def log_port():
-    return random.randrange(10000, 30000)  # noqa: S311
+    return _find_unused_port()
 
 
 @pytest.fixture(autouse=True)
@@ -2525,6 +2524,7 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     check_notify_slack(None)
 
 
+@pytest.mark.timeout(300)  # 5 minutes for this complex test
 def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
@@ -2560,7 +2560,8 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
         },
     )
 
-    time.sleep(2)
+    # Wait for services to initialize, with extra time for parallel execution
+    time.sleep(5)
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
     assert res.status_code == 200

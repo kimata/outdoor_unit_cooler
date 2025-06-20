@@ -118,7 +118,7 @@ test-walk-through:
         - test-prepare
 
     script:
-        - uv run pytest --numprocesses=auto --junit-xml=tests/evidence/junit-report.xml tests/test_basic.py tests/test_error_handling.py
+        - uv run pytest --numprocesses=auto --junit-xml=tests/evidence/junit-report.xml --maxfail=1 --dist=loadgroup tests/test_basic.py tests/test_error_handling.py
 
     cache:
         - key:
