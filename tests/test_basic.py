@@ -2524,7 +2524,6 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     check_notify_slack(None)
 
 
-@pytest.mark.timeout(300)  # 5 minutes for this complex test
 def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
