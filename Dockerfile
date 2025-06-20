@@ -23,7 +23,7 @@ RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=README.md,target=README.md \
     --mount=type=cache,target=/root/.cache/uv \
-    uv export --frozen --no-dev --format requirements-txt > requirements.txt \
+    uv export --frozen --no-group dev --format requirements-txt > requirements.txt \
     && uv pip install -r requirements.txt
 
 # Clean up dependencies
