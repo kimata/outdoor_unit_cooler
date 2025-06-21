@@ -39,7 +39,7 @@ yarn-error.log
 testem.log
 /typings
 /data/*
-/test/evidence/*
+/tests/evidence/*
 .coverage.*
 # System files
 .DS_Store
