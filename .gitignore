@@ -40,6 +40,7 @@ testem.log
 /typings
 /data/*
 /test/evidence/*
+.coverage.*
 # System files
 .DS_Store
 Thumbs.db
