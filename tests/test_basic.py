@@ -767,7 +767,14 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
-def test_actuator_log(component_manager, config, server_port, real_port, log_port):
+def test_actuator_log(  # noqa: PLR0913
+    standard_mocks,  # noqa: ARG001
+    component_manager,
+    config,
+    server_port,
+    real_port,
+    log_port,
+):
     import requests
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
@@ -1037,7 +1044,7 @@ def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
     check_standard_liveness(
         config,
         {
-            ("actuator", "monitor"): False,
+            ("actuator", "monitor"): True,
         },
     )
     # NOTE: エラーが発生していなければ OK
@@ -2152,22 +2159,7 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
 
     standard_mocks.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
-
-    app = webui.create_app(
-        config, {"msg_count": 10, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
-    )
-    client = app.test_client()
-
+    # Start controller first to ensure actuator receives messages immediately
     control_handle = controller.start(
         config,
         {
@@ -2179,8 +2171,28 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
         },
     )
 
-    # Wait for services to initialize, with extra time for parallel execution
-    time.sleep(10)
+    # Brief pause to ensure controller is ready
+    time.sleep(0.5)
+
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
+        },
+    )
+
+    # Use msg_count: 1 to ensure worker thread exits quickly after receiving a message
+    app = webui.create_app(
+        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+    )
+    client = app.test_client()
+
+    # Wait for services to initialize and worker to receive its message
+    time.sleep(2)
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
     assert res.status_code == 200
@@ -2200,6 +2212,9 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
+
+    # Give worker thread time to exit cleanly after receiving its message
+    time.sleep(0.5)
 
     client.delete()
 

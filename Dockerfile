@@ -26,14 +26,6 @@ RUN --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv export --frozen --no-group dev --format requirements-txt > requirements.txt \
     && uv pip install -r requirements.txt
 
-# Clean up dependencies
-FROM build AS deps-cleanup
-ARG PYTHON_VERSION
-RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
-    find /usr/local/lib/python${PYTHON_VERSION}/site-packages -name "*.pyc" -delete && \
-    find /usr/local/lib/python${PYTHON_VERSION}/site-packages -name "__pycache__" -type d -delete
-
-
 FROM python:${PYTHON_VERSION}-slim-bookworm AS prod
 
 ARG PYTHON_VERSION
@@ -42,7 +34,7 @@ ENV IMAGE_BUILD_DATE=${IMAGE_BUILD_DATE}
 
 ENV TZ=Asia/Tokyo
 
-COPY --from=deps-cleanup /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
+COPY --from=build /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
 
 WORKDIR /opt/unit_cooler
 
