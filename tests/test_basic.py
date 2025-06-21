@@ -676,7 +676,7 @@ def test_controller_sensor_error(mocker, config, server_port, real_port):
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
-def test_controller_dummy_error(standard_controller_mocks, config, server_port, real_port):
+def test_controller_dummy_error(controller_mocks, config, server_port, real_port):
     import controller
 
     def send_string_mock(*args, **kwargs):  # noqa: ARG001
@@ -688,9 +688,7 @@ def test_controller_dummy_error(standard_controller_mocks, config, server_port, 
 
     send_string_mock.i = 0
 
-    standard_controller_mocks.patch(
-        "unit_cooler.pubsub.publish.zmq.Socket.send_string", side_effect=send_string_mock
-    )
+    controller_mocks.patch("unit_cooler.pubsub.publish.zmq.Socket.send_string", side_effect=send_string_mock)
 
     controller.wait_and_term(
         *controller.start(
@@ -1146,14 +1144,14 @@ def test_actuator_unable_to_receive(  # noqa: PLR0913
 
     move_to(time_machine, 0)
 
-    component_manager.start_actuator(config, server_port, log_port)
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
 
     time.sleep(2)
     move_to(time_machine, 20)
 
     time.sleep(1)
 
-    component_manager.start_controller(config, server_port, real_port)
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
