@@ -117,6 +117,18 @@ def component_manager():
 
 
 @pytest.fixture()
+def standard_actuator_mocks(mocker):
+    """Provide standard mock setup for most actuator tests."""
+    from tests.test_basic import gen_sense_data, mock_fd_q10c, mock_gpio
+
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    return mocker
+
+
+@pytest.fixture()
 def standard_mocks(mocker):
     """Provide standard mock setup for most actuator tests."""
     from tests.test_basic import gen_sense_data, mock_fd_q10c, mock_gpio
@@ -195,7 +207,18 @@ def create_fetch_data_mock(field_mappings: dict[str, Any]) -> Callable:
     """Create a fetch_data mock with custom field mappings."""
     from tests.test_basic import gen_sense_data
 
-    def fetch_data_mock(db_config, measure, hostname, field, **kwargs):  # noqa: ARG001
+    def fetch_data_mock(  # noqa: PLR0913
+        db_config,  # noqa: ARG001
+        measure,  # noqa: ARG001
+        hostname,  # noqa: ARG001
+        field,
+        start="-30h",  # noqa: ARG001
+        stop="now()",  # noqa: ARG001
+        every_min=1,  # noqa: ARG001
+        window_min=3,  # noqa: ARG001
+        create_empty=True,  # noqa: ARG001
+        last=False,  # noqa: ARG001
+    ):
         return field_mappings.get(field, gen_sense_data())
 
     return fetch_data_mock

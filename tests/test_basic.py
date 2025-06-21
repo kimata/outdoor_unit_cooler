@@ -14,6 +14,13 @@ import my_lib.notify.slack
 import my_lib.webapp.config
 import pytest
 
+from tests.test_helpers import (
+    check_controller_only_liveness,
+    check_standard_liveness,
+    check_standard_post_test,
+    create_fetch_data_mock,
+)
+
 my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
 
 CONFIG_FILE = "config.example.yaml"
@@ -123,127 +130,6 @@ def fluent_mock():
         fixture.side_effect = emit_mock
 
         yield fixture
-
-
-# 共通のモックパターンを提供するfixture
-@pytest.fixture()
-def standard_actuator_mocks(mocker):
-    """アクチュエータ系テストで使用される標準的なモック設定"""
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-    return mocker
-
-
-@pytest.fixture()
-def standard_controller_mocks(mocker):
-    """コントローラ系テストで使用される標準的なモック設定"""
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    return mocker
-
-
-# 共通のテストフロー管理クラス
-class TestFlowManager:
-    """テストの共通フローを管理するクラス"""
-
-    def __init__(self, config, server_port, real_port, log_port):
-        self.config = config
-        self.server_port = server_port
-        self.real_port = real_port
-        self.log_port = log_port
-        self.handles = {}
-
-    def start_controller(self, msg_count=10, **kwargs):
-        """標準設定でコントローラを開始"""
-        import controller
-
-        default_config = {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": msg_count,
-            "server_port": self.server_port,
-            "real_port": self.real_port,
-        }
-        default_config.update(kwargs)
-        self.handles["controller"] = controller.start(self.config, default_config)
-        return self.handles["controller"]
-
-    def start_actuator(self, msg_count=10, **kwargs):
-        """標準設定でアクチュエータを開始"""
-        import actuator
-
-        default_config = {
-            "speedup": 100,
-            "msg_count": msg_count,
-            "pub_port": self.server_port,
-            "log_port": self.log_port,
-        }
-        default_config.update(kwargs)
-        self.handles["actuator"] = actuator.start(self.config, default_config)
-        return self.handles["actuator"]
-
-    def teardown_all(self):
-        """全コンポーネントを終了"""
-        if "controller" in self.handles:
-            import controller
-
-            controller.wait_and_term(*self.handles["controller"])
-        if "actuator" in self.handles:
-            import actuator
-
-            actuator.wait_and_term(*self.handles["actuator"])
-        self.handles.clear()
-
-
-@pytest.fixture()
-def test_flow(config, server_port, real_port, log_port):
-    """テストフロー管理を提供するfixture"""
-    manager = TestFlowManager(config, server_port, real_port, log_port)
-    yield manager
-    manager.teardown_all()
-
-
-# 時間進行のヘルパー関数
-def advance_time_simple(time_machine, minutes, sleep_duration=1):
-    """シンプルな時間進行パターン"""
-    for minute in minutes:
-        move_to(time_machine, minute)
-        time.sleep(sleep_duration)
-
-
-# 標準的なliveness checkパターン
-def check_standard_liveness(
-    config,
-    controller=True,
-    actuator_subscribe=True,
-    actuator_control=True,
-    actuator_monitor=True,
-    webui_subscribe=False,
-):
-    """標準的なliveness checkを実行"""
-    check_liveness(config, ["controller"], controller)
-    check_liveness(config, ["actuator", "subscribe"], actuator_subscribe)
-    check_liveness(config, ["actuator", "control"], actuator_control)
-    check_liveness(config, ["actuator", "monitor"], actuator_monitor)
-    check_liveness(config, ["webui", "subscribe"], webui_subscribe)
-
-
-# fetch_data モックのファクトリー関数
-def create_field_mock(temp_value=30, power_value=100, **kwargs):
-    """フィールド別のモックデータを生成"""
-
-    def fetch_data_mock(db_config, measure, hostname, field, **_kwargs):  # noqa: ARG001
-        if field == "temp":
-            return gen_sense_data([temp_value])
-        elif field == "power":
-            return gen_sense_data([power_value])
-        elif field in kwargs:
-            return gen_sense_data([kwargs[field]])
-        else:
-            return gen_sense_data()
-
-    return fetch_data_mock
 
 
 def move_to(time_machine, minute, hour=0):
@@ -403,7 +289,7 @@ def mock_gpio(mocker):
 
 
 ######################################################################
-def test_controller(standard_controller_mocks, config, server_port, real_port):
+def test_controller(config, server_port, real_port):
     import controller
 
     # Start and immediately wait for controller completion
@@ -422,7 +308,7 @@ def test_controller(standard_controller_mocks, config, server_port, real_port):
     )
 
     # Check liveness - controller should be up, others down
-    check_standard_liveness(config, actuator_subscribe=False, actuator_control=False, actuator_monitor=False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
@@ -460,11 +346,11 @@ def test_controller_influxdb_dummy(mocker, config, server_port, real_port):
         )
     )
 
-    check_standard_liveness(config, actuator_subscribe=False, actuator_control=False, actuator_monitor=False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
-def test_controller_start_error_1(mocker, config, server_port, real_port):
+def test_controller_start_error_1(controller_mocks, config, server_port, real_port):
     from threading import Thread as Thread_orig
 
     import controller
@@ -477,14 +363,13 @@ def test_controller_start_error_1(mocker, config, server_port, real_port):
 
     thread_mock.i = 0
 
-    mocker.patch("threading.Thread", new=thread_mock)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    controller_mocks.patch("threading.Thread", new=thread_mock)
 
     controller.wait_and_term(
         *controller.start(
             config,
             {
-                "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
+                "disable_proxy": True,
                 "speedup": 100,
                 "msg_count": 1,
                 "server_port": server_port,
@@ -493,15 +378,19 @@ def test_controller_start_error_1(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], False)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(
+        config,
+        {
+            ("controller",): False,
+            ("actuator", "subscribe"): False,
+            ("actuator", "control"): False,
+            ("actuator", "monitor"): False,
+        },
+    )
     check_notify_slack("Traceback")
 
 
-def test_controller_start_error_2(mocker, config, server_port, real_port):
+def test_controller_start_error_2(controller_mocks, config, server_port, real_port):
     from threading import Thread as Thread_orig
 
     import controller
@@ -514,8 +403,7 @@ def test_controller_start_error_2(mocker, config, server_port, real_port):
 
     thread_mock.i = 0
 
-    mocker.patch("threading.Thread", new=thread_mock)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    controller_mocks.patch("threading.Thread", new=thread_mock)
 
     controller.wait_and_term(
         *controller.start(
@@ -531,11 +419,7 @@ def test_controller_start_error_2(mocker, config, server_port, real_port):
     )
 
     # NOTE: 現状、Proxy のエラーの場合、controller としては healthz は正常になる
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack("Traceback")
 
 
@@ -557,39 +441,21 @@ def test_controller_influxdb_error(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
 def test_controller_outdoor_normal(mocker, config, server_port, real_port):
     import controller
 
-    def fetch_data_mock(  # noqa: PLR0913
-        db_config,  # noqa: ARG001
-        measure,  # noqa: ARG001
-        hostname,  # noqa: ARG001
-        field,
-        start="-30h",  # noqa: ARG001
-        stop="now()",  # noqa: ARG001
-        every_min=1,  # noqa: ARG001
-        window_min=3,  # noqa: ARG001
-        create_empty=True,  # noqa: ARG001
-        last=False,  # noqa: ARG001
-    ):
-        if field == "temp":
-            return gen_sense_data([25])
-        elif field == "power":
-            return gen_sense_data([100])
-        elif field == "lux":
-            return gen_sense_data([500])
-        elif field == "solar_rad":
-            return gen_sense_data([300])
-        else:
-            return gen_sense_data([30])
+    fetch_data_mock = create_fetch_data_mock(
+        {
+            "temp": gen_sense_data([25]),
+            "power": gen_sense_data([100]),
+            "lux": gen_sense_data([500]),
+            "solar_rad": gen_sense_data([300]),
+        }
+    )
 
     mocker.patch("my_lib.sensor_data.fetch_data", side_effect=fetch_data_mock)
 
@@ -606,11 +472,7 @@ def test_controller_outdoor_normal(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
@@ -663,11 +525,7 @@ def test_controller_aircon_mode(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
@@ -753,11 +611,7 @@ def test_controller_temp_invalid(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
@@ -796,11 +650,7 @@ def test_controller_temp_low(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
@@ -822,22 +672,15 @@ def test_controller_sensor_error(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack("エアコン動作モードを判断できません。")
 
 
-def test_controller_dummy_error(mocker, config, server_port, real_port):
+def test_controller_dummy_error(standard_controller_mocks, config, server_port, real_port):
     import controller
 
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    def send_string_mock(u: str, flags: int = 0, copy: bool = True, encoding: str = "utf-8", **kwargs):  # noqa: ARG001, FBT001
+    def send_string_mock(*args, **kwargs):  # noqa: ARG001
         send_string_mock.i += 1
-
         if send_string_mock.i == 1:
             return True
         else:
@@ -845,13 +688,15 @@ def test_controller_dummy_error(mocker, config, server_port, real_port):
 
     send_string_mock.i = 0
 
-    mocker.patch("unit_cooler.pubsub.publish.zmq.Socket.send_string", side_effect=send_string_mock)
+    standard_controller_mocks.patch(
+        "unit_cooler.pubsub.publish.zmq.Socket.send_string", side_effect=send_string_mock
+    )
 
     controller.wait_and_term(
         *controller.start(
             config,
             {
-                "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
+                "disable_proxy": True,
                 "speedup": 100,
                 "msg_count": 1,
                 "dummy_mode": True,
@@ -861,175 +706,74 @@ def test_controller_dummy_error(mocker, config, server_port, real_port):
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_controller_only_liveness(config)
     check_notify_slack(None)
 
 
-def test_actuator(standard_actuator_mocks, config, server_port, real_port, log_port):
-    import actuator
-    import controller
-
+def test_actuator(component_manager, config, server_port, real_port, log_port):
     # Start actuator and controller in sequence
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 1,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=1)
     time.sleep(1)
-    controller_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 1,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=1)
 
     # Wait for completion
-    controller.wait_and_term(*controller_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_standard_liveness(config)
-    check_notify_slack(None)
+    check_standard_post_test(config)
 
 
-def test_actuator_normal(standard_actuator_mocks, config, server_port, real_port, log_port):
-    import actuator
-    import controller
+def test_actuator_normal(  # noqa: PLR0913
+    standard_mocks, component_manager, config, server_port, real_port, log_port
+):
     import unit_cooler.controller.message
 
     # Mock cooling mode for normal operation
-    standard_actuator_mocks.patch(
+    standard_mocks.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(unit_cooler.controller.message.CONTROL_MESSAGE_LIST) - 1},
     )
 
     # Start both components with reduced speedup for normal operation
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 20,
-            "msg_count": 5,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, speedup=20, msg_count=5)
     time.sleep(1)
-    controller_handle = controller.start(
-        config,
-        {
-            "speedup": 20,
-            "dummy_mode": True,
-            "msg_count": 5,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, speedup=20, msg_count=5)
 
-    controller.wait_and_term(*controller_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_standard_liveness(config)
-    check_notify_slack(None)
+    check_standard_post_test(config)
 
 
-def test_actuator_duty_disable(mocker, config, server_port, real_port, log_port):
-    import copy
-
-    import actuator
-    import controller
-    import unit_cooler.controller.message
+def test_actuator_duty_disable(  # noqa: PLR0913
+    standard_mocks, component_manager, control_message_modifier, config, server_port, real_port, log_port
+):
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    mocker.patch(
+    standard_mocks.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
     )
 
-    message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["enable"] = False
-    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+    # Use the helper to modify duty settings
+    control_message_modifier(enable=False)
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 5,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=5)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 5,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=5)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
-    check_notify_slack(None)
+    check_standard_post_test(config)
 
 
-def test_actuator_log(mocker, config, server_port, real_port, log_port):
-    import actuator
-    import controller
+def test_actuator_log(component_manager, config, server_port, real_port, log_port):
     import requests
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     requests.Session().mount(
         "http://",
@@ -1063,13 +807,17 @@ def test_actuator_log(mocker, config, server_port, real_port, log_port):
         - my_lib.time.now()
     ).total_seconds() < 5
 
-    res = requests.get(f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear")  # noqa: S113
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
+    )
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
 
     time.sleep(2)
 
-    res = requests.get(f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view")  # noqa: S113
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
+    )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
     logging.error(json.loads(res.text)["data"])
@@ -1102,114 +850,54 @@ def test_actuator_log(mocker, config, server_port, real_port, log_port):
     assert res.status_code == 200
     assert res.text.strip() == "data: log"
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
-    check_notify_slack(None)
+    check_standard_post_test(config)
 
 
-def test_actuator_send_error(mocker, config, server_port, real_port, log_port):
-    import actuator
-    import controller
+def test_actuator_send_error(  # noqa: PLR0913
+    standard_mocks, component_manager, config, server_port, real_port, log_port
+):
+    standard_mocks.patch("fluent.sender.FluentSender", new=RuntimeError())
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    mocker.patch("fluent.sender.FluentSender", new=RuntimeError())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 1,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port)
     time.sleep(1)
-    control_handle = controller.start(
+    component_manager.start_controller(config, server_port, real_port)
+
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
+
+    check_standard_liveness(
         config,
         {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 1,
-            "server_port": server_port,
-            "real_port": real_port,
+            ("actuator", "monitor"): False,
         },
     )
-
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
-
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack("流量のロギングを開始できません。")
 
 
-def test_actuator_mode_const(mocker, config, server_port, real_port, log_port):
-    import actuator
-    import controller
+def test_actuator_mode_const(  # noqa: PLR0913
+    standard_mocks, component_manager, config, server_port, real_port, log_port
+):
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 1})
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 1})
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 1,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 1,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     check_notify_slack(None)
 
 
-def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
-    import actuator
-    import controller
-
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
-    mocker.patch("unit_cooler.actuator.sensor.get_power_state", return_value=True)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+def test_actuator_power_off_1(  # noqa: PLR0913
+    standard_mocks, component_manager, time_machine, config, server_port, real_port, log_port
+):
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_power_state", return_value=True)
 
     def dummy_mode_mock():
         dummy_mode_mock.i += 1
@@ -1220,33 +908,13 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
 
     dummy_mode_mock.i = 0
 
-    mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", side_effect=dummy_mode_mock)
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", side_effect=dummy_mode_mock)
 
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(0.3)  # Reduced from 1 for testing
     move_to(time_machine, 1)
@@ -1265,8 +933,8 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
 
     time.sleep(0.5)  # Reduced from 2 for testing
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], True)
@@ -1277,14 +945,13 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
     check_work_log("長い間バルブが閉じられていますので、流量計の電源を OFF します。")
 
 
-def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
-    import actuator
-    import controller
-
+def test_actuator_power_off_2(  # noqa: PLR0913
+    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+):
     mock_gpio(mocker)
     mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
-
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
     def dummy_mode_mock():
         dummy_mode_mock.i += 1
@@ -1298,31 +965,11 @@ def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_po
     mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", side_effect=dummy_mode_mock)
     mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.stop", side_effect=RuntimeError())
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
-
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(0.5)  # Reduced from 2 for testing
     move_to(time_machine, 1)
@@ -1333,22 +980,17 @@ def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_po
     time.sleep(0.2)  # Reduced from 1 for testing
     move_to(time_machine, 4)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
+def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
+    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+):
     import inspect
-
-    import actuator
-    import controller
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
@@ -1377,26 +1019,9 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, 
 
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(2)
     move_to(time_machine, 1)
@@ -1407,22 +1032,22 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, 
     time.sleep(1)
     move_to(time_machine, 1, 1)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(
+        config,
+        {
+            ("actuator", "monitor"): False,
+        },
+    )
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
+def test_actuator_fd_q10c_get_state_error(  # noqa: PLR0913
+    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+):
     import inspect
-
-    import actuator
-    import controller
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
@@ -1451,26 +1076,9 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_p
 
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(2)
     move_to(time_machine, 1)
@@ -1481,22 +1089,22 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_p
     time.sleep(1)
     move_to(time_machine, 1, 1)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(
+        config,
+        {
+            ("actuator", "monitor"): False,
+        },
+    )
     # NOTE: エラーが発生していなければ OK
 
 
-def test_actuator_no_test(mocker, config, server_port, real_port, log_port):
+def test_actuator_no_test(  # noqa: PLR0913
+    mocker, component_manager, config, server_port, real_port, log_port
+):
     import signal
-
-    import actuator
-    import controller
 
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
@@ -1507,48 +1115,28 @@ def test_actuator_no_test(mocker, config, server_port, real_port, log_port):
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 2,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=2)
     time.sleep(1)
-    controller_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 2,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=2)
 
     time.sleep(1)
 
     # NOTE: signal のテストもついでにやっておく
+    import actuator
+
     actuator.sig_handler(signal.SIGKILL, None)
     actuator.sig_handler(signal.SIGTERM, None)
 
-    controller.wait_and_term(*controller_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     # NOTE: 正常終了すれば OK
 
 
-def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
-    import actuator
-    import controller
-
+def test_actuator_unable_to_receive(  # noqa: PLR0913
+    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+):
     mock_gpio(mocker)
     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
@@ -1558,47 +1146,25 @@ def test_actuator_unable_to_receive(mocker, time_machine, config, server_port, r
 
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 1,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port)
 
     time.sleep(2)
     move_to(time_machine, 20)
 
     time.sleep(1)
 
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 1,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True, 10000)
-    check_liveness(config, ["actuator", "monitor"], True, 10000)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)  # Both control and monitor should be healthy
     check_notify_slack("冷却モードの指示を受信できません。")
 
 
-def test_actuator_open(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
-    import actuator
-    import controller
-
+def test_actuator_open(  # noqa: PLR0913
+    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+):
     mock_gpio(mocker)
     mock_fd_q10c(mocker)
     mocker.patch("my_lib.sensor.ltc2874.com_status", return_value=True)
@@ -1610,26 +1176,10 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
 
     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     time.sleep(1)
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
+
     time.sleep(1)  # Keep original timing for error detection
     move_to(time_machine, 1)
 
@@ -1643,14 +1193,10 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
     move_to(time_machine, 4)
     time.sleep(0.5)  # Slightly reduced from 1 for testing
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True, 10000)
-    check_liveness(config, ["actuator", "monitor"], True, 10000)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)  # Both control and monitor should be healthy
     check_notify_slack("電磁弁が壊れていますので制御を停止します。")
 
 
@@ -1764,7 +1310,9 @@ def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_por
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
+def test_actuator_leak(  # noqa: PLR0913
+    mocker, time_machine, config, server_port, real_port, log_port
+):
     import copy
 
     import actuator
@@ -1835,16 +1383,11 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
     )
 
 
-def test_actuator_speedup(mocker, config, server_port, real_port, log_port):
+def test_actuator_speedup(standard_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
 
     actuator_handle = actuator.start(
         config,
@@ -1870,25 +1413,16 @@ def test_actuator_speedup(mocker, config, server_port, real_port, log_port):
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     # NOTE: 正常終了すれば OK
 
 
-def test_actuator_monitor_error(mocker, config, server_port, real_port, log_port):
+def test_actuator_monitor_error(standard_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch("unit_cooler.actuator.monitor.send_mist_condition", side_effect=RuntimeError())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
+    standard_mocks.patch("unit_cooler.actuator.monitor.send_mist_condition", side_effect=RuntimeError())
 
     actuator_handle = actuator.start(
         config,
@@ -1915,32 +1449,27 @@ def test_actuator_monitor_error(mocker, config, server_port, real_port, log_port
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(
+        config,
+        {
+            ("actuator", "monitor"): False,
+        },
+    )
     check_notify_slack("Traceback")
 
 
-def test_actuator_slack_error(mocker, config, server_port, real_port, log_port):
+def test_actuator_slack_error(standard_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
     import slack_sdk
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
 
     def webclient_mock(self, token):  # noqa: ARG001
         raise slack_sdk.errors.SlackClientError
 
-    mocker.patch.object(slack_sdk.web.client.WebClient, "__init__", webclient_mock)
-
-    mocker.patch("unit_cooler.actuator.monitor.send_mist_condition", side_effect=RuntimeError())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch.object(slack_sdk.web.client.WebClient, "__init__", webclient_mock)
+    standard_mocks.patch("unit_cooler.actuator.monitor.send_mist_condition", side_effect=RuntimeError())
 
     actuator_handle = actuator.start(
         config,
@@ -1965,15 +1494,18 @@ def test_actuator_slack_error(mocker, config, server_port, real_port, log_port):
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(
+        config,
+        {
+            ("actuator", "monitor"): False,
+        },
+    )
     check_notify_slack("Traceback")
 
 
-def test_actuator_close(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
+def test_actuator_close(  # noqa: PLR0913
+    mocker, time_machine, config, server_port, real_port, log_port
+):
     import copy
 
     import actuator
@@ -2083,7 +1615,9 @@ def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
-def test_actuator_notify_hazard(mocker, time_machine, config, server_port, real_port, log_port):  # noqa: PLR0913
+def test_actuator_notify_hazard(  # noqa: PLR0913
+    mocker, time_machine, config, server_port, real_port, log_port
+):
     import actuator
     import controller
     import unit_cooler.actuator.control
