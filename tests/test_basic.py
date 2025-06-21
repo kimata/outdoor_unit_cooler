@@ -2161,13 +2161,12 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     check_notify_slack(None)
 
 
-def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
+def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
     import webui
 
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
+    standard_mocks.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
     actuator_handle = actuator.start(
         config,
@@ -2207,14 +2206,13 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     assert "cooler_status" in res.json
     assert "outdoor_status" in res.json
 
-    mocker.patch(
+    with mock.patch(
         "flask.wrappers.Response.status_code",
         return_value=301,
-        new_callable=mocker.PropertyMock,
-    )
-
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/", headers={"Accept-Encoding": "gzip"})
-    assert res.status_code == 301
+        new_callable=mock.PropertyMock,
+    ):
+        res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/", headers={"Accept-Encoding": "gzip"})
+        assert res.status_code == 301
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
