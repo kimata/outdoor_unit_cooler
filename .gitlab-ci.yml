@@ -239,16 +239,18 @@ test-webui-docker:
         - ACT_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
         - 'echo "Actuator: ${ACT_IP}"'
         - '[ -n "$ACT_IP" ] || (echo "Failed to get Actuator IP" && exit 1)'
-        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} --publish 5000:5000 ${CI_REGISTRY_IMAGE}:${TAG} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
+        - docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-3 --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/webui.py -s $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-1) -a $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-2)
         - sleep 10
         # NOTE: Fail した時の原因究明用にこの時点のログを保存する
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-3 > webui_log.txt
-        - WEB_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
-        - 'echo "Actuator: ${WEB_IP}"'
-        - '[ -n "$WEB_IP" ] || (echo "Failed to get WebUI IP" && exit 1)'
-        - 'timeout 60 bash -c "until curl -f http://${WEB_IP}:5000/unit_cooler/api/sysinfo 2>/dev/null; do sleep 5; done" || (echo "Failed to access WebUI" && exit 1)'
+
+        - WEB_IP=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
+        - APP_URL="http://${APP_IP}:5000/unit_cooler"
+        - 'echo "APP_URL: ${APP_URL}"'
+        - 'timeout 60 bash -c "until curl --fail \"${APP_URL}/api/sysinfo\" 2>/dev/null; do sleep 5; done" || (echo "Failed to access App" && exit 1)'
+
         - uv run pytest tests/test_playwright.py --host $(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${CI_JOB_NAME}-${CI_JOB_ID}-3)
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log.txt
         - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
