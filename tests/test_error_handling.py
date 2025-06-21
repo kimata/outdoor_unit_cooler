@@ -265,9 +265,21 @@ def test_webui_api_endpoints(config):
 
     webui_thread = threading.Thread(target=start_webui, daemon=True)
     webui_thread.start()
-    time.sleep(3)  # Allow server to start
 
+    # Wait for server to start with retry mechanism
     base_url = f"http://localhost:{test_port}{my_lib.webapp.config.URL_PREFIX}"
+    server_ready = False
+    for _ in range(10):  # Try for up to 10 seconds
+        try:
+            res = requests.get(f"{base_url}/", timeout=1)
+            if res.status_code in [200, 404, 500]:  # Any response means server is up
+                server_ready = True
+                break
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
+
+    if not server_ready:
+        pytest.fail("WebUI server failed to start within 10 seconds")
 
     # Test main page
     try:
@@ -293,8 +305,8 @@ def test_webui_api_endpoints(config):
         # Verify at least some endpoints respond
         assert any(status in [200, 404, 500] for status in endpoints_status if status)
 
-    except requests.exceptions.ConnectionError:
-        pytest.skip("WebUI server not available")
+    except requests.exceptions.ConnectionError as e:
+        pytest.fail(f"WebUI server connection failed: {e}")
 
 
 def test_webui_error_responses(config):
@@ -304,39 +316,57 @@ def test_webui_error_responses(config):
 
     import webui
 
+    # Find available port
+    test_port = _find_unused_port()
+
     # Start webui in background thread
     def start_webui():
-        app = webui.create_app(
-            config,
-            {
-                "control_host": "localhost",
-                "pub_port": 2222,
-                "actuator_host": "localhost",
-                "log_port": config["actuator"]["log_server"]["webapp"]["port"],
-                "dummy_mode": True,
-                "msg_count": 5,
-            },
-        )
-        app.run(
-            host="localhost",
-            port=config["webui"]["webapp"]["port"] + 1,  # Use different port
-            use_reloader=False,
-            threaded=True,
-        )
+        try:
+            app = webui.create_app(
+                config,
+                {
+                    "control_host": "localhost",
+                    "pub_port": 2222,
+                    "actuator_host": "localhost",
+                    "log_port": config["actuator"]["log_server"]["webapp"]["port"],
+                    "dummy_mode": True,
+                    "msg_count": 5,
+                },
+            )
+            app.run(
+                host="localhost",
+                port=test_port,
+                use_reloader=False,
+                threaded=True,
+                debug=False,
+            )
+        except Exception:
+            pass  # Ignore WebUI start failures in tests
 
     webui_thread = threading.Thread(target=start_webui, daemon=True)
     webui_thread.start()
-    time.sleep(3)
 
-    port = config["webui"]["webapp"]["port"] + 1  # Use different port
-    base_url = f"http://localhost:{port}{my_lib.webapp.config.URL_PREFIX}"
+    # Wait for server to start with retry mechanism
+    base_url = f"http://localhost:{test_port}{my_lib.webapp.config.URL_PREFIX}"
+    server_ready = False
+    for _ in range(10):  # Try for up to 10 seconds
+        try:
+            res = requests.get(f"{base_url}/", timeout=1)
+            if res.status_code in [200, 404, 500]:  # Any response means server is up
+                server_ready = True
+                break
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
+
+    if not server_ready:
+        pytest.fail("WebUI server failed to start within 10 seconds")
 
     # Test invalid endpoints
     try:
         res = requests.get(f"{base_url}/api/nonexistent", timeout=5)
         assert res.status_code == 404
-    except requests.exceptions.ConnectionError:
-        pytest.skip("WebUI server not available")
+    except requests.exceptions.ConnectionError as e:
+        pytest.fail(f"WebUI server connection failed: {e}")
 
 
 def test_hardware_boundary_conditions(config):
