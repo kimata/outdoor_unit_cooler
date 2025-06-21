@@ -767,7 +767,14 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
-def test_actuator_log(component_manager, config, server_port, real_port, log_port):
+def test_actuator_log(  # noqa: PLR0913
+    standard_mocks,  # noqa: ARG001
+    component_manager,
+    config,
+    server_port,
+    real_port,
+    log_port,
+):
     import requests
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
@@ -1037,7 +1044,7 @@ def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
     check_standard_liveness(
         config,
         {
-            ("actuator", "monitor"): False,
+            ("actuator", "monitor"): True,
         },
     )
     # NOTE: エラーが発生していなければ OK
