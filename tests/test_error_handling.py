@@ -10,6 +10,8 @@ import my_lib.webapp.config
 import pytest
 import requests
 
+from tests.test_helpers import _find_unused_port
+
 my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
 
 CONFIG_FILE = "config.example.yaml"
@@ -235,19 +237,13 @@ def test_queue_cleanup_handling(config):
 
 def test_webui_api_endpoints(config):
     """Test WebUI API endpoints comprehensively"""
-    import socket
     import threading
     import time
 
     import webui
 
     # Find available port
-    def find_free_port():
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("", 0))
-            return s.getsockname()[1]
-
-    test_port = find_free_port()
+    test_port = _find_unused_port()
 
     # Start webui in background thread
     def start_webui():

@@ -7,6 +7,8 @@ This module contains common patterns extracted from test_basic.py to reduce code
 from __future__ import annotations
 
 import copy
+import socket
+import threading
 import time
 from typing import TYPE_CHECKING
 
@@ -14,6 +16,24 @@ import pytest
 
 if TYPE_CHECKING:
     from typing import Any, Callable
+
+
+_port_lock = threading.Lock()
+
+
+def _find_unused_port():
+    """Find an unused port by binding to port 0 and getting the assigned port."""
+    import time
+
+    with _port_lock:
+        for _ in range(5):  # Retry up to 5 times
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.bind(("localhost", 0))
+                port = sock.getsockname()[1]
+                # Brief delay to reduce race conditions in parallel execution
+                time.sleep(0.01)
+                return port
+        raise RuntimeError("Could not find unused port after 5 attempts")  # noqa: EM101, TRY003
 
 
 class ComponentManager:
