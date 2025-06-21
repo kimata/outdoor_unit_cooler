@@ -1141,7 +1141,7 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
         config,
         {
             "speedup": 100,
-            "msg_count": 5,  # Reduced from 15 for testing
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1152,7 +1152,7 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,  # Reduced from 15 for testing
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
@@ -1217,7 +1217,7 @@ def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_po
         config,
         {
             "speedup": 100,
-            "msg_count": 3,  # Reduced from 10 for testing
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1228,7 +1228,7 @@ def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_po
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 3,  # Reduced from 10 for testing
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
@@ -1323,7 +1323,7 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, 
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], True)
     check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     # NOTE: エラーが発生していなければ OK
 
@@ -1397,7 +1397,7 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_p
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], True)
     check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["actuator", "monitor"], False)
     check_liveness(config, ["webui", "subscribe"], False)
     # NOTE: エラーが発生していなければ OK
 
@@ -1524,7 +1524,7 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
         config,
         {
             "speedup": 100,
-            "msg_count": 6,  # Adjusted for error detection timing
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1535,7 +1535,7 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 6,  # Adjusted for error detection timing
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },
