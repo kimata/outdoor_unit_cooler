@@ -2187,7 +2187,7 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
 
     # Use msg_count: 1 to ensure worker thread exits quickly after receiving a message
     app = webui.create_app(
-        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+        config, {"msg_count": 2, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
     )
     client = app.test_client()
 
