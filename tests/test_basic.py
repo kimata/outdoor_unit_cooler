@@ -125,6 +125,127 @@ def fluent_mock():
         yield fixture
 
 
+# 共通のモックパターンを提供するfixture
+@pytest.fixture()
+def standard_actuator_mocks(mocker):
+    """アクチュエータ系テストで使用される標準的なモック設定"""
+    mock_gpio(mocker)
+    mock_fd_q10c(mocker)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    return mocker
+
+
+@pytest.fixture()
+def standard_controller_mocks(mocker):
+    """コントローラ系テストで使用される標準的なモック設定"""
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    return mocker
+
+
+# 共通のテストフロー管理クラス
+class TestFlowManager:
+    """テストの共通フローを管理するクラス"""
+
+    def __init__(self, config, server_port, real_port, log_port):
+        self.config = config
+        self.server_port = server_port
+        self.real_port = real_port
+        self.log_port = log_port
+        self.handles = {}
+
+    def start_controller(self, msg_count=10, **kwargs):
+        """標準設定でコントローラを開始"""
+        import controller
+
+        default_config = {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": msg_count,
+            "server_port": self.server_port,
+            "real_port": self.real_port,
+        }
+        default_config.update(kwargs)
+        self.handles["controller"] = controller.start(self.config, default_config)
+        return self.handles["controller"]
+
+    def start_actuator(self, msg_count=10, **kwargs):
+        """標準設定でアクチュエータを開始"""
+        import actuator
+
+        default_config = {
+            "speedup": 100,
+            "msg_count": msg_count,
+            "pub_port": self.server_port,
+            "log_port": self.log_port,
+        }
+        default_config.update(kwargs)
+        self.handles["actuator"] = actuator.start(self.config, default_config)
+        return self.handles["actuator"]
+
+    def teardown_all(self):
+        """全コンポーネントを終了"""
+        if "controller" in self.handles:
+            import controller
+
+            controller.wait_and_term(*self.handles["controller"])
+        if "actuator" in self.handles:
+            import actuator
+
+            actuator.wait_and_term(*self.handles["actuator"])
+        self.handles.clear()
+
+
+@pytest.fixture()
+def test_flow(config, server_port, real_port, log_port):
+    """テストフロー管理を提供するfixture"""
+    manager = TestFlowManager(config, server_port, real_port, log_port)
+    yield manager
+    manager.teardown_all()
+
+
+# 時間進行のヘルパー関数
+def advance_time_simple(time_machine, minutes, sleep_duration=1):
+    """シンプルな時間進行パターン"""
+    for minute in minutes:
+        move_to(time_machine, minute)
+        time.sleep(sleep_duration)
+
+
+# 標準的なliveness checkパターン
+def check_standard_liveness(
+    config,
+    controller=True,
+    actuator_subscribe=True,
+    actuator_control=True,
+    actuator_monitor=True,
+    webui_subscribe=False,
+):
+    """標準的なliveness checkを実行"""
+    check_liveness(config, ["controller"], controller)
+    check_liveness(config, ["actuator", "subscribe"], actuator_subscribe)
+    check_liveness(config, ["actuator", "control"], actuator_control)
+    check_liveness(config, ["actuator", "monitor"], actuator_monitor)
+    check_liveness(config, ["webui", "subscribe"], webui_subscribe)
+
+
+# fetch_data モックのファクトリー関数
+def create_field_mock(temp_value=30, power_value=100, **kwargs):
+    """フィールド別のモックデータを生成"""
+
+    def fetch_data_mock(db_config, measure, hostname, field, **_kwargs):  # noqa: ARG001
+        if field == "temp":
+            return gen_sense_data([temp_value])
+        elif field == "power":
+            return gen_sense_data([power_value])
+        elif field in kwargs:
+            return gen_sense_data([kwargs[field]])
+        else:
+            return gen_sense_data()
+
+    return fetch_data_mock
+
+
 def move_to(time_machine, minute, hour=0):
     import my_lib.time
 
@@ -282,79 +403,64 @@ def mock_gpio(mocker):
 
 
 ######################################################################
-def test_controller(config, server_port, real_port, component_manager):
-    # Start controller with standard mocks already applied
-    component_manager.start_controller(
-        config,
-        server_port,
-        real_port,
-        disable_proxy=True,  # NOTE: subscriber がいないので、proxy を無効化
-        msg_count=1,
+def test_controller(standard_controller_mocks, config, server_port, real_port):
+    import controller
+
+    # Start and immediately wait for controller completion
+    controller.wait_and_term(
+        *controller.start(
+            config,
+            {
+                "speedup": 100,
+                "dummy_mode": True,
+                "msg_count": 1,
+                "server_port": server_port,
+                "real_port": real_port,
+                "disable_proxy": True,
+            },
+        )
     )
 
-    # Wait for controller to complete and then terminate
-    component_manager.wait_and_term_controller()
-
     # Check liveness - controller should be up, others down
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config, actuator_subscribe=False, actuator_control=False, actuator_monitor=False)
     check_notify_slack(None)
 
 
 def test_controller_influxdb_dummy(mocker, config, server_port, real_port):
     import controller
 
+    # Setup InfluxDB mock with dummy data
     def value_mock():
         value_mock.i += 1
-        if value_mock.i == 1:
-            return None
-        else:
-            return 1
+        return None if value_mock.i == 1 else 1
 
     value_mock.i = 0
 
     table_entry_mock = mocker.MagicMock()
     record_mock = mocker.MagicMock()
     query_api_mock = mocker.MagicMock()
-    mocker.patch.object(
-        record_mock,
-        "get_value",
-        side_effect=value_mock,
-    )
-    mocker.patch.object(
-        record_mock,
-        "get_time",
-        return_value=datetime.datetime.now(datetime.timezone.utc),
-    )
+    mocker.patch.object(record_mock, "get_value", side_effect=value_mock)
+    mocker.patch.object(record_mock, "get_time", return_value=datetime.datetime.now(datetime.timezone.utc))
     table_entry_mock.__iter__.return_value = [record_mock, record_mock]
     type(table_entry_mock).records = table_entry_mock
     query_api_mock.query.return_value = [table_entry_mock]
-    mocker.patch(
-        "influxdb_client.InfluxDBClient.query_api",
-        return_value=query_api_mock,
-    )
+    mocker.patch("influxdb_client.InfluxDBClient.query_api", return_value=query_api_mock)
 
     controller.wait_and_term(
         *controller.start(
             config,
             {
-                "disable_proxy": True,  # NOTE: subscriber がいないので、proxy を無効化
                 "speedup": 100,
+                "dummy_mode": True,
                 "msg_count": 1,
                 "server_port": server_port,
                 "real_port": real_port,
+                "disable_proxy": True,
             },
         )
     )
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], False)
-    check_liveness(config, ["actuator", "control"], False)
-    check_liveness(config, ["actuator", "monitor"], False)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config, actuator_subscribe=False, actuator_control=False, actuator_monitor=False)
     check_notify_slack(None)
 
 
@@ -763,16 +869,11 @@ def test_controller_dummy_error(mocker, config, server_port, real_port):
     check_notify_slack(None)
 
 
-def test_actuator(mocker, config, server_port, real_port, log_port):
+def test_actuator(standard_actuator_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # Start actuator and controller in sequence
     actuator_handle = actuator.start(
         config,
         {
@@ -783,7 +884,7 @@ def test_actuator(mocker, config, server_port, real_port, log_port):
         },
     )
     time.sleep(1)
-    control_handle = controller.start(
+    controller_handle = controller.start(
         config,
         {
             "speedup": 100,
@@ -794,33 +895,26 @@ def test_actuator(mocker, config, server_port, real_port, log_port):
         },
     )
 
-    controller.wait_and_term(*control_handle)
+    # Wait for completion
+    controller.wait_and_term(*controller_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     check_notify_slack(None)
 
 
-def test_actuator_normal(mocker, config, server_port, real_port, log_port):
+def test_actuator_normal(standard_actuator_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
     import unit_cooler.controller.message
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    mocker.patch(
+    # Mock cooling mode for normal operation
+    standard_actuator_mocks.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(unit_cooler.controller.message.CONTROL_MESSAGE_LIST) - 1},
     )
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # Start both components with reduced speedup for normal operation
     actuator_handle = actuator.start(
         config,
         {
@@ -831,7 +925,7 @@ def test_actuator_normal(mocker, config, server_port, real_port, log_port):
         },
     )
     time.sleep(1)
-    control_handle = controller.start(
+    controller_handle = controller.start(
         config,
         {
             "speedup": 20,
@@ -842,14 +936,10 @@ def test_actuator_normal(mocker, config, server_port, real_port, log_port):
         },
     )
 
-    controller.wait_and_term(*control_handle)
+    controller.wait_and_term(*controller_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_standard_liveness(config)
     check_notify_slack(None)
 
 
