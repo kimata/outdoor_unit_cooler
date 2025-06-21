@@ -18,6 +18,7 @@ from tests.test_helpers import (
     check_controller_only_liveness,
     check_standard_liveness,
     check_standard_post_test,
+    control_message_modifier,
     create_fetch_data_mock,
 )
 
@@ -744,7 +745,7 @@ def test_actuator_normal(  # noqa: PLR0913
 
 
 def test_actuator_duty_disable(  # noqa: PLR0913
-    standard_mocks, component_manager, control_message_modifier, config, server_port, real_port, log_port
+    standard_mocks, component_manager, config, server_port, real_port, log_port
 ):
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
@@ -754,7 +755,7 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     )
 
     # Use the helper to modify duty settings
-    control_message_modifier(enable=False)
+    control_message_modifier(standard_mocks)(enable=False)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=5)
     time.sleep(1)
@@ -986,13 +987,12 @@ def test_actuator_power_off_2(  # noqa: PLR0913
 
 
 def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
-    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+    standard_mocks, component_manager, time_machine, config, server_port, real_port, log_port
 ):
     import inspect
 
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense(True))
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mock_gpio(standard_mocks)
+    mock_fd_q10c(standard_mocks, gen_fd_q10c_ser_trans_sense(True))
 
     def dummy_mode_mock():
         dummy_mode_mock.i += 1
@@ -1003,32 +1003,33 @@ def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
 
     dummy_mode_mock.i = 0
 
-    mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", side_effect=dummy_mode_mock)
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", side_effect=dummy_mode_mock)
 
     def com_stop_mock(spi, ser=None, is_power_off=False):  # noqa: ARG001
         if inspect.stack()[4].function == "stop":
             raise RuntimeError
         return True
 
-    mocker.patch("my_lib.sensor.ltc2874.com_stop", side_effect=com_stop_mock)
+    standard_mocks.patch("my_lib.sensor.ltc2874.com_stop", side_effect=com_stop_mock)
 
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
     move_to(time_machine, 0)
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
+    component_manager.start_actuator(config, server_port, log_port, msg_count=50)
     time.sleep(1)
-    component_manager.start_controller(config, server_port, real_port, msg_count=10)
+    component_manager.start_controller(config, server_port, real_port, msg_count=50)
 
-    time.sleep(2)
+    time.sleep(5)
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(3)
     move_to(time_machine, 2)
-    time.sleep(1)
+    time.sleep(3)
     move_to(time_machine, 0, 1)
-    time.sleep(1)
+    time.sleep(3)
     move_to(time_machine, 1, 1)
+    time.sleep(3)
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
@@ -1157,16 +1158,15 @@ def test_actuator_unable_to_receive(  # noqa: PLR0913
 
 
 def test_actuator_open(  # noqa: PLR0913
-    mocker, component_manager, time_machine, config, server_port, real_port, log_port
+    standard_mocks, component_manager, time_machine, config, server_port, real_port, log_port
 ):
-    mock_gpio(mocker)
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor.ltc2874.com_status", return_value=True)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 1})
+    mock_gpio(standard_mocks)
+    mock_fd_q10c(standard_mocks)
+    standard_mocks.patch("my_lib.sensor.ltc2874.com_status", return_value=True)
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 1})
 
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
     move_to(time_machine, 0)
 
@@ -1177,7 +1177,7 @@ def test_actuator_open(  # noqa: PLR0913
     time.sleep(1)  # Keep original timing for error detection
     move_to(time_machine, 1)
 
-    mocker.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 0})
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 0})
 
     time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 2)
@@ -1194,52 +1194,36 @@ def test_actuator_open(  # noqa: PLR0913
     check_notify_slack("電磁弁が壊れていますので制御を停止します。")
 
 
-def test_actuator_flow_unknown_1(mocker, config, server_port, real_port, log_port):
+def test_actuator_flow_unknown_1(  # noqa: PLR0913
+    standard_mocks, component_manager, config, server_port, real_port, log_port
+):
     import copy
 
-    import actuator
-    import controller
     import unit_cooler.controller.message
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch(
+    mock_gpio(standard_mocks)
+    standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
+    standard_mocks.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
     )
 
     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
     message_list_orig[-1]["duty"]["on_sec"] = 100000
-    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+    standard_mocks.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    standard_mocks.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 15,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
+    component_manager.start_controller(
+        config, server_port, real_port, speedup=100, dummy_mode=True, msg_count=15
     )
     time.sleep(1)
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 15,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+    component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=15)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], True)
@@ -2173,14 +2157,14 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
             "pub_port": server_port,
             "log_port": log_port,
         },
     )
 
     app = webui.create_app(
-        config, {"msg_count": 1, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
+        config, {"msg_count": 10, "dummy_mode": True, "pub_port": server_port, "log_port": log_port}
     )
     client = app.test_client()
 
@@ -2189,7 +2173,7 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
         {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 5,
+            "msg_count": 10,
             "server_port": server_port,
             "real_port": real_port,
         },

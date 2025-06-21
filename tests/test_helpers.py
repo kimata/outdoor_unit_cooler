@@ -236,9 +236,8 @@ def advance_time_sequence(time_machine, minutes: list[int], sleep_duration: floa
         time.sleep(sleep_duration)
 
 
-@pytest.fixture()
 def control_message_modifier(mocker):
-    """Provide helper to modify control message list settings."""
+    """Modify control message list settings. Takes mocker as parameter."""
 
     def modify_duty_settings(**kwargs):
         import unit_cooler.controller.message
@@ -260,6 +259,12 @@ def control_message_modifier(mocker):
         return message_list
 
     return modify_duty_settings
+
+
+@pytest.fixture()
+def control_message_modifier_fixture(mocker):
+    """Fixture version of control_message_modifier for tests that need it as a fixture."""
+    return control_message_modifier(mocker)
 
 
 def assert_standard_api_response(response, required_fields: list[str] | None = None):
