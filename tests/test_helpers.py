@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 
 _port_lock = threading.Lock()
+_used_ports = set()
 
 
 def _find_unused_port():
@@ -26,14 +27,35 @@ def _find_unused_port():
     import time
 
     with _port_lock:
-        for _ in range(5):  # Retry up to 5 times
+        for _attempt in range(100):  # Further increase retry attempts
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.bind(("localhost", 0))
-                port = sock.getsockname()[1]
-                # Brief delay to reduce race conditions in parallel execution
-                time.sleep(0.01)
-                return port
-        raise RuntimeError("Could not find unused port after 5 attempts")  # noqa: EM101, TRY003
+                # Use SO_REUSEADDR to avoid "Address already in use" errors
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                try:
+                    sock.bind(("localhost", 0))
+                    port = sock.getsockname()[1]
+
+                    # Check if port is already tracked as used
+                    if port not in _used_ports:
+                        _used_ports.add(port)
+                        # Longer delay to ensure port is not immediately reused
+                        time.sleep(0.1)
+                        return port
+                except OSError:
+                    # Port binding failed, try again
+                    pass
+
+            # Small delay before retry to avoid tight loop
+            time.sleep(0.02)
+
+        error_msg = f"Could not find unused port after {_attempt + 1} attempts"
+        raise RuntimeError(error_msg)
+
+
+def _release_port(port):
+    """Release a port from the used ports set."""
+    with _port_lock:
+        _used_ports.discard(port)
 
 
 class ComponentManager:
