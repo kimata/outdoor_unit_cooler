@@ -2572,7 +2572,7 @@ def test_webui_dummy_mode(mocker, config, server_port, real_port, log_port):
     )
 
     # Wait for services to initialize, with extra time for parallel execution
-    time.sleep(5)
+    time.sleep(10)
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
     assert res.status_code == 200
