@@ -18,37 +18,55 @@ if TYPE_CHECKING:
     from typing import Any, Callable
 
 
+import random
+
 _port_lock = threading.Lock()
 _used_ports = set()
+_base_port = 10000  # Start from a higher port range to avoid system ports
 
 
 def _find_unused_port():
-    """Find an unused port by binding to port 0 and getting the assigned port."""
-    import time
+    """Find an unused port using a more reliable approach for parallel execution."""
+    import os
 
     with _port_lock:
-        for _attempt in range(100):  # Further increase retry attempts
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                # Use SO_REUSEADDR to avoid "Address already in use" errors
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                try:
-                    sock.bind(("localhost", 0))
-                    port = sock.getsockname()[1]
+        # Use worker ID if available to reduce conflicts
+        worker_id = os.environ.get("PYTEST_XDIST_WORKER", "gw0")
+        worker_num = int(worker_id.replace("gw", "")) if worker_id.startswith("gw") else 0
 
-                    # Check if port is already tracked as used
-                    if port not in _used_ports:
+        # Each worker gets a different port range
+        port_range_start = _base_port + (worker_num * 1000)
+        port_range_end = port_range_start + 999
+
+        # Try specific port ranges first, then fall back to system allocation
+        for _attempt in range(50):
+            # Try worker-specific range first
+            if _attempt < 30:
+                port = random.randint(port_range_start, port_range_end)  # noqa: S311
+                if port in _used_ports:
+                    continue
+
+                # Test if port is actually available
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    try:
+                        sock.bind(("localhost", port))
                         _used_ports.add(port)
-                        # Longer delay to ensure port is not immediately reused
-                        time.sleep(0.1)
                         return port
-                except OSError:
-                    # Port binding failed, try again
-                    pass
+                    except OSError:
+                        continue
+            else:
+                # Fall back to system allocation
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    try:
+                        sock.bind(("localhost", 0))
+                        port = sock.getsockname()[1]
+                        if port not in _used_ports:
+                            _used_ports.add(port)
+                            return port
+                    except OSError:
+                        continue
 
-            # Small delay before retry to avoid tight loop
-            time.sleep(0.02)
-
-        error_msg = f"Could not find unused port after {_attempt + 1} attempts"
+        error_msg = f"Could not find unused port after 50 attempts (worker: {worker_id})"
         raise RuntimeError(error_msg)
 
 
@@ -56,6 +74,7 @@ def _release_port(port):
     """Release a port from the used ports set."""
     with _port_lock:
         _used_ports.discard(port)
+
 
 
 class ComponentManager:
