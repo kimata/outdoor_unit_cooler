@@ -1074,28 +1074,24 @@ def test_actuator_fd_q10c_get_state_error(  # noqa: PLR0913
 
     move_to(time_machine, 0)
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    time.sleep(1)
-    component_manager.start_controller(config, server_port, real_port, msg_count=10)
-
+    component_manager.start_actuator(config, server_port, log_port, msg_count=50)
     time.sleep(2)
+    component_manager.start_controller(config, server_port, real_port, msg_count=50)
+
+    time.sleep(3)
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 2)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 0, 1)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 1, 1)
+    time.sleep(2)
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
 
-    check_standard_liveness(
-        config,
-        {
-            ("actuator", "monitor"): False,
-        },
-    )
+    check_standard_liveness(config)
     # NOTE: エラーが発生していなければ OK
 
 
