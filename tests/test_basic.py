@@ -2259,7 +2259,7 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
     )
 
     app = webui.create_app(
-        config, {"msg_count": 1, "dummy_mode": False, "pub_port": server_port, "log_port": log_port}
+        config, {"msg_count": 2, "dummy_mode": False, "pub_port": server_port, "log_port": log_port}
     )
     client = app.test_client()
 
