@@ -782,6 +782,7 @@ def test_actuator(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -829,6 +830,7 @@ def test_actuator_normal(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -883,6 +885,7 @@ def test_actuator_duty_disable(mocker, config, server_port, real_port, log_port)
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -926,7 +929,7 @@ def test_actuator_log(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1042,7 +1045,7 @@ def test_actuator_send_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1086,7 +1089,7 @@ def test_actuator_mode_const(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1143,7 +1146,7 @@ def test_actuator_power_off_1(mocker, time_machine, config, server_port, real_po
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1219,7 +1222,7 @@ def test_actuator_power_off_2(mocker, time_machine, config, server_port, real_po
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1293,7 +1296,7 @@ def test_actuator_fd_q10c_stop_error(mocker, time_machine, config, server_port, 
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1367,7 +1370,7 @@ def test_actuator_fd_q10c_get_state_error(mocker, time_machine, config, server_p
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1423,7 +1426,7 @@ def test_actuator_no_test(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     controller_handle = controller.start(
         config,
         {
@@ -1526,7 +1529,7 @@ def test_actuator_open(mocker, time_machine, config, server_port, real_port, log
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1594,7 +1597,7 @@ def test_actuator_flow_unknown_1(mocker, config, server_port, real_port, log_por
             "real_port": real_port,
         },
     )
-
+    time.sleep(1)
     actuator_handle = actuator.start(
         config,
         {
@@ -1706,6 +1709,7 @@ def test_actuator_leak(mocker, time_machine, config, server_port, real_port, log
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1761,7 +1765,7 @@ def test_actuator_speedup(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1805,7 +1809,7 @@ def test_actuator_monitor_error(mocker, config, server_port, real_port, log_port
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1857,7 +1861,7 @@ def test_actuator_slack_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1912,7 +1916,7 @@ def test_actuator_close(mocker, time_machine, config, server_port, real_port, lo
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1966,6 +1970,7 @@ def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2016,7 +2021,7 @@ def test_actuator_notify_hazard(mocker, time_machine, config, server_port, real_
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2063,7 +2068,7 @@ def test_actuator_ctrl_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2112,7 +2117,7 @@ def test_actuator_recv_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2160,7 +2165,7 @@ def test_actuator_iolink_short(mocker, config, server_port, real_port, log_port)
             "log_port": log_port,
         },
     )
-
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2403,6 +2408,7 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2460,6 +2466,7 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2625,6 +2632,7 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2692,6 +2700,7 @@ def test_webui_day_sum(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
+    time.sleep(1)
     control_handle = controller.start(
         config,
         {
