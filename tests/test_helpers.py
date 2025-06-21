@@ -34,15 +34,24 @@ def _find_unused_port():
         worker_id = os.environ.get("PYTEST_XDIST_WORKER", "gw0")
         worker_num = int(worker_id.replace("gw", "")) if worker_id.startswith("gw") else 0
 
-        # Each worker gets a different port range
-        port_range_start = _base_port + (worker_num * 1000)
-        port_range_end = port_range_start + 999
+        # Use modulo to wrap worker numbers and keep port ranges valid
+        # This ensures we stay within valid port range (1024-65535)
+        max_workers = 50  # Support up to 50 concurrent workers
+        worker_slot = worker_num % max_workers
+        port_range_size = 500  # Smaller range per worker to fit more workers
 
-        # Try specific port ranges first, then fall back to system allocation
-        for _attempt in range(50):
-            # Try worker-specific range first
-            if _attempt < 30:
-                port = random.randint(port_range_start, port_range_end)  # noqa: S311
+        port_range_start = _base_port + (worker_slot * port_range_size)
+        port_range_end = port_range_start + port_range_size - 1
+
+        # Ensure we don't exceed the maximum valid port number
+        if port_range_end > 65535:
+            port_range_end = 65535
+
+        # Try specific port ranges first, then fall back to system allocation quickly
+        for _attempt in range(30):  # Reduced total attempts
+            # Try worker-specific range first (fewer attempts)
+            if _attempt < 10 and port_range_start <= port_range_end:
+                port = random.randint(port_range_start, min(port_range_end, 65535))  # noqa: S311
                 if port in _used_ports:
                     continue
 
@@ -55,7 +64,7 @@ def _find_unused_port():
                     except OSError:
                         continue
             else:
-                # Fall back to system allocation
+                # Fall back to system allocation more quickly
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                     try:
                         sock.bind(("localhost", 0))
@@ -66,7 +75,7 @@ def _find_unused_port():
                     except OSError:
                         continue
 
-        error_msg = f"Could not find unused port after 50 attempts (worker: {worker_id})"
+        error_msg = f"Could not find unused port after 30 attempts (worker: {worker_id}, slot: {worker_slot})"
         raise RuntimeError(error_msg)
 
 
