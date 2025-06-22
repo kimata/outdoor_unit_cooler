@@ -24,27 +24,55 @@ import unit_cooler.const
 import zmq
 
 
-def start_server(server_port, func, interval_sec, msg_count=0):
+def start_server(server_port, func, interval_sec, msg_count=0):  # noqa: C901
     logging.info("Start ZMQ server (port: %d)...", server_port)
 
     context = zmq.Context()
 
-    socket = context.socket(zmq.PUB)
+    socket = context.socket(zmq.XPUB)
     socket.bind(f"tcp://*:{server_port}")
 
     logging.info("Server initialize done.")
 
+    # 最初のクライアント接続を待つ
+    logging.info("Waiting for first client connection...")
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
+
+    has_subscriber = False
+    while not has_subscriber:
+        events = dict(poller.poll(100))
+        if socket in events:
+            event = socket.recv()
+            if event[0] == 1:  # 購読開始
+                logging.info("First client connected.")
+                has_subscriber = True
+                # 購読イベントを処理
+                socket.send(event)
+
     send_count = 0
     try:
         while True:
+            # 購読イベントをチェック（ノンブロッキング）
+            try:
+                event = socket.recv(zmq.NOBLOCK)
+                if event[0] == 0:  # 購読解除
+                    logging.debug("Client unsubscribed.")
+                elif event[0] == 1:  # 購読開始
+                    logging.debug("New client subscribed.")
+                # イベントを転送
+                socket.send(event)
+            except zmq.Again:
+                pass  # イベントなし
+
             start_time = time.time()
             socket.send_string(f"{unit_cooler.const.PUBSUB_CH} {json.dumps(func())}")
 
             if msg_count != 0:
                 logging.debug("(send_count, msg_count) = (%d, %d)", send_count, msg_count)
                 send_count += 1
-                # NOTE: Proxy が間に入るので、2回多く回す
-                if send_count == (msg_count + 2):
+                # NOTE: Proxy が間に入るので、多く回す
+                if send_count == (msg_count + 10):
                     logging.info("Terminate, because the specified number of times has been reached.")
                     break
 
@@ -94,7 +122,9 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):  # noqa: PLR
             logging.debug("Store cache")
             cache[ch] = json_str
 
+            logging.info("Proxy message")
             backend.send_string(recv_data)
+
             if subscribed:
                 proxy_count += 1
 
@@ -102,13 +132,13 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):  # noqa: PLR
             logging.debug("Backend event")
             event = backend.recv()
             if event[0] == 0:
-                logging.debug("Unsubscribed")
+                logging.info("Client unsubscribed.")
             elif event[0] == 1:
-                logging.debug("Subscribed")
+                logging.info("New client subscribed.")
                 subscribed = True
                 ch = event[1:].decode("utf-8")
                 if ch in cache:
-                    logging.debug("Send cache")
+                    logging.info("Send cache")
                     backend.send_string(f"{unit_cooler.const.PUBSUB_CH} {cache[unit_cooler.const.PUBSUB_CH]}")
                     proxy_count += 1
                 else:

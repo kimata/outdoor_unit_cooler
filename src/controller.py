@@ -96,10 +96,13 @@ def start(config, arg):
     proxy_thread = None
     control_thread = None
     try:
-        # NOTE: Proxy が確実に終了するよう、回数指定されていた場合は、Server 側の回数を増やしておく
-        msg_count = setting["msg_count"]
-        if msg_count != 0:
-            msg_count = msg_count + 10
+        if not setting["disable_proxy"]:
+            proxy_thread = cache_proxy_start(
+                setting["server_host"],
+                setting["real_port"],
+                setting["server_port"],
+                setting["msg_count"],
+            )
 
         control_thread = control_server_start(
             config,
@@ -108,13 +111,6 @@ def start(config, arg):
             setting["speedup"],
             msg_count,
         )
-        if not setting["disable_proxy"]:
-            proxy_thread = cache_proxy_start(
-                setting["server_host"],
-                setting["real_port"],
-                setting["server_port"],
-                setting["msg_count"],
-            )
     except Exception:
         logging.exception("Failed to start controller")
         unit_cooler.util.notify_error(config, traceback.format_exc())
