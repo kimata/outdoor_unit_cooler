@@ -99,7 +99,7 @@ def start(config, arg):
         # NOTE: Proxy が確実に終了するよう、回数指定されていた場合は、Server 側の回数を増やしておく
         msg_count = setting["msg_count"]
         if msg_count != 0:
-            msg_count + 2
+            msg_count + 5
 
         control_thread = control_server_start(
             config,
