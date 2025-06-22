@@ -2236,7 +2236,7 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
         config,
         {
             "speedup": 100,
-            "msg_count": 7,
+            "msg_count": 5,
             "server_port": server_port,
             "real_port": real_port,
         },
