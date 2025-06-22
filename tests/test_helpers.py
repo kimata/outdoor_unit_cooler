@@ -85,7 +85,6 @@ def _release_port(port):
         _used_ports.discard(port)
 
 
-
 class ComponentManager:
     """Manages component startup and teardown for tests."""  # noqa: D203
 
@@ -115,7 +114,7 @@ class ComponentManager:
         default_config = {
             "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 1,
+            "msg_count": 2,
             "server_port": server_port,
             "real_port": real_port,
         }

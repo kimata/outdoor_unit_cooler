@@ -1208,10 +1208,10 @@ def test_actuator_flow_unknown_1(  # noqa: PLR0913
     config["actuator"]["monitor"]["sense"]["giveup"] = 4
 
     component_manager.start_controller(
-        config, server_port, real_port, speedup=100, dummy_mode=True, msg_count=6
+        config, server_port, real_port, speedup=100, dummy_mode=True, msg_count=7
     )
     time.sleep(1)
-    component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=6)
+    component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=7)
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
