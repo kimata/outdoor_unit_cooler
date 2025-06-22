@@ -99,14 +99,14 @@ def start(config, arg):
         # NOTE: Proxy が確実に終了するよう、回数指定されていた場合は、Server 側の回数を増やしておく
         msg_count = setting["msg_count"]
         if msg_count != 0:
-            msg_count + 5
+            msg_count = msg_count + 5
 
         control_thread = control_server_start(
             config,
             setting["real_port"],
             setting["dummy_mode"],
             setting["speedup"],
-            setting["msg_count"],
+            msg_count,
         )
         if not setting["disable_proxy"]:
             proxy_thread = cache_proxy_start(
