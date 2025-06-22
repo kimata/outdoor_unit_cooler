@@ -379,7 +379,7 @@ def test_controller_start_error_2(controller_mocks, config, server_port, real_po
 
     def thread_mock(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):  # noqa: ARG001, B006, PLR0913
         thread_mock.i += 1
-        if thread_mock.i == 2:
+        if thread_mock.i == 1:
             raise RuntimeError
         return Thread_orig(target=target, args=args)
 
@@ -400,8 +400,15 @@ def test_controller_start_error_2(controller_mocks, config, server_port, real_po
         )
     )
 
-    # NOTE: 現状、Proxy のエラーの場合、controller としては healthz は正常になる
-    check_controller_only_liveness(config)
+    check_standard_liveness(
+        config,
+        {
+            ("controller",): False,
+            ("actuator", "subscribe"): False,
+            ("actuator", "control"): False,
+            ("actuator", "monitor"): False,
+        },
+    )
     check_notify_slack("Traceback")
 
 
