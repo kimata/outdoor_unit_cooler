@@ -41,6 +41,7 @@ testem.log
 /data/*
 /tests/evidence/*
 .coverage.*
+config.yaml
 # System files
 .DS_Store
 Thumbs.db
