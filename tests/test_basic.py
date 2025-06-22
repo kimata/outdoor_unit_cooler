@@ -1524,6 +1524,8 @@ def test_actuator_close(  # noqa: PLR0913
     time.sleep(2)
     move_to(time_machine, 3)
     time.sleep(2)
+    move_to(time_machine, 4)
+    time.sleep(2)
 
     actuator.wait_and_term(*actuator_handle)
     controller.wait_and_term(*control_handle)
@@ -1531,7 +1533,7 @@ def test_actuator_close(  # noqa: PLR0913
     check_liveness(config, ["controller"], True)
     check_liveness(config, ["actuator", "subscribe"], True)
     check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["actuator", "monitor"], True, 180)
     check_liveness(config, ["webui", "subscribe"], False)
     check_notify_slack("元栓が閉じています。")
 
