@@ -100,6 +100,7 @@ def start_proxy(server_host, server_port, proxy_port, msg_count=0):  # noqa: PLR
     frontend.setsockopt_string(zmq.SUBSCRIBE, unit_cooler.const.PUBSUB_CH)
 
     backend = context.socket(zmq.XPUB)
+    backend.setsockopt(zmq.XPUB_VERBOSE, 1)
     backend.bind(f"tcp://*:{proxy_port}")
 
     cache = {}
