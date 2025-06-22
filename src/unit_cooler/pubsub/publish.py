@@ -24,7 +24,28 @@ import unit_cooler.const
 import zmq
 
 
-def start_server(server_port, func, interval_sec, msg_count=0):  # noqa: C901
+def wait_first_client(socket, timeout=10):
+    start_time = time.time()
+
+    logging.info("Waiting for first client connection...")
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
+
+    while True:
+        events = dict(poller.poll(100))
+        if socket in events:
+            event = socket.recv()
+            if event[0] == 1:  # 購読開始
+                logging.info("First client connected.")
+                # 購読イベントを処理
+                socket.send(event)
+
+        if time.time() - start_time > timeout:
+            logging.warning("Timeout waiting for first client connection.")
+            break
+
+
+def start_server(server_port, func, interval_sec, msg_count=0):
     logging.info("Start ZMQ server (port: %d)...", server_port)
 
     context = zmq.Context()
@@ -35,20 +56,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):  # noqa: C901
     logging.info("Server initialize done.")
 
     # 最初のクライアント接続を待つ
-    logging.info("Waiting for first client connection...")
-    poller = zmq.Poller()
-    poller.register(socket, zmq.POLLIN)
-
-    has_subscriber = False
-    while not has_subscriber:
-        events = dict(poller.poll(100))
-        if socket in events:
-            event = socket.recv()
-            if event[0] == 1:  # 購読開始
-                logging.info("First client connected.")
-                has_subscriber = True
-                # 購読イベントを処理
-                socket.send(event)
+    wait_first_client(socket)
 
     send_count = 0
     try:
