@@ -1,3 +1,4 @@
+import React from "react";
 import "dayjs/locale/ja";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -14,7 +15,7 @@ type Props = {
     stat: ApiResponse.Stat;
 };
 
-const Sensor = ({ isReady, stat }: Props) => {
+const Sensor = React.memo(({ isReady, stat }: Props) => {
     const loading = () => {
         return (
             <span className="display-1 align-middle ms-4">
@@ -103,6 +104,8 @@ const Sensor = ({ isReady, stat }: Props) => {
             </div>
         </div>
     );
-};
+});
+
+Sensor.displayName = 'Sensor';
 
 export { Sensor };

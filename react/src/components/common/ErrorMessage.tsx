@@ -1,10 +1,12 @@
+import React from 'react';
+
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
   className?: string;
 }
 
-const ErrorMessage = ({ message, onRetry, className = '' }: ErrorMessageProps) => {
+const ErrorMessage = React.memo(({ message, onRetry, className = '' }: ErrorMessageProps) => {
   return (
     <div className={`row justify-content-center ${className}`} data-testid="error">
       <div className="col-11 text-end">
@@ -22,6 +24,8 @@ const ErrorMessage = ({ message, onRetry, className = '' }: ErrorMessageProps) =
       </div>
     </div>
   );
-};
+});
+
+ErrorMessage.displayName = 'ErrorMessage';
 
 export { ErrorMessage };

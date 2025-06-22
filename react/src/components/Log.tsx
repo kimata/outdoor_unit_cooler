@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { PaginationControl } from "react-bootstrap-pagination-control";
 import { XCircleFill, ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from "react-bootstrap-icons";
 
@@ -15,7 +15,7 @@ type Props = {
     log: ApiResponse.Log;
 };
 
-const Log = ({ isReady, log }: Props) => {
+const Log = React.memo(({ isReady, log }: Props) => {
     const [page, setPage] = useState(1);
     const size = 5;
 
@@ -114,9 +114,9 @@ const Log = ({ isReady, log }: Props) => {
                         between={3}
                         total={log.length}
                         limit={size}
-                        changePage={(page) => {
+                        changePage={useCallback((page: number) => {
                             setPage(page);
-                        }}
+                        }, [])}
                         ellipsis={1}
                     />
                 </div>
@@ -136,6 +136,8 @@ const Log = ({ isReady, log }: Props) => {
             </div>
         </div>
     );
-};
+});
+
+Log.displayName = 'Log';
 
 export { Log };

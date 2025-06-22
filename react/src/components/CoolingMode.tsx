@@ -1,3 +1,4 @@
+import React from "react";
 import { ApiResponse } from "../lib/ApiResponse";
 import { Loading } from "./common/Loading";
 
@@ -6,7 +7,7 @@ type Props = {
     stat: ApiResponse.Stat;
 };
 
-const CoolingMode = ({ isReady, stat }: Props) => {
+const CoolingMode = React.memo(({ isReady, stat }: Props) => {
     const dutyInfo = (mode: ApiResponse.Mode) => {
         return (
             <div className="container">
@@ -53,6 +54,8 @@ const CoolingMode = ({ isReady, stat }: Props) => {
             </div>
         </div>
     );
-};
+});
+
+CoolingMode.displayName = 'CoolingMode';
 
 export { CoolingMode };

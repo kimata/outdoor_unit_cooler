@@ -1,10 +1,12 @@
+import React from 'react';
+
 interface LoadingProps {
   size?: 'small' | 'medium' | 'large';
   text?: string;
   className?: string;
 }
 
-const Loading = ({
+const Loading = React.memo(({
   size = 'medium',
   text = 'Loading...',
   className = ''
@@ -22,6 +24,8 @@ const Loading = ({
       </span>
     </div>
   );
-};
+});
+
+Loading.displayName = 'Loading';
 
 export { Loading };

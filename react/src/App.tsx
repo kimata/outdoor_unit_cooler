@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import "./App.css";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -76,8 +76,6 @@ function App() {
     };
 
     const [updateTime, setUpdateTime] = useState("Unknown");
-    const buildDate = dayjs(preval`module.exports = new Date().toUTCString();`).format("LLL");
-    const buildDateFrom = dayjs(preval`module.exports = new Date().toUTCString();`).fromNow();
 
     // API calls using custom hooks
     const {
@@ -130,17 +128,24 @@ function App() {
         return "データの読み込みに失敗しました";
     };
 
-    const handleRetry = () => {
+    const handleRetry = useCallback(() => {
         refetchStat();
         refetchLog();
-    };
+    }, [refetchStat, refetchLog]);
 
-    // Format system info data
-    const imageBuildDate = sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).format("LLL") : "?";
-    const imageBuildDateFrom = sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).fromNow() : "?";
-    const actuatorUptime = actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).format("LLL") : "?";
-    const actuatorUptimeFrom = actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).fromNow() : "?";
-    const actuatorLoadAverage = actuatorSysInfo?.load_average || "?";
+    // Format system info data with memoization
+    const systemInfoMemo = useMemo(() => ({
+        imageBuildDate: sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).format("LLL") : "?",
+        imageBuildDateFrom: sysInfo?.image_build_date ? dayjs(sysInfo.image_build_date).fromNow() : "?",
+        actuatorUptime: actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).format("LLL") : "?",
+        actuatorUptimeFrom: actuatorSysInfo?.uptime ? dayjs(actuatorSysInfo.uptime).fromNow() : "?",
+        actuatorLoadAverage: actuatorSysInfo?.load_average || "?"
+    }), [sysInfo?.image_build_date, actuatorSysInfo?.uptime, actuatorSysInfo?.load_average]);
+
+    const buildInfo = useMemo(() => ({
+        buildDate: dayjs(preval`module.exports = new Date().toUTCString();`).format("LLL"),
+        buildDateFrom: dayjs(preval`module.exports = new Date().toUTCString();`).fromNow()
+    }), []);
 
 
     return (
@@ -174,22 +179,22 @@ function App() {
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                アクチュエータ起動時刻: {actuatorUptime} [{actuatorUptimeFrom}]
+                                アクチュエータ起動時刻: {systemInfoMemo.actuatorUptime} [{systemInfoMemo.actuatorUptimeFrom}]
                             </small>
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                アクチュエータ load average: {actuatorLoadAverage}
+                                アクチュエータ load average: {systemInfoMemo.actuatorLoadAverage}
                             </small>
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                イメージビルド: {imageBuildDate} [{imageBuildDateFrom}]
+                                イメージビルド: {systemInfoMemo.imageBuildDate} [{systemInfoMemo.imageBuildDateFrom}]
                             </small>
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                React ビルド: {buildDate} [{buildDateFrom}]
+                                React ビルド: {buildInfo.buildDate} [{buildInfo.buildDateFrom}]
                             </small>
                         </p>
                         <p className="display-6">

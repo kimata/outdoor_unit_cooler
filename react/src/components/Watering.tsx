@@ -1,10 +1,11 @@
+import React from "react";
 import watering_icon from "../assets/watering.png";
 
 import { ApiResponse } from "../lib/ApiResponse";
 import { Loading } from "./common/Loading";
 import { StatComponentProps } from "../types/common";
 
-const Watering = ({ isReady, stat }: StatComponentProps) => {
+const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
     const amount = (watering: ApiResponse.Watering) => {
         return (
             <div className="card-body outdoor_unit">
@@ -59,6 +60,8 @@ const Watering = ({ isReady, stat }: StatComponentProps) => {
             </div>
         </div>
     );
-};
+});
+
+Watering.displayName = 'Watering';
 
 export { Watering };

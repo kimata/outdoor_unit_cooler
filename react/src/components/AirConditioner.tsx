@@ -1,3 +1,4 @@
+import React from "react";
 import "dayjs/locale/ja";
 import dayjs, { locale, extend } from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -13,7 +14,7 @@ type Props = {
     stat: ApiResponse.Stat;
 };
 
-const AirConditioner = ({ isReady, stat }: Props) => {
+const AirConditioner = React.memo(({ isReady, stat }: Props) => {
 
     const valueInt = (value: number | null) => {
         if (value == null) {
@@ -28,7 +29,7 @@ const AirConditioner = ({ isReady, stat }: Props) => {
     };
 
     type AirconRowProps = { airconData: ApiResponse.SensorData };
-    const AirconRow: React.FC<AirconRowProps> = (props) => {
+    const AirconRow: React.FC<AirconRowProps> = React.memo((props) => {
         let date = dayjs(props.airconData.time);
 
         return (
@@ -58,7 +59,7 @@ const AirConditioner = ({ isReady, stat }: Props) => {
                 </td>
             </tr>
         );
-    };
+    });
     const coolerStatus = (stat: ApiResponse.Stat) => {
         if (stat.cooler_status.message != null) {
             return <div>{stat.cooler_status.message}</div>;
@@ -101,6 +102,8 @@ const AirConditioner = ({ isReady, stat }: Props) => {
             </div>
         </div>
     );
-};
+});
+
+AirConditioner.displayName = 'AirConditioner';
 
 export { AirConditioner };

@@ -1,3 +1,4 @@
+import React from "react";
 import { Chart, CategoryScale, LinearScale, BarElement, Tooltip, ChartOptions } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
@@ -10,7 +11,7 @@ type Props = {
     stat: ApiResponse.Stat;
 };
 
-const History = ({ isReady, stat }: Props) => {
+const History = React.memo(({ isReady, stat }: Props) => {
     const history = (watering_list: ApiResponse.Watering[]) => {
         const chartOptions: ChartOptions<any> = {
             responsive: true,
@@ -72,6 +73,8 @@ const History = ({ isReady, stat }: Props) => {
             </div>
         </div>
     );
-};
+});
+
+History.displayName = 'History';
 
 export { History };
