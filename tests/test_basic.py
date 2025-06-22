@@ -1204,8 +1204,8 @@ def test_actuator_flow_unknown_1(  # noqa: PLR0913
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
     standard_mocks.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    # NOTE: エラー閾値を下げて6回の実行でエラーが発生するようにする
-    config["actuator"]["monitor"]["sense"]["giveup"] = 4
+    # NOTE: エラー閾値を下げて7回の実行でエラーが発生するようにする
+    config["actuator"]["monitor"]["sense"]["giveup"] = 3
 
     component_manager.start_controller(
         config, server_port, real_port, speedup=100, dummy_mode=True, msg_count=7
