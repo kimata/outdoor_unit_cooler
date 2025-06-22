@@ -72,7 +72,7 @@ def start_server(server_port, func, interval_sec, msg_count=0):  # noqa: C901
                 logging.debug("(send_count, msg_count) = (%d, %d)", send_count, msg_count)
                 send_count += 1
                 # NOTE: Proxy が間に入るので、多く回す
-                if send_count == (msg_count + 20):
+                if send_count == (msg_count + 15):
                     logging.info("Terminate, because the specified number of times has been reached.")
                     break
 
