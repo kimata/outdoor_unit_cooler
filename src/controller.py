@@ -109,7 +109,7 @@ def start(config, arg):
             setting["real_port"],
             setting["dummy_mode"],
             setting["speedup"],
-            msg_count,
+            setting["msg_count"],
         )
     except Exception:
         logging.exception("Failed to start controller")
