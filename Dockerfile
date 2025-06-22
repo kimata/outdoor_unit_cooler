@@ -7,7 +7,6 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
     build-essential \
     swig
 
-ENV PYTHONDONTWRITEBYTECODE=1
 ENV PATH="/root/.local/bin/:$PATH"
 
 ENV UV_SYSTEM_PYTHON=1 \
