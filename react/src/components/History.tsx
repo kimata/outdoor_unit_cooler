@@ -18,7 +18,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
             scales: {
                 y: {
                     ticks: {
-                        callback: function (value: number) {
+                        callback: function (value: any) {
                             return value + " L";
                         },
                     },
