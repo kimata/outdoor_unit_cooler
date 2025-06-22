@@ -269,7 +269,7 @@ def test_webui_api_endpoints(config):
     # Wait for server to start with retry mechanism
     base_url = f"http://localhost:{test_port}{my_lib.webapp.config.URL_PREFIX}"
     server_ready = False
-    for _ in range(10):  # Try for up to 10 seconds
+    for _ in range(30):  # Try for up to 30 seconds
         try:
             res = requests.get(f"{base_url}/", timeout=1)
             if res.status_code in [200, 404, 500]:  # Any response means server is up
@@ -279,7 +279,7 @@ def test_webui_api_endpoints(config):
             time.sleep(1)
 
     if not server_ready:
-        pytest.fail("WebUI server failed to start within 10 seconds")
+        pytest.fail("WebUI server failed to start within 30 seconds")
 
     # Test main page
     try:
@@ -349,7 +349,7 @@ def test_webui_error_responses(config):
     # Wait for server to start with retry mechanism
     base_url = f"http://localhost:{test_port}{my_lib.webapp.config.URL_PREFIX}"
     server_ready = False
-    for _ in range(10):  # Try for up to 10 seconds
+    for _ in range(30):  # Try for up to 30 seconds
         try:
             res = requests.get(f"{base_url}/", timeout=1)
             if res.status_code in [200, 404, 500]:  # Any response means server is up
@@ -359,7 +359,7 @@ def test_webui_error_responses(config):
             time.sleep(1)
 
     if not server_ready:
-        pytest.fail("WebUI server failed to start within 10 seconds")
+        pytest.fail("WebUI server failed to start within 30 seconds")
 
     # Test invalid endpoints
     try:

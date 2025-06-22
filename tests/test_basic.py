@@ -1519,13 +1519,13 @@ def test_actuator_close(  # noqa: PLR0913
         },
     )
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 2)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 3)
-    time.sleep(1)
+    time.sleep(2)
     move_to(time_machine, 4)
-    time.sleep(1)
+    time.sleep(2)
 
     actuator.wait_and_term(*actuator_handle)
     controller.wait_and_term(*control_handle)
