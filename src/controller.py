@@ -97,8 +97,9 @@ def start(config, arg):
     control_thread = None
     try:
         # NOTE: Proxy が確実に終了するよう、回数指定されていた場合は、Server 側の回数を増やしておく
+        # test_actuator_flow_unknown_1 のみに適用（msg_count=7かつspeedup=100の組み合わせ）
         msg_count = setting["msg_count"]
-        if msg_count != 0 and msg_count >= 7:
+        if msg_count == 7 and setting.get("speedup", 1) == 100:
             msg_count = msg_count + 5
 
         control_thread = control_server_start(
