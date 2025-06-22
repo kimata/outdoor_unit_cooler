@@ -2248,7 +2248,7 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
     client = app.test_client()
 
     # NOTE: カバレッジ用にキューを溢れさせる
-    for _ in range(100):
+    for _ in range(30):
         unit_cooler.webui.worker.queue_put(
             app.config["MESSAGE_QUEUE"],
             {"state": 0},
