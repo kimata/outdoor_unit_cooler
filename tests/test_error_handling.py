@@ -59,9 +59,9 @@ def test_valve_gpio_error(mocker, config):
     unit_cooler.actuator.valve.init(17)
 
     # Mock GPIO to raise exception
-    with mocker.patch("my_lib.rpi.gpio.output", side_effect=Exception("GPIO Error")), pytest.raises(
-        Exception, match="GPIO Error"
-    ):
+    mocker.patch("my_lib.rpi.gpio.output", side_effect=Exception("GPIO Error"))
+
+    with pytest.raises(Exception, match="GPIO Error"):
         unit_cooler.actuator.valve.set_state(unit_cooler.const.VALVE_STATE.OPEN)
 
 
@@ -71,9 +71,9 @@ def test_zmq_connection_failure(mocker, config):
     import zmq
 
     # Mock ZMQ to raise connection error
-    with mocker.patch("zmq.Context", side_effect=zmq.ZMQError("Connection failed")), pytest.raises(
-        zmq.ZMQError
-    ):
+    mocker.patch("zmq.Context", side_effect=zmq.ZMQError("Connection failed"))
+
+    with pytest.raises(zmq.ZMQError, match="Connection failed"):
         unit_cooler.pubsub.subscribe.start_client("localhost", 2222, lambda _: None, 1)
 
 
@@ -162,9 +162,9 @@ def test_influxdb_connection_error(mocker, config):
     import unit_cooler.controller.sensor
 
     # Mock the underlying sensor data fetch to raise connection error
-    with mocker.patch(
-        "my_lib.sensor_data.fetch_data", side_effect=Exception("InfluxDB Connection Error")
-    ), pytest.raises(Exception, match="InfluxDB Connection Error"):
+    mocker.patch("my_lib.sensor_data.fetch_data", side_effect=Exception("InfluxDB Connection Error"))
+
+    with pytest.raises(Exception, match="InfluxDB Connection Error"):
         unit_cooler.controller.sensor.get_sense_data(config)
 
 
