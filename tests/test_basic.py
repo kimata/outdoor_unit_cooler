@@ -1166,20 +1166,22 @@ def test_actuator_open(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(1)  # Keep original timing for error detection
     move_to(time_machine, 1)
 
-    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 0})
-
     time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 2)
+
+    standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 0})
+
     time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 3)
     time.sleep(0.5)  # Slightly reduced from 1 for testing
     move_to(time_machine, 4)
+    time.sleep(0.5)  # Slightly reduced from 1 for testing
+    move_to(time_machine, 5)
     time.sleep(0.5)  # Slightly reduced from 1 for testing
 
     component_manager.wait_and_term_controller()
