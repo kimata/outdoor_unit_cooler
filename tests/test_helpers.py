@@ -7,9 +7,14 @@ This module contains common patterns extracted from test_basic.py to reduce code
 from __future__ import annotations
 
 import copy
+import fcntl
+import os
+import random
 import socket
+import tempfile
 import threading
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -18,71 +23,125 @@ if TYPE_CHECKING:
     from typing import Any, Callable
 
 
-import random
-
 _port_lock = threading.Lock()
 _used_ports = set()
 _base_port = 10000  # Start from a higher port range to avoid system ports
+_port_lock_file = Path(tempfile.gettempdir()) / "pytest_port_lock"
+
+
+def _acquire_port_lock():
+    """Acquire cross-process port allocation lock."""
+    try:
+        lock_fd = os.open(str(_port_lock_file), os.O_CREAT | os.O_WRONLY, 0o644)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        return lock_fd
+    except OSError:
+        return None
+
+
+def _release_port_lock(lock_fd):
+    """Release cross-process port allocation lock."""
+    if lock_fd is not None:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+        except OSError:
+            pass
+
+
+def _load_used_ports():
+    """Load used ports from shared file."""
+    used_ports_file = Path(tempfile.gettempdir()) / "pytest_used_ports"
+    try:
+        with used_ports_file.open() as f:
+            return {int(line.strip()) for line in f if line.strip().isdigit()}
+    except (FileNotFoundError, ValueError):
+        return set()
+
+
+def _save_used_ports(used_ports):
+    """Save used ports to shared file."""
+    used_ports_file = Path(tempfile.gettempdir()) / "pytest_used_ports"
+    try:
+        with used_ports_file.open("w") as f:
+            for port in sorted(used_ports):
+                f.write(f"{port}\n")
+    except OSError:
+        pass
 
 
 def _find_unused_port():
-    """Find an unused port using a more reliable approach for parallel execution."""
-    import os
+    """Find an unused port using cross-process coordination."""
+    lock_fd = _acquire_port_lock()
+    if lock_fd is None:
+        # Fallback to simple system allocation if locking fails
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("localhost", 0))
+            return sock.getsockname()[1]
 
-    with _port_lock:
-        # Use worker ID if available to reduce conflicts
+    try:
+        # Load currently used ports from all processes
+        used_ports = _load_used_ports()
+
+        # Use worker ID for initial port range preference
         worker_id = os.environ.get("PYTEST_XDIST_WORKER", "gw0")
         worker_num = int(worker_id.replace("gw", "")) if worker_id.startswith("gw") else 0
 
-        # Use modulo to wrap worker numbers and keep port ranges valid
-        # This ensures we stay within valid port range (1024-65535)
-        max_workers = 50  # Support up to 50 concurrent workers
+        # Calculate worker-specific starting point
+        max_workers = 50
         worker_slot = worker_num % max_workers
-        port_range_size = 500  # Smaller range per worker to fit more workers
-
+        port_range_size = 500
         port_range_start = _base_port + (worker_slot * port_range_size)
-        port_range_end = port_range_start + port_range_size - 1
+        port_range_end = min(port_range_start + port_range_size - 1, 65535)
 
-        # Ensure we don't exceed the maximum valid port number
-        if port_range_end > 65535:
-            port_range_end = 65535
+        # Try to find an available port
+        for _attempt in range(50):
+            if _attempt < 20 and port_range_start <= port_range_end:
+                # Try worker-specific range first
+                port = random.randint(port_range_start, port_range_end)  # noqa: S311
+            else:
+                # Try broader range
+                port = random.randint(_base_port, 65535)  # noqa: S311
 
-        # Try specific port ranges first, then fall back to system allocation quickly
-        for _attempt in range(30):  # Reduced total attempts
-            # Try worker-specific range first (fewer attempts)
-            if _attempt < 10 and port_range_start <= port_range_end:
-                port = random.randint(port_range_start, min(port_range_end, 65535))  # noqa: S311
-                if port in _used_ports:
+            if port in used_ports:
+                continue
+
+            # Test if port is actually available
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                try:
+                    sock.bind(("localhost", port))
+                    # Port is available - record it and return
+                    used_ports.add(port)
+                    _save_used_ports(used_ports)
+                    return port
+                except OSError:
+                    # Port not available, try next
                     continue
 
-                # Test if port is actually available
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    try:
-                        sock.bind(("localhost", port))
-                        _used_ports.add(port)
-                        return port
-                    except OSError:
-                        continue
-            else:
-                # Fall back to system allocation more quickly
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    try:
-                        sock.bind(("localhost", 0))
-                        port = sock.getsockname()[1]
-                        if port not in _used_ports:
-                            _used_ports.add(port)
-                            return port
-                    except OSError:
-                        continue
+        # If we get here, fall back to system allocation
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("localhost", 0))
+            port = sock.getsockname()[1]
+            used_ports.add(port)
+            _save_used_ports(used_ports)
+            return port
 
-        error_msg = f"Could not find unused port after 30 attempts (worker: {worker_id}, slot: {worker_slot})"
-        raise RuntimeError(error_msg)
+    finally:
+        _release_port_lock(lock_fd)
 
 
 def _release_port(port):
-    """Release a port from the used ports set."""
-    with _port_lock:
-        _used_ports.discard(port)
+    """Release a port from the used ports set across all processes."""
+    lock_fd = _acquire_port_lock()
+    if lock_fd is None:
+        return
+
+    try:
+        used_ports = _load_used_ports()
+        used_ports.discard(port)
+        _save_used_ports(used_ports)
+    finally:
+        _release_port_lock(lock_fd)
 
 
 class ComponentManager:

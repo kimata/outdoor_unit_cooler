@@ -14,6 +14,7 @@ import pytest
 
 from tests.test_helpers import (
     _find_unused_port,
+    _release_port,
     check_controller_only_liveness,
     check_standard_liveness,
     check_standard_post_test,
@@ -57,17 +58,23 @@ def config():
 
 @pytest.fixture()
 def server_port():
-    return _find_unused_port()
+    port = _find_unused_port()
+    yield port
+    _release_port(port)
 
 
 @pytest.fixture()
 def real_port():
-    return _find_unused_port()
+    port = _find_unused_port()
+    yield port
+    _release_port(port)
 
 
 @pytest.fixture()
 def log_port():
-    return _find_unused_port()
+    port = _find_unused_port()
+    yield port
+    _release_port(port)
 
 
 @pytest.fixture(autouse=True)
