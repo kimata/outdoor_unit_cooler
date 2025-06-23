@@ -2056,7 +2056,7 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
         },
     )
 
-    time.sleep(2)
+    time.sleep(4)
 
     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
