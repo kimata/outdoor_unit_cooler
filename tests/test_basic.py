@@ -700,7 +700,6 @@ def test_controller_dummy_error(controller_mocks, config, server_port, real_port
 def test_actuator(component_manager, config, server_port, real_port, log_port):
     # Start actuator and controller in sequence
     component_manager.start_actuator(config, server_port, log_port, msg_count=1)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=1)
 
     # Wait for completion
@@ -723,7 +722,6 @@ def test_actuator_normal(  # noqa: PLR0913
 
     # Start both components with reduced speedup for normal operation
     component_manager.start_actuator(config, server_port, log_port, speedup=20, msg_count=5)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, speedup=20, msg_count=5)
 
     component_manager.wait_and_term_controller()
@@ -746,7 +744,6 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     control_message_modifier(standard_mocks)(enable=False)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=5)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=5)
 
     component_manager.wait_and_term_controller()
@@ -766,7 +763,6 @@ def test_actuator_log(  # noqa: PLR0913
     import requests
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     requests.Session().mount(
@@ -856,7 +852,6 @@ def test_actuator_send_error(  # noqa: PLR0913
     standard_mocks.patch("fluent.sender.FluentSender", new=RuntimeError())
 
     component_manager.start_actuator(config, server_port, log_port)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port)
 
     component_manager.wait_and_term_controller()
@@ -877,7 +872,6 @@ def test_actuator_mode_const(  # noqa: PLR0913
     standard_mocks.patch("unit_cooler.controller.engine.dummy_cooling_mode", return_value={"cooling_mode": 1})
 
     component_manager.start_actuator(config, server_port, log_port)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port)
 
     component_manager.wait_and_term_controller()
@@ -907,7 +901,6 @@ def test_actuator_power_off_1(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(0.3)  # Reduced from 1 for testing
@@ -962,7 +955,6 @@ def test_actuator_power_off_2(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     time.sleep(0.5)  # Reduced from 2 for testing
@@ -1013,7 +1005,6 @@ def test_actuator_fd_q10c_stop_error(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=50)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=50)
 
     time.sleep(5)
@@ -1071,7 +1062,6 @@ def test_actuator_fd_q10c_get_state_error(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=50)
-    time.sleep(2)
     component_manager.start_controller(config, server_port, real_port, msg_count=50)
 
     time.sleep(3)
@@ -1106,7 +1096,6 @@ def test_actuator_no_test(  # noqa: PLR0913
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=2)
-    time.sleep(1)
     component_manager.start_controller(config, server_port, real_port, msg_count=2)
 
     time.sleep(1)
@@ -1219,7 +1208,6 @@ def test_actuator_flow_unknown_1(  # noqa: PLR0913
     component_manager.start_controller(
         config, server_port, real_port, speedup=100, dummy_mode=True, msg_count=7
     )
-    time.sleep(1)
     component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=7)
 
     component_manager.wait_and_term_controller()
@@ -1325,7 +1313,6 @@ def test_actuator_leak(  # noqa: PLR0913
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1376,7 +1363,6 @@ def test_actuator_speedup(standard_mocks, config, server_port, real_port, log_po
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1411,7 +1397,6 @@ def test_actuator_monitor_error(standard_mocks, config, server_port, real_port, 
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1458,7 +1443,6 @@ def test_actuator_slack_error(standard_mocks, config, server_port, real_port, lo
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1516,7 +1500,6 @@ def test_actuator_close(  # noqa: PLR0913
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1570,7 +1553,6 @@ def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1623,7 +1605,6 @@ def test_actuator_notify_hazard(  # noqa: PLR0913
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1670,7 +1651,6 @@ def test_actuator_ctrl_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1719,7 +1699,6 @@ def test_actuator_recv_error(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1767,7 +1746,6 @@ def test_actuator_iolink_short(mocker, config, server_port, real_port, log_port)
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -1778,8 +1756,8 @@ def test_actuator_iolink_short(mocker, config, server_port, real_port, log_port)
             "real_port": real_port,
         },
     )
-
     time.sleep(1)
+    mock_fd_q10c(mocker, gen_fd_q10c_ser_trans_sense())
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
@@ -2010,7 +1988,6 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2068,7 +2045,6 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2163,10 +2139,6 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
             "real_port": real_port,
         },
     )
-
-    # Brief pause to ensure controller is ready
-    time.sleep(0.5)
-
     actuator_handle = actuator.start(
         config,
         {
@@ -2240,7 +2212,6 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
@@ -2308,7 +2279,6 @@ def test_webui_day_sum(mocker, config, server_port, real_port, log_port):
             "log_port": log_port,
         },
     )
-    time.sleep(1)
     control_handle = controller.start(
         config,
         {
