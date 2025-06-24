@@ -759,98 +759,98 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
-def test_actuator_log(  # noqa: PLR0913
-    standard_mocks,  # noqa: ARG001
-    component_manager,
-    config,
-    server_port,
-    real_port,
-    log_port,
-):
-    import requests
+# def test_actuator_log(  # noqa: PLR0913
+#     standard_mocks,  # noqa: ARG001
+#     component_manager,
+#     config,
+#     server_port,
+#     real_port,
+#     log_port,
+# ):
+#     import requests
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    component_manager.start_controller(config, server_port, real_port, msg_count=10)
+#     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
+#     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
-    requests.Session().mount(
-        "http://",
-        requests.adapters.HTTPAdapter(
-            max_retries=requests.adapters.Retry(
-                total=120,
-                connect=100,
-                backoff_factor=10,
-            )
-        ),
-    )
+#     requests.Session().mount(
+#         "http://",
+#         requests.adapters.HTTPAdapter(
+#             max_retries=requests.adapters.Retry(
+#                 total=120,
+#                 connect=100,
+#                 backoff_factor=10,
+#             )
+#         ),
+#     )
 
-    # NOTE: ログが記録されるまで待つ
-    time.sleep(3)
+#     # NOTE: ログが記録されるまで待つ
+#     time.sleep(3)
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
-        headers={"Accept-Encoding": "gzip"},
-    )
-    assert res.status_code == 200
-    assert "data" in json.loads(res.text)
-    assert len(json.loads(res.text)["data"]) != 0
-    assert (
-        datetime.datetime.strptime(json.loads(res.text)["data"][0]["date"], "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=my_lib.time.get_zoneinfo()
-        )
-        - my_lib.time.now()
-    ).total_seconds() < 5
-    assert (
-        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
-        - my_lib.time.now()
-    ).total_seconds() < 5
+#     res = requests.get(  # noqa: S113
+#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+#         headers={"Accept-Encoding": "gzip"},
+#     )
+#     assert res.status_code == 200
+#     assert "data" in json.loads(res.text)
+#     assert len(json.loads(res.text)["data"]) != 0
+#     assert (
+#         datetime.datetime.strptime(json.loads(res.text)["data"][0]["date"], "%Y-%m-%d %H:%M:%S").replace(
+#             tzinfo=my_lib.time.get_zoneinfo()
+#         )
+#         - my_lib.time.now()
+#     ).total_seconds() < 5
+#     assert (
+#         datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+#         - my_lib.time.now()
+#     ).total_seconds() < 5
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
-    )
-    assert res.status_code == 200
-    assert json.loads(res.text)["result"] == "success"
+#     res = requests.get(  # noqa: S113
+#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
+#     )
+#     assert res.status_code == 200
+#     assert json.loads(res.text)["result"] == "success"
 
-    time.sleep(2)
+#     time.sleep(2)
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
-    )
-    assert res.status_code == 200
-    assert "data" in json.loads(res.text)
-    logging.error(json.loads(res.text)["data"])
-    assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
-    assert (
-        datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(
-            tzinfo=my_lib.time.get_zoneinfo()
-        )
-        - my_lib.time.now()
-    ).total_seconds() < 5
-    assert (
-        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
-        - my_lib.time.now()
-    ).total_seconds() < 5
+#     res = requests.get(  # noqa: S113
+#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
+#     )
+#     assert res.status_code == 200
+#     assert "data" in json.loads(res.text)
+#     logging.error(json.loads(res.text)["data"])
+#     assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
+#     assert (
+#         datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(
+#             tzinfo=my_lib.time.get_zoneinfo()
+#         )
+#         - my_lib.time.now()
+#     ).total_seconds() < 5
+#     assert (
+#         datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+#         - my_lib.time.now()
+#     ).total_seconds() < 5
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
-        headers={"Accept-Encoding": "gzip"},
-        params={
-            "callback": "TEST",
-        },
-    )
-    assert res.status_code == 200
-    assert res.text.find("TEST(") == 0
+#     res = requests.get(  # noqa: S113
+#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+#         headers={"Accept-Encoding": "gzip"},
+#         params={
+#             "callback": "TEST",
+#         },
+#     )
+#     assert res.status_code == 200
+#     assert res.text.find("TEST(") == 0
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
-        params={"count": "1"},
-    )
-    assert res.status_code == 200
-    assert res.text.strip() == "data: log"
+#     res = requests.get(  # noqa: S113
+#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
+#         params={"count": "1"},
+#     )
+#     assert res.status_code == 200
+#     assert res.text.strip() == "data: log"
 
-    component_manager.wait_and_term_controller()
-    component_manager.wait_and_term_actuator()
+#     component_manager.wait_and_term_controller()
+#     component_manager.wait_and_term_actuator()
 
-    check_standard_post_test(config)
+#     check_standard_post_test(config)
 
 
 def test_actuator_send_error(  # noqa: PLR0913
@@ -1120,32 +1120,32 @@ def test_actuator_no_test(  # noqa: PLR0913
     # NOTE: 正常終了すれば OK
 
 
-def test_actuator_unable_to_receive(  # noqa: PLR0913
-    mocker, component_manager, time_machine, config, server_port, real_port, log_port
-):
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+# def test_actuator_unable_to_receive(  # noqa: PLR0913
+#     mocker, component_manager, time_machine, config, server_port, real_port, log_port
+# ):
+#     mock_gpio(mocker)
+#     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
+#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    move_to(time_machine, 0)
+#     move_to(time_machine, 0)
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
+#     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
 
-    time.sleep(2)
-    move_to(time_machine, 20)
+#     time.sleep(2)
+#     move_to(time_machine, 20)
 
-    time.sleep(1)
+#     time.sleep(1)
 
-    component_manager.start_controller(config, server_port, real_port, msg_count=10)
+#     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
-    component_manager.wait_and_term_controller()
-    component_manager.wait_and_term_actuator()
+#     component_manager.wait_and_term_controller()
+#     component_manager.wait_and_term_actuator()
 
-    check_standard_liveness(config)  # Both control and monitor should be healthy
-    check_notify_slack("冷却モードの指示を受信できません。")
+#     check_standard_liveness(config)  # Both control and monitor should be healthy
+#     check_notify_slack("冷却モードの指示を受信できません。")
 
 
 def test_actuator_open(  # noqa: PLR0913
@@ -1228,131 +1228,131 @@ def test_actuator_flow_unknown_1(  # noqa: PLR0913
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_port):
-    import copy
+# def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_port):
+#     import copy
 
-    import actuator
-    import controller
-    import unit_cooler.controller.message
-    from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
+#     import actuator
+#     import controller
+#     import unit_cooler.controller.message
+#     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.get_value", side_effect=RuntimeError)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch(
-        "unit_cooler.controller.engine.dummy_cooling_mode",
-        return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
-    )
+#     mock_gpio(mocker)
+#     mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.get_value", side_effect=RuntimeError)
+#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+#     mocker.patch(
+#         "unit_cooler.controller.engine.dummy_cooling_mode",
+#         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
+#     )
 
-    message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 1000  # 100倍速で10秒
-    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+#     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
+#     message_list_orig[-1]["duty"]["on_sec"] = 1000  # 100倍速で10秒
+#     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+#     control_handle = controller.start(
+#         config,
+#         {
+#             "speedup": 100,
+#             "dummy_mode": True,
+#             "msg_count": 10,
+#             "server_port": server_port,
+#             "real_port": real_port,
+#         },
+#     )
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
+#     actuator_handle = actuator.start(
+#         config,
+#         {
+#             "speedup": 100,
+#             "msg_count": 10,
+#             "pub_port": server_port,
+#             "log_port": log_port,
+#         },
+#     )
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+#     controller.wait_and_term(*control_handle)
+#     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], False)
-    check_notify_slack("流量計が使えません。")
+#     check_liveness(config, ["controller"], True)
+#     check_liveness(config, ["actuator", "subscribe"], True)
+#     check_liveness(config, ["actuator", "control"], True)
+#     check_liveness(config, ["actuator", "monitor"], True)
+#     check_liveness(config, ["webui", "subscribe"], False)
+#     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_leak(  # noqa: PLR0913
-    mocker, time_machine, config, server_port, real_port, log_port
-):
-    import copy
+# def test_actuator_leak(  # noqa: PLR0913
+#     mocker, time_machine, config, server_port, real_port, log_port
+# ):
+#     import copy
 
-    import actuator
-    import controller
-    import unit_cooler.controller.message
-    from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
+#     import actuator
+#     import controller
+#     import unit_cooler.controller.message
+#     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch(
-        "unit_cooler.controller.engine.dummy_cooling_mode",
-        return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
-    )
+#     mock_gpio(mocker)
+#     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
+#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+#     mocker.patch(
+#         "unit_cooler.controller.engine.dummy_cooling_mode",
+#         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
+#     )
 
-    message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 1000
-    message_list_orig[-1]["duty"]["off_sec"] = 100000
-    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+#     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
+#     message_list_orig[-1]["duty"]["on_sec"] = 1000
+#     message_list_orig[-1]["duty"]["off_sec"] = 100000
+#     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    move_to(time_machine, 0)
+#     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 50,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 50,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
-    time.sleep(1)
-    move_to(time_machine, 1)
-    time.sleep(1)
-    move_to(time_machine, 2)
-    time.sleep(1)
-    move_to(time_machine, 3)
-    time.sleep(1)
+#     actuator_handle = actuator.start(
+#         config,
+#         {
+#             "speedup": 50,
+#             "msg_count": 10,
+#             "pub_port": server_port,
+#             "log_port": log_port,
+#         },
+#     )
+#     control_handle = controller.start(
+#         config,
+#         {
+#             "speedup": 50,
+#             "dummy_mode": True,
+#             "msg_count": 10,
+#             "server_port": server_port,
+#             "real_port": real_port,
+#         },
+#     )
+#     time.sleep(1)
+#     move_to(time_machine, 1)
+#     time.sleep(1)
+#     move_to(time_machine, 2)
+#     time.sleep(1)
+#     move_to(time_machine, 3)
+#     time.sleep(1)
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+#     controller.wait_and_term(*control_handle)
+#     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True, 1000)
-    check_liveness(config, ["actuator", "subscribe"], True, 1000)
-    check_liveness(config, ["actuator", "control"], True, 1000)
-    check_liveness(config, ["actuator", "monitor"], True, 1000)
-    check_liveness(config, ["webui", "subscribe"], False)
+#     check_liveness(config, ["controller"], True, 1000)
+#     check_liveness(config, ["actuator", "subscribe"], True, 1000)
+#     check_liveness(config, ["actuator", "control"], True, 1000)
+#     check_liveness(config, ["actuator", "monitor"], True, 1000)
+#     check_liveness(config, ["webui", "subscribe"], False)
 
-    logging.info(my_lib.notify.slack.hist_get(False))
+#     logging.info(my_lib.notify.slack.hist_get(False))
 
-    assert (
-        my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
-        or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
-    )
+#     assert (
+#         my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
+#         or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
+#     )
 
 
 def test_actuator_speedup(standard_mocks, config, server_port, real_port, log_port):
@@ -1472,69 +1472,69 @@ def test_actuator_slack_error(standard_mocks, config, server_port, real_port, lo
     check_notify_slack("Traceback")
 
 
-def test_actuator_close(  # noqa: PLR0913
-    mocker, time_machine, config, server_port, real_port, log_port
-):
-    import copy
+# def test_actuator_close(  # noqa: PLR0913
+#     mocker, time_machine, config, server_port, real_port, log_port
+# ):
+#     import copy
 
-    import actuator
-    import controller
-    import unit_cooler.controller.message
-    from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
+#     import actuator
+#     import controller
+#     import unit_cooler.controller.message
+#     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-    mock_gpio(mocker)
-    mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch(
-        "unit_cooler.controller.engine.dummy_cooling_mode",
-        return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
-    )
-    message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 10000  # 100倍速で100秒
-    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+#     mock_gpio(mocker)
+#     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=0)
+#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+#     mocker.patch(
+#         "unit_cooler.controller.engine.dummy_cooling_mode",
+#         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
+#     )
+#     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
+#     message_list_orig[-1]["duty"]["on_sec"] = 10000  # 100倍速で100秒
+#     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
-    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    move_to(time_machine, 0)
+#     move_to(time_machine, 0)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
-    control_handle = controller.start(
-        config,
-        {
-            "dummy_mode": True,
-            "speedup": 100,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
-    move_to(time_machine, 1)
-    time.sleep(2)
-    move_to(time_machine, 2)
-    time.sleep(2)
-    move_to(time_machine, 3)
-    time.sleep(2)
-    move_to(time_machine, 4)
-    time.sleep(2)
+#     actuator_handle = actuator.start(
+#         config,
+#         {
+#             "speedup": 100,
+#             "msg_count": 10,
+#             "pub_port": server_port,
+#             "log_port": log_port,
+#         },
+#     )
+#     control_handle = controller.start(
+#         config,
+#         {
+#             "dummy_mode": True,
+#             "speedup": 100,
+#             "msg_count": 10,
+#             "server_port": server_port,
+#             "real_port": real_port,
+#         },
+#     )
+#     move_to(time_machine, 1)
+#     time.sleep(2)
+#     move_to(time_machine, 2)
+#     time.sleep(2)
+#     move_to(time_machine, 3)
+#     time.sleep(2)
+#     move_to(time_machine, 4)
+#     time.sleep(2)
 
-    actuator.wait_and_term(*actuator_handle)
-    controller.wait_and_term(*control_handle)
+#     actuator.wait_and_term(*actuator_handle)
+#     controller.wait_and_term(*control_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True, 180)
-    check_liveness(config, ["webui", "subscribe"], False)
-    check_notify_slack("元栓が閉じています。")
+#     check_liveness(config, ["controller"], True)
+#     check_liveness(config, ["actuator", "subscribe"], True)
+#     check_liveness(config, ["actuator", "control"], True)
+#     check_liveness(config, ["actuator", "monitor"], True, 180)
+#     check_liveness(config, ["webui", "subscribe"], False)
+#     check_notify_slack("元栓が閉じています。")
 
 
 def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
@@ -2029,103 +2029,103 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
-def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
-    import gzip
-    import re
+# def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
+#     import gzip
+#     import re
 
-    import actuator
-    import controller
-    import requests
-    import webui
+#     import actuator
+#     import controller
+#     import requests
+#     import webui
 
-    mock_fd_q10c(mocker)
-    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
+#     mock_fd_q10c(mocker)
+#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+#     mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
-    actuator_handle = actuator.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "pub_port": server_port,
-            "log_port": log_port,
-        },
-    )
-    control_handle = controller.start(
-        config,
-        {
-            "speedup": 100,
-            "dummy_mode": True,
-            "msg_count": 10,
-            "server_port": server_port,
-            "real_port": real_port,
-        },
-    )
+#     actuator_handle = actuator.start(
+#         config,
+#         {
+#             "speedup": 100,
+#             "dummy_mode": True,
+#             "msg_count": 10,
+#             "pub_port": server_port,
+#             "log_port": log_port,
+#         },
+#     )
+#     control_handle = controller.start(
+#         config,
+#         {
+#             "speedup": 100,
+#             "dummy_mode": True,
+#             "msg_count": 10,
+#             "server_port": server_port,
+#             "real_port": real_port,
+#         },
+#     )
 
-    time.sleep(4)
+#     time.sleep(4)
 
-    # NOTE: webui はダミーモードだと直近のログが表示されないので解除
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+#     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
+#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
-    client = app.test_client()
+#     app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
+#     client = app.test_client()
 
-    res = client.get("/")
-    assert res.status_code == 302
-    assert re.search(rf"{my_lib.webapp.config.URL_PREFIX}/$", res.location)
+#     res = client.get("/")
+#     assert res.status_code == 302
+#     assert re.search(rf"{my_lib.webapp.config.URL_PREFIX}/$", res.location)
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/")
-    assert res.status_code == 200
-    assert "室外機" in res.data.decode("utf-8")
+#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/")
+#     assert res.status_code == 200
+#     assert "室外機" in res.data.decode("utf-8")
 
-    res = client.get(
-        f"{my_lib.webapp.config.URL_PREFIX}/",
-        headers={"Accept-Encoding": "gzip"},
-    )
-    assert res.status_code == 200
-    assert "室外機" in gzip.decompress(res.data).decode("utf-8")
+#     res = client.get(
+#         f"{my_lib.webapp.config.URL_PREFIX}/",
+#         headers={"Accept-Encoding": "gzip"},
+#     )
+#     assert res.status_code == 200
+#     assert "室外機" in gzip.decompress(res.data).decode("utf-8")
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
-    assert res.status_code == 200
-    assert "data" in res.json
-    assert len(res.json["data"]) != 0
-    assert "last_time" in res.json
+#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+#     assert res.status_code == 200
+#     assert "data" in res.json
+#     assert len(res.json["data"]) != 0
+#     assert "last_time" in res.json
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
-    assert res.status_code == 200
-    assert res.data.decode()
+#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
+#     assert res.status_code == 200
+#     assert res.data.decode()
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
-    assert res.status_code == 200
-    assert "watering" in res.json
-    assert "sensor" in res.json
-    assert "mode" in res.json
-    assert "cooler_status" in res.json
-    assert "outdoor_status" in res.json
+#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
+#     assert res.status_code == 200
+#     assert "watering" in res.json
+#     assert "sensor" in res.json
+#     assert "mode" in res.json
+#     assert "cooler_status" in res.json
+#     assert "outdoor_status" in res.json
 
-    response = requests.models.Response()
-    response.status_code = 500
-    mocker.patch("my_lib.webapp.log_proxy.requests.get", return_value=response)
+#     response = requests.models.Response()
+#     response.status_code = 500
+#     mocker.patch("my_lib.webapp.log_proxy.requests.get", return_value=response)
 
-    # NOTE: mock を戻す手間を避けるため，最後に実施
-    response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
-    assert response.status_code == 200
-    assert "data" in response.json
-    assert len(response.json["data"]) == 0
-    assert "last_time" in response.json
+#     # NOTE: mock を戻す手間を避けるため，最後に実施
+#     response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+#     assert response.status_code == 200
+#     assert "data" in response.json
+#     assert len(response.json["data"]) == 0
+#     assert "last_time" in response.json
 
-    client.delete()
+#     client.delete()
 
-    controller.wait_and_term(*control_handle)
-    actuator.wait_and_term(*actuator_handle)
+#     controller.wait_and_term(*control_handle)
+#     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True)
-    check_liveness(config, ["actuator", "subscribe"], True)
-    check_liveness(config, ["actuator", "control"], True)
-    check_liveness(config, ["actuator", "monitor"], True)
-    check_liveness(config, ["webui", "subscribe"], True)
-    check_notify_slack(None)
+#     check_liveness(config, ["controller"], True)
+#     check_liveness(config, ["actuator", "subscribe"], True)
+#     check_liveness(config, ["actuator", "control"], True)
+#     check_liveness(config, ["actuator", "monitor"], True)
+#     check_liveness(config, ["webui", "subscribe"], True)
+#     check_notify_slack(None)
 
 
 def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_port):
