@@ -19,10 +19,14 @@ export function useApi<T>(
   const [data, setData] = useState<T>(initialData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
-      setLoading(true);
+      // 初回ロード時のみloadingをtrueにする
+      if (isFirstLoad) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await fetch(url);
@@ -32,14 +36,20 @@ export function useApi<T>(
 
       const result = await response.json();
       setData(result);
+      
+      if (isFirstLoad) {
+        setIsFirstLoad(false);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '通信に失敗しました';
       setError(errorMessage);
       console.error('API fetch error:', err);
     } finally {
-      setLoading(false);
+      if (isFirstLoad) {
+        setLoading(false);
+      }
     }
-  }, [url]);
+  }, [url, isFirstLoad]);
 
   useEffect(() => {
     if (options.immediate !== false) {
