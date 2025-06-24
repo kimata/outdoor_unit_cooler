@@ -15,6 +15,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
     const history = (watering_list: ApiResponse.Watering[]) => {
         const chartOptions: ChartOptions<any> = {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     ticks: {
@@ -44,7 +45,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
         return (
             <div className="card-body">
                 <div className="container">
-                    <div className="row" data-testid="history-info">
+                    <div className="row" data-testid="history-info" style={{ height: "180px" }}>
                         <Bar options={chartOptions} data={chartData} />
                     </div>
                 </div>

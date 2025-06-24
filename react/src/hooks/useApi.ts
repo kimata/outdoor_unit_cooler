@@ -22,7 +22,10 @@ export function useApi<T>(
 
   const fetchData = useCallback(async (): Promise<void> => {
     try {
-      setLoading(true);
+      // 初回のみloadingをtrueにする
+      if (data === initialData) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await fetch(url);
@@ -39,7 +42,7 @@ export function useApi<T>(
     } finally {
       setLoading(false);
     }
-  }, [url]);
+  }, [url, data, initialData]);
 
   useEffect(() => {
     if (options.immediate !== false) {
