@@ -7,7 +7,6 @@ extend(relativeTime);
 
 import { valueText, dateText } from "../lib/Util";
 import { ApiResponse } from "../lib/ApiResponse";
-import { Loading } from "./common/Loading";
 
 type Props = {
     isReady: boolean;

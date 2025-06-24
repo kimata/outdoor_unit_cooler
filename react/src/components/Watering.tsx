@@ -2,7 +2,6 @@ import React from "react";
 import watering_icon from "../assets/watering.png";
 
 import { ApiResponse } from "../lib/ApiResponse";
-import { Loading } from "./common/Loading";
 import { StatComponentProps } from "../types/common";
 
 const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
