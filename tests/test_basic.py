@@ -759,98 +759,98 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
-# def test_actuator_log(  # noqa: PLR0913
-#     standard_mocks,  # noqa: ARG001
-#     component_manager,
-#     config,
-#     server_port,
-#     real_port,
-#     log_port,
-# ):
-#     import requests
+def test_actuator_log(  # noqa: PLR0913
+    standard_mocks,  # noqa: ARG001
+    component_manager,
+    config,
+    server_port,
+    real_port,
+    log_port,
+):
+    import requests
 
-#     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-#     component_manager.start_controller(config, server_port, real_port, msg_count=10)
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
-#     requests.Session().mount(
-#         "http://",
-#         requests.adapters.HTTPAdapter(
-#             max_retries=requests.adapters.Retry(
-#                 total=120,
-#                 connect=100,
-#                 backoff_factor=10,
-#             )
-#         ),
-#     )
+    requests.Session().mount(
+        "http://",
+        requests.adapters.HTTPAdapter(
+            max_retries=requests.adapters.Retry(
+                total=120,
+                connect=100,
+                backoff_factor=10,
+            )
+        ),
+    )
 
-#     # NOTE: ログが記録されるまで待つ
-#     time.sleep(3)
+    # NOTE: ログが記録されるまで待つ
+    time.sleep(3)
 
-#     res = requests.get(  # noqa: S113
-#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
-#         headers={"Accept-Encoding": "gzip"},
-#     )
-#     assert res.status_code == 200
-#     assert "data" in json.loads(res.text)
-#     assert len(json.loads(res.text)["data"]) != 0
-#     assert (
-#         datetime.datetime.strptime(json.loads(res.text)["data"][0]["date"], "%Y-%m-%d %H:%M:%S").replace(
-#             tzinfo=my_lib.time.get_zoneinfo()
-#         )
-#         - my_lib.time.now()
-#     ).total_seconds() < 5
-#     assert (
-#         datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
-#         - my_lib.time.now()
-#     ).total_seconds() < 5
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert res.status_code == 200
+    assert "data" in json.loads(res.text)
+    assert len(json.loads(res.text)["data"]) != 0
+    assert (
+        datetime.datetime.strptime(json.loads(res.text)["data"][0]["date"], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=my_lib.time.get_zoneinfo()
+        )
+        - my_lib.time.now()
+    ).total_seconds() < 5
+    assert (
+        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+        - my_lib.time.now()
+    ).total_seconds() < 5
 
-#     res = requests.get(  # noqa: S113
-#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
-#     )
-#     assert res.status_code == 200
-#     assert json.loads(res.text)["result"] == "success"
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
+    )
+    assert res.status_code == 200
+    assert json.loads(res.text)["result"] == "success"
 
-#     time.sleep(2)
+    time.sleep(2)
 
-#     res = requests.get(  # noqa: S113
-#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
-#     )
-#     assert res.status_code == 200
-#     assert "data" in json.loads(res.text)
-#     logging.error(json.loads(res.text)["data"])
-#     assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
-#     assert (
-#         datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(
-#             tzinfo=my_lib.time.get_zoneinfo()
-#         )
-#         - my_lib.time.now()
-#     ).total_seconds() < 5
-#     assert (
-#         datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
-#         - my_lib.time.now()
-#     ).total_seconds() < 5
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
+    )
+    assert res.status_code == 200
+    assert "data" in json.loads(res.text)
+    logging.error(json.loads(res.text)["data"])
+    assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
+    assert (
+        datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=my_lib.time.get_zoneinfo()
+        )
+        - my_lib.time.now()
+    ).total_seconds() < 5
+    assert (
+        datetime.datetime.fromtimestamp(json.loads(res.text)["last_time"], tz=my_lib.time.get_zoneinfo())
+        - my_lib.time.now()
+    ).total_seconds() < 5
 
-#     res = requests.get(  # noqa: S113
-#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
-#         headers={"Accept-Encoding": "gzip"},
-#         params={
-#             "callback": "TEST",
-#         },
-#     )
-#     assert res.status_code == 200
-#     assert res.text.find("TEST(") == 0
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+        headers={"Accept-Encoding": "gzip"},
+        params={
+            "callback": "TEST",
+        },
+    )
+    assert res.status_code == 200
+    assert res.text.find("TEST(") == 0
 
-#     res = requests.get(  # noqa: S113
-#         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
-#         params={"count": "1"},
-#     )
-#     assert res.status_code == 200
-#     assert res.text.strip() == "data: log"
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
+        params={"count": "1"},
+    )
+    assert res.status_code == 200
+    assert res.text.strip() == "data: log"
 
-#     component_manager.wait_and_term_controller()
-#     component_manager.wait_and_term_actuator()
+    component_manager.wait_and_term_controller()
+    component_manager.wait_and_term_actuator()
 
-#     check_standard_post_test(config)
+    check_standard_post_test(config)
 
 
 def test_actuator_send_error(  # noqa: PLR0913
