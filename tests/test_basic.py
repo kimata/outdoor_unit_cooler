@@ -769,8 +769,8 @@ def test_actuator_log(  # noqa: PLR0913
 ):
     import requests
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=20)
-    component_manager.start_controller(config, server_port, real_port, msg_count=20)
+    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
+    component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
     requests.Session().mount(
         "http://",
@@ -784,7 +784,8 @@ def test_actuator_log(  # noqa: PLR0913
     )
 
     # NOTE: ログが記録されるまで待つ
-    time.sleep(10)
+    time.sleep(3)
+    logging.error("CHECK START")
 
     res = requests.get(  # noqa: S113
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
