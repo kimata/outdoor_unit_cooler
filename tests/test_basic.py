@@ -1228,59 +1228,59 @@ def test_actuator_flow_unknown_1(  # noqa: PLR0913
     check_notify_slack("流量計が使えません。")
 
 
-# def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_port):
-#     import copy
+def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_port):
+    import copy
 
-#     import actuator
-#     import controller
-#     import unit_cooler.controller.message
-#     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
+    import actuator
+    import controller
+    import unit_cooler.controller.message
+    from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
-#     mock_gpio(mocker)
-#     mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.get_value", side_effect=RuntimeError)
-#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-#     mocker.patch(
-#         "unit_cooler.controller.engine.dummy_cooling_mode",
-#         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
-#     )
+    mock_gpio(mocker)
+    mocker.patch("unit_cooler.actuator.sensor.FD_Q10C.get_value", side_effect=RuntimeError)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch(
+        "unit_cooler.controller.engine.dummy_cooling_mode",
+        return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
+    )
 
-#     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-#     message_list_orig[-1]["duty"]["on_sec"] = 1000  # 100倍速で10秒
-#     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
+    message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
+    message_list_orig[-1]["duty"]["on_sec"] = 1000  # 100倍速で10秒
+    mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
-#     control_handle = controller.start(
-#         config,
-#         {
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#             "server_port": server_port,
-#             "real_port": real_port,
-#         },
-#     )
+    control_handle = controller.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
+        },
+    )
 
-#     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     actuator_handle = actuator.start(
-#         config,
-#         {
-#             "speedup": 100,
-#             "msg_count": 10,
-#             "pub_port": server_port,
-#             "log_port": log_port,
-#         },
-#     )
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
+        },
+    )
 
-#     controller.wait_and_term(*control_handle)
-#     actuator.wait_and_term(*actuator_handle)
+    controller.wait_and_term(*control_handle)
+    actuator.wait_and_term(*actuator_handle)
 
-#     check_liveness(config, ["controller"], True)
-#     check_liveness(config, ["actuator", "subscribe"], True)
-#     check_liveness(config, ["actuator", "control"], True)
-#     check_liveness(config, ["actuator", "monitor"], True)
-#     check_liveness(config, ["webui", "subscribe"], False)
-#     check_notify_slack("流量計が使えません。")
+    check_liveness(config, ["controller"], True)
+    check_liveness(config, ["actuator", "subscribe"], True)
+    check_liveness(config, ["actuator", "control"], True)
+    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["webui", "subscribe"], False)
+    check_notify_slack("流量計が使えません。")
 
 
 def test_actuator_leak(  # noqa: PLR0913
