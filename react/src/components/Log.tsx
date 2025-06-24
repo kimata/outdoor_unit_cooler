@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PaginationControl } from "react-bootstrap-pagination-control";
 import { XCircleFill, ToggleOff, ToggleOn, Speedometer, SunriseFill, SunsetFill } from "react-bootstrap-icons";
 
@@ -94,22 +95,35 @@ const Log = React.memo(({ isReady, log }: Props) => {
         return (
             <div>
                 <div className="container text-start mb-3" data-testid="log">
-                    {log.slice((page - 1) * size, page * size).map((entry: ApiResponse.LogEntry) => {
-                        let date = dayjs(entry.date);
-                        let log_date = date.format("M月D日(ddd) HH:mm");
-                        let log_fromNow = date.fromNow();
+                    <AnimatePresence initial={false}>
+                        {log.slice((page - 1) * size, page * size).map((entry: ApiResponse.LogEntry) => {
+                            let date = dayjs(entry.date);
+                            let log_date = date.format("M月D日(ddd) HH:mm");
+                            let log_fromNow = date.fromNow();
 
-                        return (
-                            <div className="row" key={entry.id}>
-                                <div className="col-12 font-weight-bold">
-                                    {log_date}
-                                    <small className="text-muted">({log_fromNow})</small>
-                                </div>
-                                <div className="col-12 log-message mb-1">{formatMessage(entry.message)}</div>
-                                <hr className="dashed" />
-                            </div>
-                        );
-                    })}
+                            return (
+                                <motion.div 
+                                    className="row" 
+                                    key={entry.id}
+                                    initial={{ opacity: 0, height: 0, y: -20 }}
+                                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                                    exit={{ opacity: 0, height: 0, y: -20 }}
+                                    transition={{ 
+                                        duration: 0.3,
+                                        ease: "easeOut"
+                                    }}
+                                    layout
+                                >
+                                    <div className="col-12 font-weight-bold">
+                                        {log_date}
+                                        <small className="text-muted">({log_fromNow})</small>
+                                    </div>
+                                    <div className="col-12 log-message mb-1">{formatMessage(entry.message)}</div>
+                                    <hr className="dashed" />
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
                 </div>
 
                 <div className="position-absolute bottom-0 start-50 translate-middle-x">
