@@ -19,6 +19,10 @@ const Log = React.memo(({ isReady, log }: Props) => {
     const [page, setPage] = useState(1);
     const size = 5;
 
+    const handlePageChange = useCallback((page: number) => {
+        setPage(page);
+    }, []);
+
     const loading = () => {
         return (
             <span className="display-1 align-middle ms-4">
@@ -114,9 +118,7 @@ const Log = React.memo(({ isReady, log }: Props) => {
                         between={3}
                         total={log.length}
                         limit={size}
-                        changePage={useCallback((page: number) => {
-                            setPage(page);
-                        }, [])}
+                        changePage={handlePageChange}
                         ellipsis={1}
                     />
                 </div>
