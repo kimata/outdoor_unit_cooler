@@ -17,7 +17,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
     // chartOptionsは変更されないのでメモ化
     const chartOptions: ChartOptions<any> = useMemo(() => ({
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         animation: {
             duration: 400, // 軽いアニメーションで値の変化を表現
         },
