@@ -786,7 +786,7 @@ def test_actuator_log(  # noqa: PLR0913
 
     # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
     wait_for_set_cooling_working(timeout=30)
-    
+
     time.sleep(1)
 
     res = requests.get(  # noqa: S113
@@ -2032,103 +2032,104 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
-# def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
-#     import gzip
-#     import re
+def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
+    import gzip
+    import re
 
-#     import actuator
-#     import controller
-#     import requests
-#     import webui
+    import actuator
+    import controller
+    import requests
+    import webui
 
-#     mock_fd_q10c(mocker)
-#     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-#     mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
+    mock_fd_q10c(mocker)
+    mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
 
-#     actuator_handle = actuator.start(
-#         config,
-#         {
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#             "pub_port": server_port,
-#             "log_port": log_port,
-#         },
-#     )
-#     control_handle = controller.start(
-#         config,
-#         {
-#             "speedup": 100,
-#             "dummy_mode": True,
-#             "msg_count": 10,
-#             "server_port": server_port,
-#             "real_port": real_port,
-#         },
-#     )
+    actuator_handle = actuator.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+            "pub_port": server_port,
+            "log_port": log_port,
+        },
+    )
+    control_handle = controller.start(
+        config,
+        {
+            "speedup": 100,
+            "dummy_mode": True,
+            "msg_count": 10,
+            "server_port": server_port,
+            "real_port": real_port,
+        },
+    )
 
-#     time.sleep(4)
+    # NOTE: webui はダミーモードだと直近のログが表示されないので解除
+    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-#     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
-#     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
+    wait_for_set_cooling_working(timeout=30)
 
-#     app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
-#     client = app.test_client()
+    app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
+    client = app.test_client()
 
-#     res = client.get("/")
-#     assert res.status_code == 302
-#     assert re.search(rf"{my_lib.webapp.config.URL_PREFIX}/$", res.location)
+    res = client.get("/")
+    assert res.status_code == 302
+    assert re.search(rf"{my_lib.webapp.config.URL_PREFIX}/$", res.location)
 
-#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/")
-#     assert res.status_code == 200
-#     assert "室外機" in res.data.decode("utf-8")
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/")
+    assert res.status_code == 200
+    assert "室外機" in res.data.decode("utf-8")
 
-#     res = client.get(
-#         f"{my_lib.webapp.config.URL_PREFIX}/",
-#         headers={"Accept-Encoding": "gzip"},
-#     )
-#     assert res.status_code == 200
-#     assert "室外機" in gzip.decompress(res.data).decode("utf-8")
+    res = client.get(
+        f"{my_lib.webapp.config.URL_PREFIX}/",
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert res.status_code == 200
+    assert "室外機" in gzip.decompress(res.data).decode("utf-8")
 
-#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
-#     assert res.status_code == 200
-#     assert "data" in res.json
-#     assert len(res.json["data"]) != 0
-#     assert "last_time" in res.json
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+    assert res.status_code == 200
+    assert "data" in res.json
+    assert len(res.json["data"]) != 0
+    assert "last_time" in res.json
 
-#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
-#     assert res.status_code == 200
-#     assert res.data.decode()
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
+    assert res.status_code == 200
+    assert res.data.decode()
 
-#     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
-#     assert res.status_code == 200
-#     assert "watering" in res.json
-#     assert "sensor" in res.json
-#     assert "mode" in res.json
-#     assert "cooler_status" in res.json
-#     assert "outdoor_status" in res.json
+    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/stat")
+    assert res.status_code == 200
+    assert "watering" in res.json
+    assert "sensor" in res.json
+    assert "mode" in res.json
+    assert "cooler_status" in res.json
+    assert "outdoor_status" in res.json
 
-#     response = requests.models.Response()
-#     response.status_code = 500
-#     mocker.patch("my_lib.webapp.log_proxy.requests.get", return_value=response)
+    response = requests.models.Response()
+    response.status_code = 500
+    mocker.patch("my_lib.webapp.log_proxy.requests.get", return_value=response)
 
-#     # NOTE: mock を戻す手間を避けるため，最後に実施
-#     response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
-#     assert response.status_code == 200
-#     assert "data" in response.json
-#     assert len(response.json["data"]) == 0
-#     assert "last_time" in response.json
+    # NOTE: mock を戻す手間を避けるため，最後に実施
+    response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+    assert response.status_code == 200
+    assert "data" in response.json
+    assert len(response.json["data"]) == 0
+    assert "last_time" in response.json
 
-#     client.delete()
+    client.delete()
 
-#     controller.wait_and_term(*control_handle)
-#     actuator.wait_and_term(*actuator_handle)
+    controller.wait_and_term(*control_handle)
+    actuator.wait_and_term(*actuator_handle)
 
-#     check_liveness(config, ["controller"], True)
-#     check_liveness(config, ["actuator", "subscribe"], True)
-#     check_liveness(config, ["actuator", "control"], True)
-#     check_liveness(config, ["actuator", "monitor"], True)
-#     check_liveness(config, ["webui", "subscribe"], True)
-#     check_notify_slack(None)
+    check_liveness(config, ["controller"], True)
+    check_liveness(config, ["actuator", "subscribe"], True)
+    check_liveness(config, ["actuator", "control"], True)
+    check_liveness(config, ["actuator", "monitor"], True)
+    check_liveness(config, ["webui", "subscribe"], True)
+    check_notify_slack(None)
 
 
 def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_port):
