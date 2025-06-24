@@ -25,9 +25,7 @@ const Log = React.memo(({ isReady, log }: Props) => {
 
     const loading = () => {
         return (
-            <span className="display-1 align-middle ms-4">
-                <span className="display-5">Loading...</span>
-            </span>
+            <span></span>
         );
     };
 

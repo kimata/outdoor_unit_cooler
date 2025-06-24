@@ -97,7 +97,7 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">エアコン稼働状況</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(stat) : <Loading size="large" />}</div>
+                    <div className="card-body">{isReady ? sensorInfo(stat) : <span></span>}</div>
                 </div>
             </div>
         </div>

@@ -49,7 +49,7 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">現在の冷却モード</h4>
                     </div>
-                    <div className="card-body">{isReady ? modeInfo(stat.mode) : <Loading size="large" />}</div>
+                    <div className="card-body">{isReady ? modeInfo(stat.mode) : <span></span>}</div>
                 </div>
             </div>
         </div>
