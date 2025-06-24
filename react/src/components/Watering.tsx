@@ -2,6 +2,7 @@ import React from "react";
 import watering_icon from "../assets/watering.png";
 
 import { ApiResponse } from "../lib/ApiResponse";
+import { Loading } from "./common/Loading";
 import { StatComponentProps } from "../types/common";
 
 const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
@@ -52,6 +53,7 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                     </div>
                     {isReady ? amount(stat.watering[0]) : (
                         <div className="card-body outdoor_unit">
+                            <Loading size="large" />
                         </div>
                     )}
                 </div>

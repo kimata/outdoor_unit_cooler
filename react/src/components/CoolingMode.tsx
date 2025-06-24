@@ -1,5 +1,6 @@
 import React from "react";
 import { ApiResponse } from "../lib/ApiResponse";
+import { Loading } from "./common/Loading";
 
 type Props = {
     isReady: boolean;
@@ -28,7 +29,7 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
 
     const modeInfo = (mode: ApiResponse.Mode) => {
         if (mode == null) {
-            return <span></span>;
+            return <Loading size="large" />;
         }
 
         return (
@@ -48,7 +49,7 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">現在の冷却モード</h4>
                     </div>
-                    <div className="card-body">{isReady ? modeInfo(stat.mode) : <span></span>}</div>
+                    <div className="card-body">{isReady ? modeInfo(stat.mode) : <Loading size="large" />}</div>
                 </div>
             </div>
         </div>

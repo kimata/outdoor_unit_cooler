@@ -54,6 +54,9 @@ const History = React.memo(({ isReady, stat }: Props) => {
     const loading = () => {
         return (
             <div className="card-body">
+                <span className="display-1 align-middle ms-4">
+                    <span className="display-5">Loading...</span>
+                </span>
             </div>
         );
     };
