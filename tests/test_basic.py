@@ -20,6 +20,7 @@ from tests.test_helpers import (
     check_standard_post_test,
     control_message_modifier,
     create_fetch_data_mock,
+    wait_for_set_cooling_working,
 )
 
 my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
@@ -767,8 +768,6 @@ def test_actuator_log(  # noqa: PLR0913
     real_port,
     log_port,
 ):
-    import threading
-
     import requests
 
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
@@ -786,27 +785,8 @@ def test_actuator_log(  # noqa: PLR0913
     )
 
     # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
-    set_cooling_working_called = threading.Event()
-    original_set_cooling_working = None
-
-    def mock_set_cooling_working(*args, **kwargs):
-        # イベントをセット
-        set_cooling_working_called.set()
-        logging.info("set_cooling_working was called")
-        # 元の関数を呼び出す
-        return original_set_cooling_working(*args, **kwargs)
-
-    # valve.set_cooling_working をモックして待つ
-    with mock.patch(
-        "unit_cooler.actuator.valve.set_cooling_working", side_effect=mock_set_cooling_working
-    ) as mock_func:
-        # 元の関数を保存
-        original_set_cooling_working = mock_func.wraps
-
-        # set_cooling_working が呼ばれるまで最大30秒待つ
-        if not set_cooling_working_called.wait(timeout=30):
-            pytest.fail("set_cooling_working was not called within 30 seconds")
-
+    wait_for_set_cooling_working(timeout=30)
+    
     time.sleep(1)
 
     res = requests.get(  # noqa: S113

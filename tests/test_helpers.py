@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import fcntl
+import logging
 import os
 import random
 import socket
@@ -16,6 +17,7 @@ import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
+from unittest import mock
 
 import pytest
 
@@ -142,6 +144,41 @@ def _release_port(port):
         _save_used_ports(used_ports)
     finally:
         _release_port_lock(lock_fd)
+
+
+def wait_for_set_cooling_working(timeout: float = 30.0) -> None:
+    """
+    Wait for unit_cooler.actuator.valve.set_cooling_working to be called.
+    
+    This function uses a mock to detect when set_cooling_working is called and
+    waits up to the specified timeout for it to happen.
+    
+    Args:
+        timeout: Maximum time to wait in seconds (default: 30.0)
+        
+    Raises:
+        pytest.fail: If set_cooling_working is not called within the timeout
+    """
+    set_cooling_working_called = threading.Event()
+    original_set_cooling_working = None
+    
+    def mock_set_cooling_working(*args, **kwargs):
+        # イベントをセット
+        set_cooling_working_called.set()
+        logging.info("set_cooling_working was called")
+        # 元の関数を呼び出す
+        return original_set_cooling_working(*args, **kwargs)
+    
+    # valve.set_cooling_working をモックして待つ
+    with mock.patch(
+        "unit_cooler.actuator.valve.set_cooling_working", side_effect=mock_set_cooling_working
+    ) as mock_func:
+        # 元の関数を保存
+        original_set_cooling_working = mock_func.wraps
+        
+        # set_cooling_working が呼ばれるまで最大 timeout 秒待つ
+        if not set_cooling_working_called.wait(timeout=timeout):
+            pytest.fail(f"set_cooling_working was not called within {timeout} seconds")
 
 
 class ComponentManager:
