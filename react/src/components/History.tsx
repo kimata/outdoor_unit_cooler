@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { Chart, CategoryScale, LinearScale, BarElement, Tooltip, ChartOptions } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
@@ -12,12 +12,14 @@ type Props = {
 };
 
 const History = React.memo(({ isReady, stat }: Props) => {
+    const chartRef = useRef<Chart<"bar"> | null>(null);
+
     // chartOptionsは変更されないのでメモ化
     const chartOptions: ChartOptions<any> = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: true,
         animation: {
-            duration: 0 // アニメーションを無効化してちらつきを防止
+            duration: 400, // 軽いアニメーションで値の変化を表現
         },
         scales: {
             y: {
@@ -34,29 +36,39 @@ const History = React.memo(({ isReady, stat }: Props) => {
         },
     }), []);
 
-    // chartDataのみstatの変更に応じて更新
-    const chartData = useMemo(() => {
-        if (!isReady || !stat.watering) {
-            return null;
+    // 初期データ
+    const initialChartData = useMemo(() => ({
+        labels: Array.from(Array(7), (_, i) => (i == 6 ? "本日" : 6 - i + "日前")),
+        datasets: [
+            {
+                label: "散水量",
+                data: [0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: "rgba(128, 128, 128, 0.6)",
+            },
+        ],
+    }), []);
+
+    // データが更新された時にチャートを更新
+    useEffect(() => {
+        if (chartRef.current && isReady && stat.watering && stat.watering.length >= 7) {
+            const chart = chartRef.current;
+            const newData = stat.watering.map((watering) => parseFloat(watering["amount"].toFixed(1))).reverse();
+            
+            // データセットのデータのみ更新
+            chart.data.datasets[0].data = newData;
+            chart.update('none'); // アニメーションなしで更新
         }
-        
-        return {
-            labels: Array.from(Array(7), (_, i) => (i == 6 ? "本日" : 6 - i + "日前")),
-            datasets: [
-                {
-                    label: "散水量",
-                    data: stat.watering.map((watering) => watering["amount"].toFixed(1)).reverse(),
-                    backgroundColor: "rgba(128, 128, 128, 0.6)",
-                },
-            ],
-        };
     }, [isReady, stat.watering]);
 
     const history = () => {
         return (
             <div className="card-body">
                 <div className="w-100" data-testid="history-info">
-                    {chartData && <Bar options={chartOptions} data={chartData} />}
+                    <Bar 
+                        ref={chartRef}
+                        options={chartOptions} 
+                        data={initialChartData}
+                    />
                 </div>
             </div>
         );
@@ -78,7 +90,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">散水履歴</h4>
                     </div>
-                    {isReady ? history() : loading()}
+                    {isReady || stat.watering.length > 0 ? history() : loading()}
                 </div>
             </div>
         </div>

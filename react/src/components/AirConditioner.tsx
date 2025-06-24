@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "dayjs/locale/ja";
 import dayjs, { locale, extend } from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 locale("ja");
 extend(relativeTime);
 
-import { valueText, dateText } from "../lib/Util";
+import { motion } from "framer-motion";
+import { dateText } from "../lib/Util";
 import { ApiResponse } from "../lib/ApiResponse";
 import { Loading } from "./common/Loading";
+import { AnimatedNumber } from "./common/AnimatedNumber";
 
 type Props = {
     isReady: boolean;
@@ -30,6 +32,14 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
 
     type AirconRowProps = { airconData: ApiResponse.SensorData };
     const AirconRow: React.FC<AirconRowProps> = React.memo((props) => {
+        const [previousValue, setPreviousValue] = useState(props.airconData.value || 0);
+        const currentWidth = (100.0 * props.airconData.value) / 1500;
+        const previousWidth = (100.0 * previousValue) / 1500;
+        
+        useEffect(() => {
+            setPreviousValue(props.airconData.value || 0);
+        }, [props.airconData.value]);
+
         let date = dayjs(props.airconData.time);
 
         return (
@@ -38,17 +48,24 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                 <td className="text-end col-4">
                     <div className="progress-label-container">
                         <div className="progress" style={{ height: "2em" }}>
-                            <div
+                            <motion.div
                                 className="progress-bar bg-secondary"
                                 role="progressbar"
                                 aria-valuenow={valueInt(props.airconData.value)}
                                 aria-valuemin={0}
                                 aria-valuemax={1200}
-                                style={{ width: (100.0 * props.airconData.value) / 1500 + "%" }}
-                            ></div>
+                                initial={{ width: previousWidth + "%" }}
+                                animate={{ width: currentWidth + "%" }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                            ></motion.div>
                         </div>
                         <div className="progress-label digit">
-                            <b>{valueText(props.airconData.value, 0)}</b>
+                            <b>
+                                <AnimatedNumber 
+                                    value={props.airconData.value || 0} 
+                                    decimals={0}
+                                />
+                            </b>
                             <small className="ms-2">W</small>
                         </div>
                     </div>
@@ -97,7 +114,7 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">エアコン稼働状況</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(stat) : <Loading size="large" />}</div>
+                    <div className="card-body">{isReady || stat.sensor.power.length > 0 ? sensorInfo(stat) : <Loading size="large" />}</div>
                 </div>
             </div>
         </div>

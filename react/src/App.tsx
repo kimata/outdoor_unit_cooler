@@ -76,6 +76,7 @@ function App() {
     };
 
     const [updateTime, setUpdateTime] = useState("Unknown");
+    const [isLogFirstLoad, setIsLogFirstLoad] = useState(true);
 
     // API calls using custom hooks
     const {
@@ -111,6 +112,11 @@ function App() {
             }
         }
     });
+
+    // Update isLogFirstLoad when logLoading changes
+    if (!logLoading && isLogFirstLoad) {
+        setIsLogFirstLoad(false);
+    }
 
     // Update time when stat data changes
     if (!statLoading && stat && updateTime === "Unknown") {
@@ -168,7 +174,7 @@ function App() {
                             <CoolingMode isReady={isReady} stat={stat} />
                             <AirConditioner isReady={isReady} stat={stat} />
                             <Sensor isReady={isReady} stat={stat} />
-                            <Log isReady={!logLoading} log={log} />
+                            <Log isReady={!logLoading || !isLogFirstLoad} log={log} />
                         </div>
                     </div>
                 </div>

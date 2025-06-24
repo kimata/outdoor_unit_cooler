@@ -7,8 +7,9 @@ dayjs.extend(relativeTime);
 
 import reactStringReplace from "react-string-replace";
 
-import { valueText, dateText } from "../lib/Util";
+import { dateText } from "../lib/Util";
 import { ApiResponse } from "../lib/ApiResponse";
+import { AnimatedNumber } from "./common/AnimatedNumber";
 
 type Props = {
     isReady: boolean;
@@ -31,7 +32,12 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
             <tr className="row" key={label}>
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
                 <td className="text-end col-2 digit">
-                    <b>{valueText(sensorData.value)}</b>
+                    <b>
+                        <AnimatedNumber 
+                            value={sensorData.value || 0} 
+                            decimals={1}
+                        />
+                    </b>
                 </td>
                 <td className="text-start col-2">
                     <small>{unit}</small>
@@ -99,7 +105,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">センサー値</h4>
                     </div>
-                    <div className="card-body">{isReady ? sensorInfo(stat) : loading()}</div>
+                    <div className="card-body">{isReady || stat.sensor.temp.length > 0 ? sensorInfo(stat) : loading()}</div>
                 </div>
             </div>
         </div>
