@@ -1337,8 +1337,6 @@ def test_actuator_leak(  # noqa: PLR0913
     # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
     wait_for_set_cooling_working(timeout=30)
 
-    time.sleep(1)
-
     move_to(time_machine, 1)
     time.sleep(1)
     move_to(time_machine, 2)
