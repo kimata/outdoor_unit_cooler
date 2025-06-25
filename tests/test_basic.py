@@ -785,7 +785,7 @@ def test_actuator_log(  # noqa: PLR0913
     )
 
     # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
-    wait_for_set_cooling_working(timeout=30)
+    wait_for_set_cooling_working()
 
     time.sleep(1)
 
@@ -1167,6 +1167,9 @@ def test_actuator_open(  # noqa: PLR0913
     component_manager.start_actuator(config, server_port, log_port, msg_count=10)
     component_manager.start_controller(config, server_port, real_port, msg_count=10)
 
+    # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
+    wait_for_set_cooling_working()
+
     time.sleep(1)  # Keep original timing for error detection
     move_to(time_machine, 1)
 
@@ -1334,8 +1337,8 @@ def test_actuator_leak(  # noqa: PLR0913
         },
     )
 
-    # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
-    wait_for_set_cooling_working(timeout=30)
+    # NOTE: set_cooling_working が呼ばれるまで待つ
+    wait_for_set_cooling_working()
 
     move_to(time_machine, 1)
     time.sleep(1)
@@ -2074,8 +2077,8 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     # NOTE: webui はダミーモードだと直近のログが表示されないので解除
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
-    wait_for_set_cooling_working(timeout=30)
+    # NOTE: set_cooling_working が呼ばれるまで待つ
+    wait_for_set_cooling_working()
 
     app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
     client = app.test_client()
