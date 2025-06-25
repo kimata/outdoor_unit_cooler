@@ -1317,8 +1317,8 @@ def test_actuator_leak(  # noqa: PLR0913
     actuator_handle = actuator.start(
         config,
         {
-            "speedup": 50,
-            "msg_count": 10,
+            "speedup": 100,
+            "msg_count": 20,
             "pub_port": server_port,
             "log_port": log_port,
         },
@@ -1326,20 +1326,25 @@ def test_actuator_leak(  # noqa: PLR0913
     control_handle = controller.start(
         config,
         {
-            "speedup": 50,
+            "speedup": 100,
             "dummy_mode": True,
-            "msg_count": 10,
+            "msg_count": 20,
             "server_port": server_port,
             "real_port": real_port,
         },
     )
-    time.sleep(1)
-    move_to(time_machine, 1)
-    time.sleep(1)
-    move_to(time_machine, 2)
-    time.sleep(1)
-    move_to(time_machine, 3)
-    time.sleep(1)
+
+    # NOTE: set_cooling_working が呼ばれるまで最大30秒待つ
+    wait_for_set_cooling_working(timeout=30)
+
+    move_to(time_machine, 0, 1)
+    time.sleep(0.5)
+    move_to(time_machine, 0, 2)
+    time.sleep(0.5)
+    move_to(time_machine, 0, 3)
+    time.sleep(0.5)
+    move_to(time_machine, 0, 4)
+    time.sleep(0.5)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
