@@ -4,6 +4,7 @@
 import datetime
 import json
 import logging
+import os
 import pathlib
 import time
 from unittest import mock
@@ -2073,14 +2074,13 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
         },
     )
 
-    # NOTE: webui はダミーモードだと直近のログが表示されないので解除
-    mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+    app = webui.create_app(
+        config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port, "dummy_mode": False}
+    )
+    client = app.test_client()
 
     # NOTE: set_cooling_working が呼ばれるまで待つ
     wait_for_set_cooling_working()
-
-    app = webui.create_app(config, {"msg_count": 1, "pub_port": server_port, "log_port": log_port})
-    client = app.test_client()
 
     res = client.get("/")
     assert res.status_code == 302
@@ -2097,13 +2097,16 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     assert res.status_code == 200
     assert "室外機" in gzip.decompress(res.data).decode("utf-8")
 
-    logging.error("@@@@@@@@@@@@@@@@@")
+    # Wait for logs to be committed to database
+    time.sleep(1)
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
-    assert res.status_code == 200
-    assert "data" in res.json
-    assert len(res.json["data"]) != 0
-    assert "last_time" in res.json
+    # Temporarily override DUMMY_MODE to avoid stop_day=7
+    with mock.patch.dict(os.environ, {"DUMMY_MODE": "false"}):
+        res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+        assert res.status_code == 200
+        assert "data" in res.json
+        assert len(res.json["data"]) != 0
+        assert "last_time" in res.json
 
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
     assert res.status_code == 200

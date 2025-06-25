@@ -159,8 +159,11 @@ def wait_for_set_cooling_working(timeout: float = 30.0) -> None:
     Raises:
         pytest.fail: If set_cooling_working is not called within the timeout
     """
+    import unit_cooler.actuator.valve
+    
     set_cooling_working_called = threading.Event()
-    original_set_cooling_working = None
+    # 元の関数を保存
+    original_set_cooling_working = unit_cooler.actuator.valve.set_cooling_working
     
     def mock_set_cooling_working(*args, **kwargs):
         # イベントをセット
@@ -172,10 +175,7 @@ def wait_for_set_cooling_working(timeout: float = 30.0) -> None:
     # valve.set_cooling_working をモックして待つ
     with mock.patch(
         "unit_cooler.actuator.valve.set_cooling_working", side_effect=mock_set_cooling_working
-    ) as mock_func:
-        # 元の関数を保存
-        original_set_cooling_working = mock_func.wraps
-        
+    ):
         # set_cooling_working が呼ばれるまで最大 timeout 秒待つ
         if not set_cooling_working_called.wait(timeout=timeout):
             pytest.fail(f"set_cooling_working was not called within {timeout} seconds")
