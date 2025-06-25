@@ -2097,6 +2097,8 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     assert res.status_code == 200
     assert "室外機" in gzip.decompress(res.data).decode("utf-8")
 
+    logging.error("@@@@@@@@@@@@@@@@@")
+
     res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
     assert res.status_code == 200
     assert "data" in res.json
