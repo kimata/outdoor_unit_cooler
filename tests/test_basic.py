@@ -820,7 +820,6 @@ def test_actuator_log(  # noqa: PLR0913
     )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
-    logging.error(json.loads(res.text)["data"])
     assert json.loads(res.text)["data"][-1]["message"].find("ログがクリアされました。") != -1
     assert (
         datetime.datetime.strptime(json.loads(res.text)["data"][-1]["date"], "%Y-%m-%d %H:%M:%S").replace(

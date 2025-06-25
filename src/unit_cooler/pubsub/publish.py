@@ -77,8 +77,8 @@ def start_server(server_port, func, interval_sec, msg_count=0):
             socket.send_string(f"{unit_cooler.const.PUBSUB_CH} {json.dumps(func())}")
 
             if msg_count != 0:
-                logging.debug("(send_count, msg_count) = (%d, %d)", send_count, msg_count)
                 send_count += 1
+                logging.debug("(send_count, msg_count) = (%d, %d)", send_count, msg_count)
                 # NOTE: Proxy が間に入るので、多く回す
                 if send_count == (msg_count + 15):
                     logging.info("Terminate, because the specified number of times has been reached.")
