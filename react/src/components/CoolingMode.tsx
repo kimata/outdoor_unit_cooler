@@ -16,11 +16,11 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                     <div className="col-6">
                         <span className="me-1">On:</span>
                         <AnimatedNumber
-                            value={mode.duty.on_sec}
+                            value={Math.round(mode.duty.on_sec / 60)}
                             decimals={0}
                             className="display-6 digit"
                         />
-                        <span className="ms-1">sec</span>
+                        <span className="ms-1">min</span>
                     </div>
                     <div className="col-6">
                         <span className="me-1">Off:</span>
