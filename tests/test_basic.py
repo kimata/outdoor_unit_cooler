@@ -1289,7 +1289,7 @@ def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_por
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_leak(  # noqa: PLR0913
+def test_actuator_leak(  # noqa: PLR0913, PLR0915
     mocker, time_machine, config, server_port, real_port, log_port
 ):
     import copy
@@ -1359,6 +1359,23 @@ def test_actuator_leak(  # noqa: PLR0913
     time.sleep(0.5)
     move_to(time_machine, 4)
     time.sleep(0.5)
+
+    # 水漏れメッセージが生成されるまで待機（プロセス終了前に確認）
+    max_wait_time = 10  # 最大10秒間待機
+    wait_interval = 0.5  # 0.5秒間隔でチェック
+    waited_time = 0
+
+    while waited_time < max_wait_time:
+        hist = my_lib.notify.slack.hist_get(False)
+        leak_message_found = any("水漏れしています。" in msg for msg in hist)
+
+        if leak_message_found:
+            logging.info("水漏れメッセージが検出されました: %s", hist)
+            break
+
+        logging.debug("水漏れメッセージ待機中... (%s秒経過)", waited_time)
+        time.sleep(wait_interval)
+        waited_time += wait_interval
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
