@@ -1331,7 +1331,6 @@ def test_actuator_leak(  # noqa: PLR0913
         config,
         {
             "speedup": 100,
-            "dummy_mode": True,
             "msg_count": 20,
             "server_port": server_port,
             "real_port": real_port,
