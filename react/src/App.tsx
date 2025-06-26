@@ -14,7 +14,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 import preval from "preval.macro";
-import packageJson from "../package.json";
+import { version as reactVersion } from "react";
 
 import { ApiResponse } from "./lib/ApiResponse";
 import { useApi } from "./hooks/useApi";
@@ -206,7 +206,7 @@ function App() {
                         </p>
                         <p className="text-muted m-0">
                             <small>
-                                React バージョン: {packageJson.dependencies.react}
+                                React バージョン: {reactVersion}
                             </small>
                         </p>
                         <p className="display-6">
