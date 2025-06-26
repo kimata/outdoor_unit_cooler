@@ -418,19 +418,19 @@ def test_configuration_edge_cases(tmp_path):
     """Test configuration edge cases"""
     import my_lib.config
 
-    # Test empty config file - should raise TypeError due to None handling
+    # Test empty config file - returns None
     empty_config = tmp_path / "empty.yaml"
     empty_config.write_text("")
 
-    with pytest.raises(TypeError, match="'NoneType' object does not support item assignment"):
-        my_lib.config.load(str(empty_config))
+    result = my_lib.config.load(str(empty_config))
+    assert result is None
 
-    # Test config with only comments - should also raise TypeError
+    # Test config with only comments - also returns None
     comment_config = tmp_path / "comments.yaml"
     comment_config.write_text("# This is a comment\n# Another comment")
 
-    with pytest.raises(TypeError, match="'NoneType' object does not support item assignment"):
-        my_lib.config.load(str(comment_config))
+    result = my_lib.config.load(str(comment_config))
+    assert result is None
 
     # Test invalid YAML syntax
     invalid_yaml = tmp_path / "invalid.yaml"

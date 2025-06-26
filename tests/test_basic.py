@@ -1300,16 +1300,27 @@ def test_actuator_leak(  # noqa: PLR0913
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
     mock_gpio(mocker)
+    # 水漏れ検出のため高い流量値を設定
     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+
+    # 水漏れ検出の閾値を下げる（設定値を一時的に変更）
+    config_copy = copy.deepcopy(config)
+    config_copy["actuator"]["monitor"]["flow"]["on"]["max"] = [
+        15,
+        15,
+        15,
+        15,
+    ]  # 20 > 15なので水漏れが検出される
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
     )
 
     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 1000
-    message_list_orig[-1]["duty"]["off_sec"] = 100000
+    # バルブを長時間開いて水漏れを検出させる
+    message_list_orig[-1]["duty"]["on_sec"] = 30  # 30秒間開く（水漏れ検出に十分な時間）
+    message_list_orig[-1]["duty"]["off_sec"] = 1  # 1秒だけ閉じる
     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
@@ -1318,7 +1329,7 @@ def test_actuator_leak(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     actuator_handle = actuator.start(
-        config,
+        config_copy,
         {
             "speedup": 100,
             "msg_count": 20,
@@ -1327,7 +1338,7 @@ def test_actuator_leak(  # noqa: PLR0913
         },
     )
     control_handle = controller.start(
-        config,
+        config_copy,
         {
             "speedup": 100,
             "dummy_mode": True,
@@ -1352,11 +1363,11 @@ def test_actuator_leak(  # noqa: PLR0913
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config, ["controller"], True, 1000)
-    check_liveness(config, ["actuator", "subscribe"], True, 1000)
-    check_liveness(config, ["actuator", "control"], True, 1000)
-    check_liveness(config, ["actuator", "monitor"], True, 1000)
-    check_liveness(config, ["webui", "subscribe"], False)
+    check_liveness(config_copy, ["controller"], True, 1000)
+    check_liveness(config_copy, ["actuator", "subscribe"], True, 1000)
+    check_liveness(config_copy, ["actuator", "control"], True, 1000)
+    check_liveness(config_copy, ["actuator", "monitor"], True, 1000)
+    check_liveness(config_copy, ["webui", "subscribe"], False)
 
     logging.info(my_lib.notify.slack.hist_get(False))
 
