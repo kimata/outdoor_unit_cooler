@@ -14,6 +14,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 import preval from "preval.macro";
+import packageJson from "../package.json";
 
 import { ApiResponse } from "./lib/ApiResponse";
 import { useApi } from "./hooks/useApi";
@@ -201,6 +202,11 @@ function App() {
                         <p className="text-muted m-0">
                             <small>
                                 React ビルド: {buildInfo.buildDate} [{buildInfo.buildDateFrom}]
+                            </small>
+                        </p>
+                        <p className="text-muted m-0">
+                            <small>
+                                React バージョン: {packageJson.dependencies.react}
                             </small>
                         </p>
                         <p className="display-6">
