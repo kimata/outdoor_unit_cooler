@@ -17,6 +17,7 @@ Options:
 import concurrent.futures
 import logging
 import pathlib
+import threading
 import time
 import traceback
 
@@ -29,7 +30,7 @@ import unit_cooler.pubsub.subscribe
 import unit_cooler.util
 
 last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
-should_terminate = False
+should_terminate = threading.Event()
 
 
 def queue_put(message_queue, message, liveness_file):
@@ -102,7 +103,7 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
 
             my_lib.footprint.update(liveness_file)
 
-            if should_terminate:
+            if should_terminate.is_set():
                 logging.info("Terminate monitor worker")
                 break
 
@@ -150,7 +151,7 @@ def control_worker(config, message_queue, liveness_file, dummy_mode=False, speed
 
             my_lib.footprint.update(liveness_file)
 
-            if should_terminate:
+            if should_terminate.is_set():
                 logging.info("Terminate control worker")
                 break
 
@@ -215,9 +216,9 @@ def get_worker_def(config, message_queue, setting):
 
 
 def start(executor, worker_def):
-    global should_terminate  # noqa: PLW0603
+    global should_terminate
 
-    should_terminate = False
+    should_terminate.clear()
     thread_list = []
 
     for worker_info in worker_def:
@@ -225,6 +226,12 @@ def start(executor, worker_def):
         thread_list.append({"name": worker_info["name"], "future": future})
 
     return thread_list
+
+
+def term():
+    global should_terminate
+
+    should_terminate.set()
 
 
 if __name__ == "__main__":

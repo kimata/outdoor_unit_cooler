@@ -31,7 +31,7 @@ def sig_handler(num, frame):  # noqa: ARG001
     logging.warning("Receive signal %d", num)
 
     if num == signal.SIGTERM:
-        unit_cooler.actuator.worker.should_terminate = True
+        unit_cooler.actuator.worker.term()
 
 
 def wait_before_start(config):
