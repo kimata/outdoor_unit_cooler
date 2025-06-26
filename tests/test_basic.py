@@ -1302,8 +1302,9 @@ def test_actuator_leak(  # noqa: PLR0913
     mock_gpio(mocker)
     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
+    # NOTE: このテストはダミーモードを使わないので、judge_cooling_mode を差し替える
     mocker.patch(
-        "unit_cooler.controller.engine.dummy_cooling_mode",
+        "unit_cooler.controller.engine.judge_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
     )
 
@@ -1320,8 +1321,8 @@ def test_actuator_leak(  # noqa: PLR0913
 
     original_get_worker_def = unit_cooler.actuator.worker.get_worker_def
 
-    def patched_get_worker_def(config, setting):
-        worker_def = original_get_worker_def(config, setting)
+    def patched_get_worker_def(config, message_queue, setting):
+        worker_def = original_get_worker_def(config, message_queue, setting)
         # monitor_workerのmsg_countだけを50に変更
         for worker in worker_def:
             if worker["name"] == "monitor_worker":
