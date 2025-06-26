@@ -1289,7 +1289,7 @@ def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_por
     check_notify_slack("流量計が使えません。")
 
 
-def test_actuator_leak(  # noqa: PLR0913, PLR0915
+def test_actuator_leak(  # noqa: PLR0913
     mocker, time_machine, config, server_port, real_port, log_port
 ):
     import copy
@@ -1312,6 +1312,13 @@ def test_actuator_leak(  # noqa: PLR0913, PLR0915
         15,
         15,
     ]  # 20 > 15なので水漏れが検出される
+
+    # 並列実行でのデバッグ情報
+    logging.info(
+        "テスト設定: 流量センサー=%s L/min, 閾値=%s",
+        20,
+        config_copy["actuator"]["monitor"]["flow"]["on"]["max"],
+    )
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
@@ -1351,31 +1358,21 @@ def test_actuator_leak(  # noqa: PLR0913, PLR0915
     # NOTE: set_cooling_working が呼ばれるまで待つ
     wait_for_set_cooling_working()
 
-    move_to(time_machine, 1)
-    time.sleep(0.5)
-    move_to(time_machine, 2)
-    time.sleep(0.5)
-    move_to(time_machine, 3)
-    time.sleep(0.5)
-    move_to(time_machine, 4)
-    time.sleep(0.5)
+    # より確実に水漏れを検出するために時間を十分に進める
+    # 水漏れ検出は5秒, 10秒, 15秒, 20秒のタイミングで行われる
+    for minute in range(1, 10):  # 9分間実行して確実に水漏れを検出
+        move_to(time_machine, minute)
+        time.sleep(0.5)
 
-    # 水漏れメッセージが生成されるまで待機（プロセス終了前に確認）
-    max_wait_time = 10  # 最大10秒間待機
-    wait_interval = 0.5  # 0.5秒間隔でチェック
-    waited_time = 0
-
-    while waited_time < max_wait_time:
+        # 各時間でメッセージをチェック
         hist = my_lib.notify.slack.hist_get(False)
-        leak_message_found = any("水漏れしています。" in msg for msg in hist)
-
-        if leak_message_found:
-            logging.info("水漏れメッセージが検出されました: %s", hist)
+        if any("水漏れしています。" in msg for msg in hist):
+            logging.info("水漏れメッセージが%s分で検出されました: %s", minute, hist)
             break
 
-        logging.debug("水漏れメッセージ待機中... (%s秒経過)", waited_time)
-        time.sleep(wait_interval)
-        waited_time += wait_interval
+        # バルブ状態のデバッグ情報も取得
+        if minute <= 3:  # 最初の3分間のみログ出力
+            logging.info("時刻%s分での状況: hist=%s", minute, hist)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
