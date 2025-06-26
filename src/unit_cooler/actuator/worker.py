@@ -110,7 +110,7 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
             if msg_count != 0:
                 logging.debug("(monitor_count, msg_count) = (%d, %d)", handle["monitor_count"], msg_count)
                 # NOTE: monitor_worker が先に終了しないようにする
-                if handle["monitor_count"] >= (msg_count + 20):
+                if handle["monitor_count"] >= (msg_count + 100):
                     logging.info(
                         "Terminate monitor worker, because the specified number of times has been reached."
                     )

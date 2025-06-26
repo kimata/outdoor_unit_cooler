@@ -1300,34 +1300,16 @@ def test_actuator_leak(  # noqa: PLR0913
     from unit_cooler.controller.message import CONTROL_MESSAGE_LIST as CONTROL_MESSAGE_LIST_ORIG
 
     mock_gpio(mocker)
-    # 水漏れ検出のため高い流量値を設定
     mocker.patch("unit_cooler.actuator.sensor.get_flow", return_value=20)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
-
-    # 水漏れ検出の閾値を下げる（設定値を一時的に変更）
-    config_copy = copy.deepcopy(config)
-    config_copy["actuator"]["monitor"]["flow"]["on"]["max"] = [
-        15,
-        15,
-        15,
-        15,
-    ]  # 20 > 15なので水漏れが検出される
-
-    # 並列実行でのデバッグ情報
-    logging.info(
-        "テスト設定: 流量センサー=%s L/min, 閾値=%s",
-        20,
-        config_copy["actuator"]["monitor"]["flow"]["on"]["max"],
-    )
     mocker.patch(
         "unit_cooler.controller.engine.dummy_cooling_mode",
         return_value={"cooling_mode": len(CONTROL_MESSAGE_LIST_ORIG) - 1},
     )
 
     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    # バルブを長時間開いて水漏れを検出させる
-    message_list_orig[-1]["duty"]["on_sec"] = 30  # 30秒間開く（水漏れ検出に十分な時間）
-    message_list_orig[-1]["duty"]["off_sec"] = 1  # 1秒だけ閉じる
+    message_list_orig[-1]["duty"]["on_sec"] = 1000
+    message_list_orig[-1]["duty"]["off_sec"] = 100000
     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
@@ -1336,7 +1318,7 @@ def test_actuator_leak(  # noqa: PLR0913
     move_to(time_machine, 0)
 
     actuator_handle = actuator.start(
-        config_copy,
+        config,
         {
             "speedup": 100,
             "msg_count": 20,
@@ -1345,7 +1327,7 @@ def test_actuator_leak(  # noqa: PLR0913
         },
     )
     control_handle = controller.start(
-        config_copy,
+        config,
         {
             "speedup": 100,
             "dummy_mode": True,
@@ -1358,39 +1340,29 @@ def test_actuator_leak(  # noqa: PLR0913
     # NOTE: set_cooling_working が呼ばれるまで待つ
     wait_for_set_cooling_working()
 
-    # より確実に水漏れを検出するために時間を十分に進める
-    # 水漏れ検出は5秒, 10秒, 15秒, 20秒のタイミングで行われる
-    for minute in range(1, 10):  # 9分間実行して確実に水漏れを検出
-        move_to(time_machine, minute)
-        time.sleep(0.5)
-
-        # 各時間でメッセージをチェック
-        hist = my_lib.notify.slack.hist_get(False)
-        if any("水漏れしています。" in msg for msg in hist):
-            logging.info("水漏れメッセージが%s分で検出されました: %s", minute, hist)
-            break
-
-        # バルブ状態のデバッグ情報も取得
-        if minute <= 3:  # 最初の3分間のみログ出力
-            logging.info("時刻%s分での状況: hist=%s", minute, hist)
+    move_to(time_machine, 1)
+    time.sleep(0.5)
+    move_to(time_machine, 2)
+    time.sleep(0.5)
+    move_to(time_machine, 3)
+    time.sleep(0.5)
+    move_to(time_machine, 4)
+    time.sleep(0.5)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
 
-    check_liveness(config_copy, ["controller"], True, 1000)
-    check_liveness(config_copy, ["actuator", "subscribe"], True, 1000)
-    check_liveness(config_copy, ["actuator", "control"], True, 1000)
-    check_liveness(config_copy, ["actuator", "monitor"], True, 1000)
-    check_liveness(config_copy, ["webui", "subscribe"], False)
+    check_liveness(config, ["controller"], True, 1000)
+    check_liveness(config, ["actuator", "subscribe"], True, 1000)
+    check_liveness(config, ["actuator", "control"], True, 1000)
+    check_liveness(config, ["actuator", "monitor"], True, 1000)
+    check_liveness(config, ["webui", "subscribe"], False)
 
     logging.info(my_lib.notify.slack.hist_get(False))
 
-    # IndexErrorを防ぐために安全なチェックを追加
-    hist = my_lib.notify.slack.hist_get(False)
-    assert len(hist) >= 1, f"Expected at least 1 message, but got {len(hist)} messages"
-
-    assert hist[-1].find("水漏れしています。") == 0 or (
-        len(hist) >= 2 and hist[-2].find("水漏れしています。") == 0
+    assert (
+        my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
+        or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
     )
 
 
