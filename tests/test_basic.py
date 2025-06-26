@@ -1315,6 +1315,21 @@ def test_actuator_leak(  # noqa: PLR0913
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
+    # monitor_workerのmsg_countを増やして早期終了を防ぐ
+    import unit_cooler.actuator.worker
+
+    original_get_worker_def = unit_cooler.actuator.worker.get_worker_def
+
+    def patched_get_worker_def(config, setting):
+        worker_def = original_get_worker_def(config, setting)
+        # monitor_workerのmsg_countだけを50に変更
+        for worker in worker_def:
+            if worker["name"] == "monitor_worker":
+                worker["param"][5] = 50  # msg_countの位置
+        return worker_def
+
+    mocker.patch("unit_cooler.actuator.worker.get_worker_def", side_effect=patched_get_worker_def)
+
     move_to(time_machine, 0)
 
     actuator_handle = actuator.start(
