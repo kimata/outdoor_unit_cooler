@@ -58,21 +58,21 @@ def config():
     return my_lib.config.load(CONFIG_FILE, pathlib.Path(SCHEMA_CONFIG))
 
 
-@pytest.fixture()
+@pytest.fixture
 def server_port():
     port = _find_unused_port()
     yield port
     _release_port(port)
 
 
-@pytest.fixture()
+@pytest.fixture
 def real_port():
     port = _find_unused_port()
     yield port
     _release_port(port)
 
 
-@pytest.fixture()
+@pytest.fixture
 def log_port():
     port = _find_unused_port()
     yield port
@@ -194,9 +194,9 @@ def check_liveness(config, conf_path, is_healthy, threshold_sec=120):
     name = " - ".join(conf_path)
     liveness_file = my_lib.config.get_path(config, conf_path, ["liveness", "file"])
 
-    assert (
-        my_lib.footprint.elapsed(liveness_file) < threshold_sec
-    ) == is_healthy, f'{name} の healthz が更新されていま{"せん" if is_healthy else "す"}。'
+    assert (my_lib.footprint.elapsed(liveness_file) < threshold_sec) == is_healthy, (
+        f"{name} の healthz が更新されていま{'せん' if is_healthy else 'す'}。"
+    )
 
 
 def check_notify_slack(message, index=-1):
@@ -218,12 +218,12 @@ def check_work_log(message):
     if message is None:
         assert unit_cooler.actuator.work_log.hist_get() == [], "正常なはずなのに、エラー通知がされています。"
     else:
-        assert (
-            len(unit_cooler.actuator.work_log.hist_get()) != 0
-        ), "異常が発生したはずなのに、エラー通知がされていません。"
-        assert (
-            unit_cooler.actuator.work_log.hist_get()[-1].find(message) != -1
-        ), f"「{message}」が work_log で通知されていません。"
+        assert len(unit_cooler.actuator.work_log.hist_get()) != 0, (
+            "異常が発生したはずなのに、エラー通知がされていません。"
+        )
+        assert unit_cooler.actuator.work_log.hist_get()[-1].find(message) != -1, (
+            f"「{message}」が work_log で通知されていません。"
+        )
 
 
 def mock_fd_q10c(mocker, ser_trans=gen_fd_q10c_ser_trans_sense(), count=0, spi_read=0x11):  # noqa: B008
@@ -1341,13 +1341,13 @@ def test_actuator_leak(  # noqa: PLR0913
     wait_for_set_cooling_working()
 
     move_to(time_machine, 1)
-    time.sleep(1)
+    time.sleep(0.5)
     move_to(time_machine, 2)
-    time.sleep(1)
+    time.sleep(0.5)
     move_to(time_machine, 3)
-    time.sleep(1)
+    time.sleep(0.5)
     move_to(time_machine, 4)
-    time.sleep(1)
+    time.sleep(0.5)
 
     controller.wait_and_term(*control_handle)
     actuator.wait_and_term(*actuator_handle)
@@ -1440,9 +1440,10 @@ def test_actuator_monitor_error(standard_mocks, config, server_port, real_port, 
 
 
 def test_actuator_slack_error(standard_mocks, config, server_port, real_port, log_port):
+    import slack_sdk
+
     import actuator
     import controller
-    import slack_sdk
 
     standard_mocks.patch("unit_cooler.actuator.sensor.get_flow", return_value=None)
 
@@ -2044,9 +2045,10 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     import gzip
     import re
 
+    import requests
+
     import actuator
     import controller
-    import requests
     import webui
 
     mock_fd_q10c(mocker)

@@ -22,8 +22,8 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                         className="text-start display-1 ms-4"
                                         data-testid="watering-amount-info"
                                     >
-                                        <AnimatedNumber 
-                                            value={watering.amount} 
+                                        <AnimatedNumber
+                                            value={watering.amount}
                                             decimals={1}
                                             className="fw-bold digit"
                                         />
@@ -35,8 +35,8 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                         className="text-start ms-4 text-muted"
                                         data-testid="watering-price-info"
                                     >
-                                        <AnimatedNumber 
-                                            value={watering.price} 
+                                        <AnimatedNumber
+                                            value={watering.price}
                                             decimals={1}
                                             className="fw-bold display-6 digit"
                                         />

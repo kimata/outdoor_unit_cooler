@@ -22,7 +22,8 @@ from unittest import mock
 import pytest
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from collections.abc import Callable
+    from typing import Any
 
 
 _port_lock = threading.Lock()
@@ -149,33 +150,32 @@ def _release_port(port):
 def wait_for_set_cooling_working(timeout: float = 30.0) -> None:
     """
     Wait for unit_cooler.actuator.valve.set_cooling_working to be called.
-    
+
     This function uses a mock to detect when set_cooling_working is called and
     waits up to the specified timeout for it to happen.
-    
+
     Args:
         timeout: Maximum time to wait in seconds (default: 30.0)
-        
+
     Raises:
         pytest.fail: If set_cooling_working is not called within the timeout
+
     """
     import unit_cooler.actuator.valve
-    
+
     set_cooling_working_called = threading.Event()
     # 元の関数を保存
     original_set_cooling_working = unit_cooler.actuator.valve.set_cooling_working
-    
+
     def mock_set_cooling_working(*args, **kwargs):
         # イベントをセット
         set_cooling_working_called.set()
         logging.info("set_cooling_working was called")
         # 元の関数を呼び出す
         return original_set_cooling_working(*args, **kwargs)
-    
+
     # valve.set_cooling_working をモックして待つ
-    with mock.patch(
-        "unit_cooler.actuator.valve.set_cooling_working", side_effect=mock_set_cooling_working
-    ):
+    with mock.patch("unit_cooler.actuator.valve.set_cooling_working", side_effect=mock_set_cooling_working):
         # set_cooling_working が呼ばれるまで最大 timeout 秒待つ
         if not set_cooling_working_called.wait(timeout=timeout):
             pytest.fail(f"set_cooling_working was not called within {timeout} seconds")
@@ -273,7 +273,7 @@ class ComponentManager:
             webui.wait_and_term(*self.handles["webui"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def component_manager():
     """Fixture providing component management functionality."""
     manager = ComponentManager()
@@ -281,7 +281,7 @@ def component_manager():
     manager.teardown_all()
 
 
-@pytest.fixture()
+@pytest.fixture
 def standard_actuator_mocks(mocker):
     """Provide standard mock setup for most actuator tests."""
     from tests.test_basic import gen_sense_data, mock_fd_q10c, mock_gpio
@@ -293,7 +293,7 @@ def standard_actuator_mocks(mocker):
     return mocker
 
 
-@pytest.fixture()
+@pytest.fixture
 def standard_mocks(mocker):
     """Provide standard mock setup for most actuator tests."""
     from tests.test_basic import gen_sense_data, mock_fd_q10c, mock_gpio
@@ -305,7 +305,7 @@ def standard_mocks(mocker):
     return mocker
 
 
-@pytest.fixture()
+@pytest.fixture
 def controller_mocks(mocker):
     """Provide standard mock setup for controller tests."""
     from tests.test_basic import gen_sense_data
@@ -314,7 +314,7 @@ def controller_mocks(mocker):
     return mocker
 
 
-@pytest.fixture()
+@pytest.fixture
 def webapp_client(config, server_port, log_port):
     """Create a webapp test client with standard configuration."""
     import webui
@@ -426,7 +426,7 @@ def control_message_modifier(mocker):
     return modify_duty_settings
 
 
-@pytest.fixture()
+@pytest.fixture
 def control_message_modifier_fixture(mocker):
     """Fixture version of control_message_modifier for tests that need it as a fixture."""
     return control_message_modifier(mocker)

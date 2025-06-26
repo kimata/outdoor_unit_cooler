@@ -1,71 +1,72 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
 interface UseApiState<T> {
-  data: T;
-  loading: boolean;
-  error: string | null;
+    data: T;
+    loading: boolean;
+    error: string | null;
 }
 
 interface UseApiOptions {
-  interval?: number;
-  immediate?: boolean;
+    interval?: number;
+    immediate?: boolean;
 }
 
 export function useApi<T>(
-  url: string,
-  initialData: T,
-  options: UseApiOptions = {}
+    url: string,
+    initialData: T,
+    options: UseApiOptions = {},
 ): UseApiState<T> & { refetch: () => Promise<void> } {
-  const [data, setData] = useState<T>(initialData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+    const [data, setData] = useState<T>(initialData);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  const fetchData = useCallback(async (): Promise<void> => {
-    try {
-      // 初回ロード時のみloadingをtrueにする
-      if (isFirstLoad) {
-        setLoading(true);
-      }
-      setError(null);
+    const fetchData = useCallback(async (): Promise<void> => {
+        try {
+            // 初回ロード時のみloadingをtrueにする
+            if (isFirstLoad) {
+                setLoading(true);
+            }
+            setError(null);
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-      const result = await response.json();
-      setData(result);
-      
-      if (isFirstLoad) {
-        setIsFirstLoad(false);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '通信に失敗しました';
-      setError(errorMessage);
-      console.error('API fetch error:', err);
-    } finally {
-      if (isFirstLoad) {
-        setLoading(false);
-      }
-    }
-  }, [url, isFirstLoad]);
+            const result = await response.json();
+            setData(result);
 
-  useEffect(() => {
-    if (options.immediate !== false) {
-      fetchData();
-    }
+            if (isFirstLoad) {
+                setIsFirstLoad(false);
+            }
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : "通信に失敗しました";
+            setError(errorMessage);
+            console.error("API fetch error:", err);
+        } finally {
+            if (isFirstLoad) {
+                setLoading(false);
+            }
+        }
+    }, [url, isFirstLoad]);
 
-    if (options.interval) {
-      const intervalId = setInterval(fetchData, options.interval);
-      return () => clearInterval(intervalId);
-    }
-  }, [fetchData, options.immediate, options.interval]);
+    useEffect(() => {
+        if (options.immediate !== false) {
+            fetchData();
+        }
 
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchData,
-  };
+        if (options.interval) {
+            const intervalId = setInterval(fetchData, options.interval);
+            return () => clearInterval(intervalId);
+        }
+    }, [fetchData, options.immediate, options.interval]);
+
+    return {
+        data,
+        loading,
+        error,
+        refetch: fetchData,
+    };
 }

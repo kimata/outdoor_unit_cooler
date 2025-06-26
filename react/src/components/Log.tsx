@@ -102,13 +102,13 @@ const Log = React.memo(({ isReady, log }: Props) => {
                             let log_fromNow = date.fromNow();
 
                             return (
-                                <motion.div 
-                                    className="row" 
+                                <motion.div
+                                    className="row"
                                     key={entry.id}
                                     initial={{ opacity: 0, height: 0, y: -20 }}
                                     animate={{ opacity: 1, height: "auto", y: 0 }}
                                     exit={{ opacity: 0, height: 0, y: -20 }}
-                                    transition={{ 
+                                    transition={{
                                         duration: 0.3,
                                         ease: "easeOut"
                                     }}

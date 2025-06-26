@@ -20,8 +20,9 @@ import json
 import logging
 import time
 
-import unit_cooler.const
 import zmq
+
+import unit_cooler.const
 
 
 def wait_first_client(socket, timeout=10):
@@ -177,6 +178,7 @@ if __name__ == "__main__":
     import my_lib.config
     import my_lib.logger
     import my_lib.pretty
+
     import unit_cooler.actuator.subscribe
     import unit_cooler.const
     import unit_cooler.controller.engine

@@ -1,7 +1,11 @@
-formatter:
-  type: basic
-  indent: 4
-  retain_line_breaks: true
-  disallow_anchors: false
-  anchor_case: original
-  drop_merge_tag: false
+extends: default
+rules:
+    indentation:
+        spaces: 4
+        indent-sequences: consistent
+    new-lines:
+        type: unix
+    line-length:
+        max: 120
+    trailing-spaces: disable
+    document-start: disable

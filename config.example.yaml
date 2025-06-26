@@ -29,7 +29,6 @@ controller:
             - name: 降雨量
               measure: sensor.rasp
               hostname: rasp-weather-1
-
         power:
             - name: リビング
               measure: hems.sharp
@@ -112,7 +111,6 @@ webui:
     webapp:
         static_dir_path: react/dist
         port: 5000
-
     subscribe:
         liveness:
             file: /dev/shm/healthz.webui.subscribe

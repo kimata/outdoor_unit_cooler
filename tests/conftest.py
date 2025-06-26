@@ -10,17 +10,17 @@ def pytest_addoption(parser):
     parser.addoption("--port", default="5000")
 
 
-@pytest.fixture()
+@pytest.fixture
 def host(request):
     return request.config.getoption("--host")
 
 
-@pytest.fixture()
+@pytest.fixture
 def port(request):
     return request.config.getoption("--port")
 
 
-@pytest.fixture()
+@pytest.fixture
 def page(page):
     from playwright.sync_api import expect
 
@@ -32,7 +32,7 @@ def page(page):
     return page
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser_context_args(browser_context_args, request):
     return {
         **browser_context_args,

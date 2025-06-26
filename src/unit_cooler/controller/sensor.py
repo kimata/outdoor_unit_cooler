@@ -16,6 +16,7 @@ import os
 import my_lib.notify.slack
 import my_lib.sensor_data
 import my_lib.time
+
 import unit_cooler.const
 import unit_cooler.controller.message
 
@@ -174,8 +175,7 @@ OUTDOOR_CONDITION_LIST = [
     {
         "judge": lambda sense_data: sense_data["lux"][0]["value"] < LUX_THRESHOLD,
         "message": lambda sense_data: (
-            "照度 ({lux:,.0f} LUX) が "
-            "{threshold:,.0f} LUX より小さいので冷却を弱めます。(outdoor_status: -2)"
+            "照度 ({lux:,.0f} LUX) が {threshold:,.0f} LUX より小さいので冷却を弱めます。(outdoor_status: -2)"
         ).format(lux=sense_data["lux"][0]["value"], threshold=LUX_THRESHOLD),
         "status": -2,
     },
@@ -318,7 +318,7 @@ def get_sense_data(config):
             else:
                 unit_cooler.util.notify_error(
                     config,
-                    f'{sensor["name"]} のデータを取得できませんでした。',
+                    f"{sensor['name']} のデータを取得できませんでした。",
                 )
                 kind_data.append({"name": sensor["name"], "value": None})
 

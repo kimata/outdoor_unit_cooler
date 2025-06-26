@@ -15,8 +15,8 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                 <div className="row">
                     <div className="col-6">
                         <span className="me-1">On:</span>
-                        <AnimatedNumber 
-                            value={mode.duty.on_sec} 
+                        <AnimatedNumber
+                            value={mode.duty.on_sec}
                             decimals={0}
                             className="display-6 digit"
                         />
@@ -24,8 +24,8 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                     </div>
                     <div className="col-6">
                         <span className="me-1">Off:</span>
-                        <AnimatedNumber 
-                            value={Math.round(mode.duty.off_sec / 60)} 
+                        <AnimatedNumber
+                            value={Math.round(mode.duty.off_sec / 60)}
                             decimals={0}
                             className="display-6 digit"
                         />
@@ -44,8 +44,8 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
         return (
             <div data-testid="cooling-info">
                 <div className="display-1 align-middle ms-1">
-                    <AnimatedNumber 
-                        value={mode.mode_index} 
+                    <AnimatedNumber
+                        value={mode.mode_index}
                         decimals={0}
                         className="fw-bold digit"
                     />

@@ -35,7 +35,7 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
         const [previousValue, setPreviousValue] = useState(props.airconData.value || 0);
         const currentWidth = (100.0 * props.airconData.value) / 1500;
         const previousWidth = (100.0 * previousValue) / 1500;
-        
+
         useEffect(() => {
             setPreviousValue(props.airconData.value || 0);
         }, [props.airconData.value]);
@@ -61,8 +61,8 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                         </div>
                         <div className="progress-label digit">
                             <b>
-                                <AnimatedNumber 
-                                    value={props.airconData.value || 0} 
+                                <AnimatedNumber
+                                    value={props.airconData.value || 0}
                                     decimals={0}
                                 />
                             </b>

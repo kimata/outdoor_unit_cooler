@@ -51,6 +51,7 @@ def create_app(config, arg):
     import my_lib.webapp.base
     import my_lib.webapp.log_proxy
     import my_lib.webapp.util
+
     import unit_cooler.webui.cooler_stat
     import unit_cooler.webui.worker
 
@@ -107,7 +108,7 @@ def create_app(config, arg):
 
     my_lib.webapp.config.show_handler_list(app)
 
-    api_base_url = f'http://{setting["actuator_host"]}:{setting["log_port"]}/unit_cooler'
+    api_base_url = f"http://{setting['actuator_host']}:{setting['log_port']}/unit_cooler"
     my_lib.webapp.log_proxy.init(api_base_url)
     unit_cooler.webui.cooler_stat.init(api_base_url)
 

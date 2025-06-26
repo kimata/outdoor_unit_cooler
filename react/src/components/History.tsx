@@ -53,7 +53,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
         if (chartRef.current && isReady && stat.watering && stat.watering.length >= 7) {
             const chart = chartRef.current;
             const newData = stat.watering.map((watering) => parseFloat(watering["amount"].toFixed(1))).reverse();
-            
+
             // データセットのデータのみ更新
             chart.data.datasets[0].data = newData;
             chart.update('none'); // アニメーションなしで更新
@@ -64,9 +64,9 @@ const History = React.memo(({ isReady, stat }: Props) => {
         return (
             <div className="card-body">
                 <div className="w-100" data-testid="history-info">
-                    <Bar 
+                    <Bar
                         ref={chartRef}
-                        options={chartOptions} 
+                        options={chartOptions}
                         data={initialChartData}
                     />
                 </div>

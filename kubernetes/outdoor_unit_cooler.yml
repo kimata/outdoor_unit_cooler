@@ -44,23 +44,23 @@ spec:
                   imagePullPolicy: Always
                   command: ["./src/controller.py"]
                   ports:
-                    - containerPort: 2222
+                      - containerPort: 2222
                   resources:
-                    requests:
-                        memory: 256Mi
-                    limits:
-                        memory: 512Mi
+                      requests:
+                          memory: 256Mi
+                      limits:
+                          memory: 512Mi
                   livenessProbe:
-                    exec:
-                        command:
-                            - /opt/unit_cooler/src/healthz.py
-                            - "-m"
-                            - CTRL
-                    initialDelaySeconds: 120
-                    periodSeconds: 120
-                    timeoutSeconds: 30
-                    successThreshold: 1
-                    failureThreshold: 3
+                      exec:
+                          command:
+                              - /opt/unit_cooler/src/healthz.py
+                              - "-m"
+                              - CTRL
+                      initialDelaySeconds: 120
+                      periodSeconds: 120
+                      timeoutSeconds: 30
+                      successThreshold: 1
+                      failureThreshold: 3
             dnsPolicy: Default
             nodeSelector:
                 kubernetes.io/hostname: hems
@@ -85,48 +85,48 @@ spec:
             volumes:
                 - name: dev-gpio
                   hostPath:
-                    path: /dev/gpiomem
+                      path: /dev/gpiomem
                 - name: dev-spidev
                   hostPath:
-                    path: /dev/spidev0.0
+                      path: /dev/spidev0.0
                 - name: dev-tty
                   hostPath:
-                    path: /dev/ttyAMA0
+                      path: /dev/ttyAMA0
             containers:
                 - name: unit-cooler-actuator
                   image: registry.green-rabbit.net:5000/kimata/outdoor_unit_cooler:latest
                   imagePullPolicy: Always
                   command: ["./src/actuator.py"]
                   env:
-                    - name: HEMS_SERVER_HOST
-                      value: unit-cooler-controller.hems.svc.cluster.local
-                    - name: NODE_HOSTNAME
-                      value: rasp-cooler-1
+                      - name: HEMS_SERVER_HOST
+                        value: unit-cooler-controller.hems.svc.cluster.local
+                      - name: NODE_HOSTNAME
+                        value: rasp-cooler-1
                   volumeMounts:
-                    - mountPath: /dev/gpiomem
-                      name: dev-gpio
-                    - mountPath: /dev/spidev0.0
-                      name: dev-spidev
-                    - mountPath: /dev/ttyAMA0
-                      name: dev-tty
+                      - mountPath: /dev/gpiomem
+                        name: dev-gpio
+                      - mountPath: /dev/spidev0.0
+                        name: dev-spidev
+                      - mountPath: /dev/ttyAMA0
+                        name: dev-tty
                   securityContext:
-                    privileged: true
+                      privileged: true
                   resources:
-                    requests:
-                        memory: 256Mi
-                    limits:
-                        memory: 512Mi
+                      requests:
+                          memory: 256Mi
+                      limits:
+                          memory: 512Mi
                   livenessProbe:
-                    exec:
-                        command:
-                            - /opt/unit_cooler/src/healthz.py
-                            - "-m"
-                            - ACT
-                    initialDelaySeconds: 120
-                    periodSeconds: 120
-                    timeoutSeconds: 30
-                    successThreshold: 1
-                    failureThreshold: 3
+                      exec:
+                          command:
+                              - /opt/unit_cooler/src/healthz.py
+                              - "-m"
+                              - ACT
+                      initialDelaySeconds: 120
+                      periodSeconds: 120
+                      timeoutSeconds: 30
+                      successThreshold: 1
+                      failureThreshold: 3
             dnsPolicy: ClusterFirst
             nodeSelector:
                 kubernetes.io/hostname: rasp-cooler-1
@@ -170,26 +170,26 @@ spec:
                   imagePullPolicy: Always
                   command: ["./src/webui.py"]
                   ports:
-                    - containerPort: 5000
+                      - containerPort: 5000
                   env:
-                    - name: HEMS_SERVER_HOST
-                      value: unit-cooler-controller.hems.svc.cluster.local
+                      - name: HEMS_SERVER_HOST
+                        value: unit-cooler-controller.hems.svc.cluster.local
                   resources:
-                    requests:
-                        memory: 128Mi
-                    limits:
-                        memory: 256Mi
+                      requests:
+                          memory: 128Mi
+                      limits:
+                          memory: 256Mi
                   livenessProbe:
-                    exec:
-                        command:
-                            - /opt/unit_cooler/src/healthz.py
-                            - "-m"
-                            - WEB
-                    initialDelaySeconds: 120
-                    periodSeconds: 120
-                    timeoutSeconds: 30
-                    successThreshold: 1
-                    failureThreshold: 3
+                      exec:
+                          command:
+                              - /opt/unit_cooler/src/healthz.py
+                              - "-m"
+                              - WEB
+                      initialDelaySeconds: 120
+                      periodSeconds: 120
+                      timeoutSeconds: 30
+                      successThreshold: 1
+                      failureThreshold: 3
             dnsPolicy: ClusterFirst
             nodeSelector:
                 kubernetes.io/hostname: worker

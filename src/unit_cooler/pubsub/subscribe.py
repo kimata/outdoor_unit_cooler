@@ -2,8 +2,9 @@
 import json
 import logging
 
-import unit_cooler.const
 import zmq
+
+import unit_cooler.const
 
 
 def start_client(server_host, server_port, func, msg_count=0):

@@ -21,6 +21,7 @@ import time
 import traceback
 
 import my_lib.footprint
+
 import unit_cooler.actuator.control
 import unit_cooler.actuator.monitor
 import unit_cooler.const
@@ -237,6 +238,7 @@ if __name__ == "__main__":
     import my_lib.logger
     import my_lib.pretty
     import my_lib.webapp.config
+
     import unit_cooler.actuator.valve
 
     args = docopt.docopt(__doc__)

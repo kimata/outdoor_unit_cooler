@@ -33,8 +33,8 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
                 <td className="text-end col-2 digit">
                     <b>
-                        <AnimatedNumber 
-                            value={sensorData.value || 0} 
+                        <AnimatedNumber
+                            value={sensorData.value || 0}
                             decimals={1}
                         />
                     </b>

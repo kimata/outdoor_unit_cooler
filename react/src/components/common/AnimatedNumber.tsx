@@ -15,11 +15,11 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   duration = 0.8
 }) => {
   const [displayValue, setDisplayValue] = useState(value);
-  const spring = useSpring(value, { 
+  const spring = useSpring(value, {
     duration: duration * 1000,
     bounce: 0.1
   });
-  
+
   const display = useTransform(spring, (latest) => latest.toFixed(decimals));
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   }, [display]);
 
   return (
-    <motion.span 
+    <motion.span
       className={className}
       initial={{ scale: 1 }}
       animate={{ scale: value !== displayValue ? [1, 1.05, 1] : 1 }}

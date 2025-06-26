@@ -1,13 +1,13 @@
-import { ApiResponse } from '../lib/ApiResponse';
+import { ApiResponse } from "../lib/ApiResponse";
 
 export interface BaseComponentProps {
-  isReady: boolean;
+    isReady: boolean;
 }
 
 export interface StatComponentProps extends BaseComponentProps {
-  stat: ApiResponse.Stat;
+    stat: ApiResponse.Stat;
 }
 
 export interface LogComponentProps extends BaseComponentProps {
-  log: ApiResponse.Log;
+    log: ApiResponse.Log;
 }

@@ -43,18 +43,21 @@ Raspberry Pi を使ったエアコン室外機自動冷却システム
 ### 技術スタック
 
 #### フロントエンド
+
 - **フレームワーク**: React 18
 - **UIライブラリ**: Bootstrap + React Bootstrap
 - **ビルドツール**: Vite
 - **言語**: TypeScript/JavaScript
 
 #### バックエンド
+
 - **フレームワーク**: Flask (Python)
 - **パッケージマネージャー**: uv (高速・モダン)
 - **通信**: ZeroMQ (プロセス間通信)
 - **データベース**: InfluxDB (センサーデータ), SQLite (ログ)
 
 #### ハードウェア
+
 - **制御**: Raspberry Pi + GPIO制御
 - **センサー**: 流量センサー (FD-Q10C)
 - **アクチュエータ**: 電磁弁 (DC12V)
@@ -111,6 +114,7 @@ cp config.example.yaml config.yaml
 ```
 
 設定項目の例：
+
 - InfluxDB接続設定（センサーデータの保存先）
 - GPIO設定（電磁弁制御用のピン番号）
 - Slack設定（エラー通知用）
@@ -186,6 +190,7 @@ uv run pytest tests/test_playwright.py
 ```
 
 テスト結果：
+
 - HTMLレポート: `tests/evidence/index.htm`
 - カバレッジ: `tests/evidence/coverage/`
 - E2E録画: `tests/evidence/test_*/`
@@ -193,14 +198,17 @@ uv run pytest tests/test_playwright.py
 ## 🎯 API エンドポイント
 
 ### システム状態
+
 - `GET /unit_cooler/api/status` - システム全体の状態取得
 - `GET /unit_cooler/api/sensor` - センサーデータ取得
 
 ### 制御
+
 - `POST /unit_cooler/api/valve_ctrl` - 電磁弁の手動制御
 - `GET /unit_cooler/api/mode` - 動作モード取得/設定
 
 ### ログ・履歴
+
 - `GET /unit_cooler/api/log` - システムログ取得
 - `GET /unit_cooler/api/log_view` - ログビューア
 
@@ -227,15 +235,18 @@ kubectl logs -n hems -l app=outdoor-unit-cooler
 ### よくある問題
 
 #### 電磁弁が動作しない
+
 - **GPIO権限不足**: `sudo usermod -a -G gpio $USER` を実行後、再起動
 - **配線確認**: GPIO17番ピンと電磁弁の接続を確認
 - **設定確認**: `config.yaml` の `actuator.gpio.valve_pin` をチェック
 
 #### 流量センサーが読み取れない
+
 - **シリアルポート競合**: Bluetoothが無効化されているか確認
 - **権限不足**: `/dev/ttyAMA0` へのアクセス権限を確認
 
 #### Web UIにアクセスできない
+
 - **ポート確認**: デフォルトポート5000が開いているか確認
 - **サービス確認**: `docker-compose ps` でサービス起動状況を確認
 
@@ -254,6 +265,7 @@ docker-compose logs -f webui
 ## 📊 CI/CD
 
 GitHub Actions によるCI/CDパイプライン：
+
 - テスト結果: https://kimata.github.io/outdoor_unit_cooler/
 - カバレッジレポート: https://kimata.github.io/outdoor_unit_cooler/coverage/
 

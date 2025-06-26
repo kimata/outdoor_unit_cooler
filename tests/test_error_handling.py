@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: S101, B017, PT011, ARG001, T201, PERF203, F841, S110
+# ruff: noqa: S101, B017, PT011, ARG001, PERF203, F841, S110
 """Additional error handling and edge case tests for outdoor unit cooler system."""
 
 import pathlib
@@ -67,8 +67,9 @@ def test_valve_gpio_error(mocker, config):
 
 def test_zmq_connection_failure(mocker, config):
     """Test ZeroMQ connection failure handling"""
-    import unit_cooler.pubsub.subscribe
     import zmq
+
+    import unit_cooler.pubsub.subscribe
 
     # Mock ZMQ to raise connection error
     mocker.patch("zmq.Context", side_effect=zmq.ZMQError("Connection failed"))
