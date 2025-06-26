@@ -1371,9 +1371,12 @@ def test_actuator_leak(  # noqa: PLR0913
 
     logging.info(my_lib.notify.slack.hist_get(False))
 
-    assert (
-        my_lib.notify.slack.hist_get(False)[-1].find("水漏れしています。") == 0
-        or my_lib.notify.slack.hist_get(False)[-2].find("水漏れしています。") == 0
+    # IndexErrorを防ぐために安全なチェックを追加
+    hist = my_lib.notify.slack.hist_get(False)
+    assert len(hist) >= 1, f"Expected at least 1 message, but got {len(hist)} messages"
+
+    assert hist[-1].find("水漏れしています。") == 0 or (
+        len(hist) >= 2 and hist[-2].find("水漏れしています。") == 0
     )
 
 
