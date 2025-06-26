@@ -850,6 +850,29 @@ def test_actuator_log(  # noqa: PLR0913
     assert res.status_code == 200
     assert res.text.strip() == "data: log"
 
+    # Test valve_status endpoint
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status"
+    )
+    assert res.status_code == 200
+    valve_status = json.loads(res.text)
+    assert "state" in valve_status
+    assert "state_value" in valve_status
+    assert "duration" in valve_status
+    assert valve_status["state"] in ["OPEN", "CLOSE"]
+    assert valve_status["state_value"] in [0, 1]
+    assert isinstance(valve_status["duration"], (int, float))
+    assert valve_status["duration"] >= 0
+
+    # Test valve_status endpoint with JSONP callback
+    res = requests.get(  # noqa: S113
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status",
+        params={"callback": "valveCallback"},
+    )
+    assert res.status_code == 200
+    assert res.text.startswith("valveCallback(")
+    assert res.text.endswith(")")
+
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
 
