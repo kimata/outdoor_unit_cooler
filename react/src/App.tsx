@@ -103,7 +103,7 @@ function App() {
     const {
         data: actuatorSysInfo,
         error: actuatorSysInfoError
-    } = useApi(`${API_ENDPOINT}/actuator_sysinfo`, emptySysInfo, { interval: 58000 });
+    } = useApi(`${API_ENDPOINT}/proxy/json/api/sysinfo`, emptySysInfo, { interval: 58000 });
 
     // EventSource for real-time updates
     useEventSource(`${API_ENDPOINT}/proxy/event/api/event`, {

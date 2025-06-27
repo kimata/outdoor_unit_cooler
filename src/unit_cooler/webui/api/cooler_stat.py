@@ -10,7 +10,6 @@ Options:
   -D                : デバッグモードで動作します。
 """
 
-import json
 import logging
 import os
 
@@ -18,7 +17,6 @@ import flask
 import my_lib.flask_util
 import my_lib.sensor_data
 import my_lib.webapp.config
-import requests
 
 import unit_cooler.controller.engine
 
@@ -53,12 +51,11 @@ def watering(config, day_before):
 
 
 def watering_list(config):
-    return [watering(config, i) for i in range(7)]
+    return [watering(config, i) for i in range(10)]
 
 
 def get_last_message(message_queue):
     # NOTE: 現在の実際の制御モードを取得する。
-    # ダミーモードと同じ処理でも良い気がしないでもない。
     while not message_queue.empty():
         get_last_message.last_message = message_queue.get()
     return get_last_message.last_message
@@ -80,29 +77,6 @@ def get_stats(config, message_queue):
     }
 
 
-def get_actuator_sysinfo():
-    global api_base_url
-
-    try:
-        url = "{base_url}{api_endpoint}".format(base_url=api_base_url, api_endpoint="/api/sysinfo")
-
-        # NOTE: 簡易リバースプロキシ
-        res = requests.get(url)  # noqa: S113
-        res.raise_for_status()
-
-        # NOTE: どのみち、また JSON 文字列に戻すけど...
-        return json.loads(res.text)
-    except Exception:
-        logging.exception("Unable to fetch sysinfo from %s", url)
-        return {
-            "date": "?",
-            "timezone": "?",
-            "image_build_date": "?",
-            "uptime": "?",
-            "load_average": "?",
-        }
-
-
 @blueprint.route("/api/stat", methods=["GET"])
 @my_lib.flask_util.support_jsonp
 def api_get_stats():
@@ -110,12 +84,6 @@ def api_get_stats():
     message_queue = flask.current_app.config["MESSAGE_QUEUE"]
 
     return flask.jsonify(get_stats(config, message_queue))
-
-
-@blueprint.route("/api/actuator_sysinfo", methods=["GET"])
-@my_lib.flask_util.support_jsonp
-def api_get_actuator_sysinfo():
-    return flask.jsonify(get_actuator_sysinfo())
 
 
 if __name__ == "__main__":
