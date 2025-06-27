@@ -8,9 +8,10 @@ import { AnimatedNumber } from "./common/AnimatedNumber";
 type Props = {
     isReady: boolean;
     stat: ApiResponse.Stat;
+    logUpdateTrigger: number;
 };
 
-const CoolingMode = React.memo(({ isReady, stat }: Props) => {
+const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
     const API_ENDPOINT = "/unit_cooler/api";
     const [remainingTime, setRemainingTime] = useState(0);
 
@@ -29,12 +30,12 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
         immediate: isReady
     });
 
-    // Refetch valve status when stat updates (triggered by log event)
+    // Refetch valve status when log update event occurs
     useEffect(() => {
         if (isReady && stat.mode.duty.enable) {
             refetchValveStatus();
         }
-    }, [stat, isReady, refetchValveStatus]);
+    }, [logUpdateTrigger, isReady, refetchValveStatus]);
 
     // Calculate remaining time
     useEffect(() => {

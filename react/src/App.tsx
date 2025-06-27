@@ -30,6 +30,7 @@ import { Log } from "./components/Log";
 
 function App() {
     const API_ENDPOINT = "/unit_cooler/api";
+    const [logUpdateTrigger, setLogUpdateTrigger] = useState(0);
 
     const emptyStat: ApiResponse.Stat = {
         cooler_status: {
@@ -111,6 +112,7 @@ function App() {
                 refetchLog();
                 refetchStat();
                 setUpdateTime(dayjs().format("llll"));
+                setLogUpdateTrigger(prev => prev + 1);
             }
         }
     });
@@ -173,7 +175,7 @@ function App() {
                         <div className="row display-flex row-cols-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-3 g-3">
                             <Watering isReady={isReady} stat={stat} />
                             <History isReady={isReady} stat={stat} />
-                            <CoolingMode isReady={isReady} stat={stat} />
+                            <CoolingMode isReady={isReady} stat={stat} logUpdateTrigger={logUpdateTrigger} />
                             <AirConditioner isReady={isReady} stat={stat} />
                             <Sensor isReady={isReady} stat={stat} />
                             <Log isReady={!logLoading || !isLogFirstLoad} log={log} />
