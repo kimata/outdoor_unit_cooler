@@ -29,7 +29,8 @@ def create_app(config, event_queue):
     import my_lib.webapp.log
     import my_lib.webapp.util
 
-    import unit_cooler.actuator.valve_status
+    import unit_cooler.actuator.api.flow_status
+    import unit_cooler.actuator.api.valve_status
 
     # NOTE: アクセスログは無効にする
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
@@ -45,7 +46,8 @@ def create_app(config, event_queue):
     app.register_blueprint(my_lib.webapp.log.blueprint)
     app.register_blueprint(my_lib.webapp.event.blueprint)
     app.register_blueprint(my_lib.webapp.util.blueprint)
-    app.register_blueprint(unit_cooler.actuator.valve_status.blueprint)
+    app.register_blueprint(unit_cooler.actuator.api.valve_status.blueprint)
+    app.register_blueprint(unit_cooler.actuator.api.flow_status.blueprint)
 
     my_lib.webapp.config.show_handler_list(app)
 

@@ -54,19 +54,15 @@ def get_mist_condition():
 
     if valve_status["state"] == unit_cooler.const.VALVE_STATE.OPEN:
         flow = unit_cooler.actuator.sensor.get_flow()
-        get_mist_condition.last_flow = flow
-
         # NOTE: get_flow() の内部で流量センサーの電源を入れている場合は計測に時間がかかるので、
         # その間に電磁弁の状態が変化している可能性があるので、再度状態を取得する。
         valve_status = unit_cooler.actuator.valve.get_status()
-    else:  # noqa: PLR5501
+    else:
         # NOTE: 電磁弁が閉じている場合、流量が 0 になるまでは計測を継続する。
         # (電磁弁の電源を切るため、流量が 0 になった場合は、電磁弁が開かれるまで計測は再開しない)
-        if get_mist_condition.last_flow != 0:
-            flow = unit_cooler.actuator.sensor.get_flow()
-            get_mist_condition.last_flow = flow
-        else:
-            flow = 0
+        flow = unit_cooler.actuator.sensor.get_flow() if get_mist_condition.last_flow != 0 else 0
+
+    get_mist_condition.last_flow = flow
 
     return {"valve": valve_status, "flow": flow}
 

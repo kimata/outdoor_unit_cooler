@@ -761,7 +761,7 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
-def test_actuator_log(  # noqa: PLR0913
+def test_actuator_log(  # noqa: PLR0913, PLR0915
     standard_mocks,  # noqa: ARG001
     component_manager,
     config,
@@ -878,6 +878,26 @@ def test_actuator_log(  # noqa: PLR0913
     )
     assert res.status_code == 200
     assert res.text.startswith("valveCallback(")
+
+    # Test get_flow endpoint
+    res = requests.get(
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/get_flow",
+        timeout=15,
+    )
+    assert res.status_code == 200
+    flow_status = json.loads(res.text)
+    assert "flow" in flow_status
+    assert isinstance(flow_status["flow"], (int, float))
+    assert flow_status["flow"] >= 0
+
+    # Test get_flow endpoint with JSONP callback
+    res = requests.get(
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/get_flow",
+        params={"callback": "flowCallback"},
+        timeout=15,
+    )
+    assert res.status_code == 200
+    assert res.text.startswith("flowCallback(")
     assert res.text.endswith(")")
 
     component_manager.wait_and_term_controller()
