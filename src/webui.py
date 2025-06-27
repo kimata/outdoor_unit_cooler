@@ -21,6 +21,7 @@ import multiprocessing
 import os
 import pathlib
 import threading
+import time
 
 import flask
 import flask_cors
@@ -49,7 +50,7 @@ def create_app(config, arg):
     my_lib.webapp.config.init(config["webui"])
 
     import my_lib.webapp.base
-    import my_lib.webapp.log_proxy
+    import my_lib.webapp.proxy
     import my_lib.webapp.util
 
     import unit_cooler.webui.cooler_stat
@@ -100,16 +101,20 @@ def create_app(config, arg):
 
     app.json.compat = True
 
+    # Initialize proxy before registering blueprint
+    api_base_url = f"http://{setting['actuator_host']}:{setting['log_port']}/unit_cooler"
+    # Set error_response to match old log_proxy.py behavior (return 200 with empty data)
+    error_response = {"data": [], "last_time": time.time()}
+    my_lib.webapp.proxy.init(api_base_url, error_response)
+
     app.register_blueprint(my_lib.webapp.base.blueprint_default)
     app.register_blueprint(my_lib.webapp.base.blueprint)
-    app.register_blueprint(my_lib.webapp.log_proxy.blueprint)
+    app.register_blueprint(my_lib.webapp.proxy.blueprint)
     app.register_blueprint(my_lib.webapp.util.blueprint)
     app.register_blueprint(unit_cooler.webui.cooler_stat.blueprint)
 
     my_lib.webapp.config.show_handler_list(app)
 
-    api_base_url = f"http://{setting['actuator_host']}:{setting['log_port']}/unit_cooler"
-    my_lib.webapp.log_proxy.init(api_base_url)
     unit_cooler.webui.cooler_stat.init(api_base_url)
 
     # app.debug = True

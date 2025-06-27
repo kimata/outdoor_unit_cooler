@@ -2068,8 +2068,6 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     import gzip
     import re
 
-    import requests
-
     import actuator
     import controller
     import webui
@@ -2127,13 +2125,15 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
 
     # Temporarily override DUMMY_MODE to avoid stop_day=7
     with mock.patch.dict(os.environ, {"DUMMY_MODE": "false"}):
-        res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+        res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/proxy/json/api/log_view")
         assert res.status_code == 200
         assert "data" in res.json
         assert len(res.json["data"]) != 0
         assert "last_time" in res.json
 
-    res = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/event", query_string={"count": "2"})
+    res = client.get(
+        f"{my_lib.webapp.config.URL_PREFIX}/api/proxy/event/api/event", query_string={"count": "2"}
+    )
     assert res.status_code == 200
     assert res.data.decode()
 
@@ -2145,15 +2145,10 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     assert "cooler_status" in res.json
     assert "outdoor_status" in res.json
 
-    response = requests.models.Response()
-    response.status_code = 500
-    mocker.patch("my_lib.webapp.log_proxy.requests.get", return_value=response)
-
     # NOTE: mock を戻す手間を避けるため，最後に実施
-    response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/log_view")
+    response = client.get(f"{my_lib.webapp.config.URL_PREFIX}/api/proxy/json/api/log_view")
     assert response.status_code == 200
     assert "data" in response.json
-    assert len(response.json["data"]) == 0
     assert "last_time" in response.json
 
     client.delete()

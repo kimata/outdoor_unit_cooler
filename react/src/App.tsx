@@ -92,7 +92,7 @@ function App() {
         loading: logLoading,
         error: logError,
         refetch: refetchLog
-    } = useApi(`${API_ENDPOINT}/log_view`, emptyLog);
+    } = useApi(`${API_ENDPOINT}/proxy/json/api/log_view`, emptyLog);
 
     const {
         data: sysInfo,
@@ -105,7 +105,7 @@ function App() {
     } = useApi(`${API_ENDPOINT}/actuator_sysinfo`, emptySysInfo, { interval: 58000 });
 
     // EventSource for real-time updates
-    useEventSource(`${API_ENDPOINT}/event`, {
+    useEventSource(`${API_ENDPOINT}/proxy/event/api/event`, {
         onMessage: (e) => {
             if (e.data === "log") {
                 refetchLog();
