@@ -47,11 +47,11 @@ const History = React.memo(({ isReady, stat }: Props) => {
 
     // 初期データ
     const initialChartData = useMemo(() => ({
-        labels: Array.from(Array(7), (_, i) => (i == 6 ? "本日" : 6 - i + "日前")),
+        labels: Array.from(Array(10), (_, i) => (i == 9 ? "本日" : 9 - i + "日前")),
         datasets: [
             {
                 label: "散水量",
-                data: [0, 0, 0, 0, 0, 0, 0],
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 backgroundColor: "rgba(128, 128, 128, 0.6)",
             },
         ],
@@ -59,7 +59,7 @@ const History = React.memo(({ isReady, stat }: Props) => {
 
     // データが更新された時にチャートを更新
     useEffect(() => {
-        if (chartRef.current && isReady && stat.watering && stat.watering.length >= 7) {
+        if (chartRef.current && isReady && stat.watering && stat.watering.length >= 10) {
             const chart = chartRef.current;
             const newData = stat.watering.map((watering) => parseFloat(watering["amount"].toFixed(1))).reverse();
 
