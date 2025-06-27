@@ -63,4 +63,8 @@ export namespace ApiResponse {
         state_value: 0 | 1;
         duration: number;
     }
+
+    export interface FlowStatus {
+        flow: number;
+    }
 }

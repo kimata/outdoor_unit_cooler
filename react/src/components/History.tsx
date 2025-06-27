@@ -62,8 +62,8 @@ const History = React.memo(({ isReady, stat }: Props) => {
 
     const history = () => {
         return (
-            <div className="card-body d-flex flex-grow-1">
-                <div className="w-100 h-100" data-testid="history-info" style={{ minHeight: 0 }}>
+            <div className="card-body">
+                <div className="w-100" data-testid="history-info" style={{ height: '250px', position: 'relative' }}>
                     <Bar
                         ref={chartRef}
                         options={chartOptions}
@@ -85,8 +85,8 @@ const History = React.memo(({ isReady, stat }: Props) => {
 
     return (
         <div className="col">
-            <div className="card-deck mb-3 text-center h-100">
-                <div className="card mb-4 shadow-sm d-flex flex-column">
+            <div className="card-deck mb-3 text-center">
+                <div className="card mb-4 shadow-sm">
                     <div className="card-header">
                         <h4 className="my-0 font-weight-normal">散水履歴</h4>
                     </div>

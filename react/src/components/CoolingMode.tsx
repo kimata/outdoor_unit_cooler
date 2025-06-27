@@ -14,11 +14,16 @@ type Props = {
 const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
     const API_ENDPOINT = "/unit_cooler/api";
     const [remainingTime, setRemainingTime] = useState(0);
+    const [currentFlow, setCurrentFlow] = useState(0);
 
     const emptyValveStatus: ApiResponse.ValveStatus = {
         state: "CLOSE",
         state_value: 0,
         duration: 0,
+    };
+
+    const emptyFlowStatus: ApiResponse.FlowStatus = {
+        flow: 0,
     };
 
     const {
@@ -28,6 +33,13 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
         refetch: refetchValveStatus
     } = useApi(`${API_ENDPOINT}/proxy/json/api/valve_status`, emptyValveStatus, {
         immediate: isReady
+    });
+
+    const {
+        data: flowStatus,
+        refetch: refetchFlowStatus
+    } = useApi(`${API_ENDPOINT}/proxy/json/api/get_flow`, emptyFlowStatus, {
+        immediate: false
     });
 
     // Refetch valve status when log update event occurs
@@ -69,6 +81,28 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
 
         return () => clearInterval(timer);
     }, [remainingTime, refetchValveStatus]);
+
+    // Update flow when valve is OPEN
+    useEffect(() => {
+        if (valveStatus.state === "OPEN") {
+            // Initial fetch
+            refetchFlowStatus();
+
+            // Update every second while OPEN
+            const flowTimer = setInterval(() => {
+                refetchFlowStatus();
+            }, 1000);
+
+            return () => clearInterval(flowTimer);
+        }
+    }, [valveStatus.state, refetchFlowStatus]);
+
+    // Update currentFlow state when flowStatus changes
+    useEffect(() => {
+        if (flowStatus && flowStatus.flow !== undefined) {
+            setCurrentFlow(flowStatus.flow);
+        }
+    }, [flowStatus]);
 
     const formatTime = useCallback((seconds: number): string => {
         const minutes = Math.floor(seconds / 60);
@@ -118,13 +152,18 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                 <div className="row align-items-center mb-2">
                     <div className="col-12 text-center">
                         <span
-                            className="badge fs-6"
+                            className="badge fs-6 d-flex align-items-center justify-content-center gap-2"
                             style={{
                                 backgroundColor: isOpen ? '#5e7e9b' : '#adb5bd',
                                 color: '#ffffff'
                             }}
                         >
-                            {valveStatus.state}
+                            <span>{valveStatus.state}</span>
+                            {isOpen && (
+                                <span className="fw-normal" style={{ fontSize: '0.875rem' }}>
+                                    {currentFlow.toFixed(1)} L/min
+                                </span>
+                            )}
                         </span>
                     </div>
                 </div>
