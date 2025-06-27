@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import { CircleFill, XCircleFill } from "react-bootstrap-icons";
 import { ApiResponse } from "../lib/ApiResponse";
 import { useApi } from "../hooks/useApi";
 import { Loading } from "./common/Loading";
@@ -118,12 +119,13 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                 <div className="row align-items-center mb-2">
                     <div className="col-12 text-center">
                         <span
-                            className="badge fs-6"
+                            className="badge fs-6 d-flex align-items-center justify-content-center gap-1"
                             style={{
                                 backgroundColor: isOpen ? '#5e7e9b' : '#6c757d',
                                 color: '#ffffff'
                             }}
                         >
+                            {isOpen ? <CircleFill size={12} /> : <XCircleFill size={12} />}
                             {valveStatus.state}
                         </span>
                     </div>
