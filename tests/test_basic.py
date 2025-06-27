@@ -1359,7 +1359,7 @@ def test_actuator_leak(  # noqa: PLR0913
     )
 
     message_list_orig = copy.deepcopy(CONTROL_MESSAGE_LIST_ORIG)
-    message_list_orig[-1]["duty"]["on_sec"] = 1000
+    message_list_orig[-1]["duty"]["on_sec"] = 100000
     message_list_orig[-1]["duty"]["off_sec"] = 100000
     mocker.patch.object(unit_cooler.controller.message, "CONTROL_MESSAGE_LIST", message_list_orig)
 

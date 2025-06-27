@@ -34,6 +34,15 @@ const History = React.memo(({ isReady, stat }: Props) => {
                 },
             },
         },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context: any) {
+                        return context.dataset.label + ': ' + context.parsed.y + ' L';
+                    }
+                }
+            }
+        },
     }), []);
 
     // 初期データ

@@ -153,6 +153,8 @@ def get_status():
 # 実際にバルブを開いてからの経過時間を返します。
 # duty_info = { "enable": bool, "on": on_sec, "off": off_sec }
 def set_cooling_working(duty_info):
+    logging.debug(duty_info)
+
     my_lib.footprint.clear(STAT_PATH_VALVE_STATE_IDLE)
 
     if not my_lib.footprint.exists(STAT_PATH_VALVE_STATE_WORKING):
