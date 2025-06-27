@@ -302,6 +302,12 @@ def standard_mocks(mocker):
     mock_fd_q10c(mocker)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
+
+    # Reset dummy_cooling_mode state to ensure test isolation
+    import unit_cooler.controller.engine
+
+    unit_cooler.controller.engine.dummy_cooling_mode.prev_mode = 0
+
     return mocker
 
 
