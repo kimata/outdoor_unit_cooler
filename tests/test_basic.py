@@ -790,9 +790,10 @@ def test_actuator_log(  # noqa: PLR0913
 
     time.sleep(1)
 
-    res = requests.get(  # noqa: S113
+    res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
+        timeout=10,
     )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
@@ -808,16 +809,18 @@ def test_actuator_log(  # noqa: PLR0913
         - my_lib.time.now()
     ).total_seconds() < 5
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear"
+    res = requests.get(
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear",
+        timeout=10,
     )
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
 
     time.sleep(2)
 
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view"
+    res = requests.get(
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
+        timeout=10,
     )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
@@ -833,26 +836,29 @@ def test_actuator_log(  # noqa: PLR0913
         - my_lib.time.now()
     ).total_seconds() < 5
 
-    res = requests.get(  # noqa: S113
+    res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
         params={
             "callback": "TEST",
         },
+        timeout=10,
     )
     assert res.status_code == 200
     assert res.text.find("TEST(") == 0
 
-    res = requests.get(  # noqa: S113
+    res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
         params={"count": "1"},
+        timeout=10,
     )
     assert res.status_code == 200
     assert res.text.strip() == "data: log"
 
     # Test valve_status endpoint
-    res = requests.get(  # noqa: S113
-        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status"
+    res = requests.get(
+        f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status",
+        timeout=10,
     )
     assert res.status_code == 200
     valve_status = json.loads(res.text)
@@ -865,9 +871,10 @@ def test_actuator_log(  # noqa: PLR0913
     assert valve_status["duration"] >= 0
 
     # Test valve_status endpoint with JSONP callback
-    res = requests.get(  # noqa: S113
+    res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status",
         params={"callback": "valveCallback"},
+        timeout=10,
     )
     assert res.status_code == 200
     assert res.text.startswith("valveCallback(")
