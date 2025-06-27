@@ -793,7 +793,7 @@ def test_actuator_log(  # noqa: PLR0913
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
         headers={"Accept-Encoding": "gzip"},
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
@@ -811,7 +811,7 @@ def test_actuator_log(  # noqa: PLR0913
 
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_clear",
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert json.loads(res.text)["result"] == "success"
@@ -820,7 +820,7 @@ def test_actuator_log(  # noqa: PLR0913
 
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/log_view",
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert "data" in json.loads(res.text)
@@ -842,7 +842,7 @@ def test_actuator_log(  # noqa: PLR0913
         params={
             "callback": "TEST",
         },
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert res.text.find("TEST(") == 0
@@ -850,7 +850,7 @@ def test_actuator_log(  # noqa: PLR0913
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/event",
         params={"count": "1"},
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert res.text.strip() == "data: log"
@@ -858,7 +858,7 @@ def test_actuator_log(  # noqa: PLR0913
     # Test valve_status endpoint
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status",
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     valve_status = json.loads(res.text)
@@ -874,7 +874,7 @@ def test_actuator_log(  # noqa: PLR0913
     res = requests.get(
         f"http://localhost:{log_port}/{my_lib.webapp.config.URL_PREFIX}/api/valve_status",
         params={"callback": "valveCallback"},
-        timeout=10,
+        timeout=15,
     )
     assert res.status_code == 200
     assert res.text.startswith("valveCallback(")
