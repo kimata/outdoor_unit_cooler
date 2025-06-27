@@ -28,37 +28,37 @@ CONTROL_MESSAGE_LIST = [
     # 2
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 3 * 60, "off_sec": 12 * 60},
+        "duty": {"enable": True, "on_sec": 2 * 60, "off_sec": 13 * 60},
     },
     # 3
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 5 * 60, "off_sec": 10 * 60},
+        "duty": {"enable": True, "on_sec": 3 * 60, "off_sec": 12 * 60},
     },
     # 4
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 7 * 60, "off_sec": 8 * 60},
+        "duty": {"enable": True, "on_sec": 4 * 60, "off_sec": 11 * 60},
     },
     # 5
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 9 * 60, "off_sec": 6 * 60},
+        "duty": {"enable": True, "on_sec": 5 * 60, "off_sec": 10 * 60},
     },
     # 6
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 11 * 60, "off_sec": 4 * 60},
+        "duty": {"enable": True, "on_sec": 6 * 60, "off_sec": 9 * 60},
     },
     # 7
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 13 * 60, "off_sec": 2 * 60},
+        "duty": {"enable": True, "on_sec": 8 * 60, "off_sec": 7 * 60},
     },
     # 8
     {
         "state": unit_cooler.const.COOLING_STATE.WORKING,
-        "duty": {"enable": True, "on_sec": 14 * 60, "off_sec": 1 * 60},
+        "duty": {"enable": True, "on_sec": 10 * 60, "off_sec": 5 * 60},
     },
 ]
 
