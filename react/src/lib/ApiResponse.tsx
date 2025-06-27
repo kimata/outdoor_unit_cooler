@@ -56,5 +56,11 @@ export namespace ApiResponse {
         image_build_date: string;
         load_average: string;
         uptime: string;
-   }
+    }
+
+    export interface ValveStatus {
+        state: "OPEN" | "CLOSE";
+        state_value: 0 | 1;
+        duration: number;
+    }
 }

@@ -26,12 +26,35 @@ OFF_SEC_MIN = 5
 
 
 def dummy_cooling_mode():
-    cooling_mode = (dummy_cooling_mode.prev_mode + 1) % len(
-        unit_cooler.controller.message.CONTROL_MESSAGE_LIST
-    )
+    import random
+
+    current_mode = dummy_cooling_mode.prev_mode
+    max_mode = len(unit_cooler.controller.message.CONTROL_MESSAGE_LIST) - 1
+
+    # 60%の確率で現状維持、40%の確率で変更
+    if random.random() < 0.6:  # noqa: S311
+        cooling_mode = current_mode
+    elif current_mode == 1:
+        # モード1の場合、特別な処理
+        if random.random() < 0.1:  # noqa: S311  # 10%の確率で0へ
+            cooling_mode = 0
+        elif random.random() < 0.5:  # noqa: S311  # 残り90%のうち50%で+1
+            cooling_mode = min(current_mode + 1, max_mode)
+        else:  # 残り90%のうち50%で現状維持
+            cooling_mode = current_mode
+    elif current_mode == 0:
+        # モード0の場合、+1のみ
+        cooling_mode = 1
+    elif current_mode == max_mode:
+        # 最大モードの場合、-1のみ
+        cooling_mode = current_mode - 1
+    else:
+        # その他の場合、50%で+1、50%で-1
+        cooling_mode = current_mode + 1 if random.random() < 0.5 else current_mode - 1  # noqa: S311
+
     dummy_cooling_mode.prev_mode = cooling_mode
 
-    logging.info("cooling_mode: %d", cooling_mode)
+    logging.info("cooling_mode: %d (prev: %d)", cooling_mode, current_mode)
 
     return {"cooling_mode": cooling_mode}
 

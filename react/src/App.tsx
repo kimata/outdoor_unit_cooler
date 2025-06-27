@@ -109,6 +109,7 @@ function App() {
         onMessage: (e) => {
             if (e.data === "log") {
                 refetchLog();
+                refetchStat();
                 setUpdateTime(dayjs().format("llll"));
             }
         }

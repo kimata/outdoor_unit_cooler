@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { ApiResponse } from "../lib/ApiResponse";
+import { useApi } from "../hooks/useApi";
 import { Loading } from "./common/Loading";
 import { AnimatedNumber } from "./common/AnimatedNumber";
 
@@ -9,6 +11,70 @@ type Props = {
 };
 
 const CoolingMode = React.memo(({ isReady, stat }: Props) => {
+    const API_ENDPOINT = "/unit_cooler/api";
+    const [remainingTime, setRemainingTime] = useState(0);
+
+    const emptyValveStatus: ApiResponse.ValveStatus = {
+        state: "CLOSE",
+        state_value: 0,
+        duration: 0,
+    };
+
+    const {
+        data: valveStatus,
+        loading: valveLoading,
+        error: valveError,
+        refetch: refetchValveStatus
+    } = useApi(`${API_ENDPOINT}/proxy/json/api/valve_status`, emptyValveStatus, {
+        immediate: isReady
+    });
+
+    // Refetch valve status when stat updates (triggered by log event)
+    useEffect(() => {
+        if (isReady && stat.mode.duty.enable) {
+            refetchValveStatus();
+        }
+    }, [stat, isReady, refetchValveStatus]);
+
+    // Calculate remaining time
+    useEffect(() => {
+        if (!isReady || !stat.mode.duty.enable || valveLoading) {
+            setRemainingTime(0);
+            return;
+        }
+
+        const isOpen = valveStatus.state === "OPEN";
+        const maxDuration = isOpen ? stat.mode.duty.on_sec : stat.mode.duty.off_sec;
+        const elapsed = valveStatus.duration;
+        const remaining = Math.max(0, maxDuration - elapsed);
+
+        setRemainingTime(remaining);
+    }, [isReady, stat.mode.duty.enable, stat.mode.duty.on_sec, stat.mode.duty.off_sec, valveStatus, valveLoading]);
+
+    // Real-time countdown update
+    useEffect(() => {
+        if (remainingTime <= 0) return;
+
+        const timer = setInterval(() => {
+            setRemainingTime(prev => {
+                const newValue = Math.max(0, prev - 1);
+                // Refresh when countdown reaches zero
+                if (newValue === 0) {
+                    refetchValveStatus();
+                }
+                return newValue;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [remainingTime, refetchValveStatus]);
+
+    const formatTime = useCallback((seconds: number): string => {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds) % 60;
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }, []);
+
     const dutyInfo = (mode: ApiResponse.Mode) => {
         return (
             <div className="container">
@@ -36,6 +102,69 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
         );
     };
 
+    const valveStatusDisplay = () => {
+        if (valveLoading || valveError || !stat.mode.duty.enable) {
+            return null;
+        }
+
+        const isOpen = valveStatus.state === "OPEN";
+        const maxDuration = isOpen ? stat.mode.duty.on_sec : stat.mode.duty.off_sec;
+        const progress = maxDuration > 0 ? ((maxDuration - remainingTime) / maxDuration) * 100 : 0;
+
+        return (
+            <div className="mt-3">
+                {/* Valve Status */}
+                <div className="row align-items-center mb-2">
+                    <div className="col-12 text-center">
+                        <span
+                            className="badge fs-6"
+                            style={{
+                                backgroundColor: isOpen ? '#5e7e9b' : '#6c757d',
+                                color: '#ffffff'
+                            }}
+                        >
+                            {valveStatus.state}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="row align-items-center mb-2">
+                    <div className="col-12">
+                        <div className="progress-label-container">
+                            <div className="progress" style={{ height: "2em" }}>
+                                <motion.div
+                                    key={`${valveStatus.state}-${maxDuration}-${valveStatus.duration}`}
+                                    className="progress-bar bg-secondary"
+                                    role="progressbar"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: `${Math.max(0, progress)}%` }}
+                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                    aria-valuenow={progress}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                />
+                            </div>
+                            <div className="progress-label digit">
+                                <small style={{ color: '#adb5bd' }} className="me-2">残り</small>
+                                <b style={{ color: '#adb5bd' }}>
+                                    {formatTime(remainingTime)}
+                                </b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Warning Message */}
+                {remainingTime <= 5 && remainingTime > 0 && (
+                    <div className="text-center">
+                        <small className="text-warning">まもなく切り替え</small>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const modeInfo = (mode: ApiResponse.Mode) => {
         if (mode == null) {
             return <Loading size="large" />;
@@ -51,6 +180,7 @@ const CoolingMode = React.memo(({ isReady, stat }: Props) => {
                     />
                 </div>
                 {dutyInfo(mode)}
+                {valveStatusDisplay()}
             </div>
         );
     };
