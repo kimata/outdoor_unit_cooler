@@ -771,8 +771,8 @@ def test_actuator_log(  # noqa: PLR0913, PLR0915
 ):
     import requests
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=10)
-    component_manager.start_controller(config, server_port, real_port, msg_count=10)
+    component_manager.start_actuator(config, server_port, log_port, msg_count=20)
+    component_manager.start_controller(config, server_port, real_port, msg_count=20)
 
     requests.Session().mount(
         "http://",
