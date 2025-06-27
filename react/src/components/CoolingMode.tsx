@@ -161,7 +161,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                             <span>{valveStatus.state}</span>
                             {isOpen && (
                                 <span className="fw-normal" style={{ fontSize: '0.875rem' }}>
-                                    {currentFlow.toFixed(1)} L/min
+                                    {currentFlow.toFixed(2)} L/min
                                 </span>
                             )}
                         </span>
