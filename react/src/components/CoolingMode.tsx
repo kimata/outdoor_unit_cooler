@@ -121,7 +121,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                         <span
                             className="badge fs-6 d-flex align-items-center justify-content-center gap-1"
                             style={{
-                                backgroundColor: isOpen ? '#5e7e9b' : '#6c757d',
+                                backgroundColor: isOpen ? '#5e7e9b' : '#adb5bd',
                                 color: '#ffffff'
                             }}
                         >
