@@ -27,7 +27,7 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                             format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
                                             plugins={[continuous]}
                                             trend={1}
-                                            spinTiming={{ duration: 5000, easing: 'ease-out' }}
+                                            spinTiming={{ duration: 2000, easing: 'ease-out' }}
                                             className="fw-bold digit"
                                         />
                                         <span className="display-5 ms-2">L</span>
@@ -43,7 +43,7 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                             format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
                                             plugins={[continuous]}
                                             trend={1}
-                                            spinTiming={{ duration: 5000, easing: 'ease-out' }}
+                                            spinTiming={{ duration: 2000, easing: 'ease-out' }}
                                             className="fw-bold display-6 digit"
                                         />
                                         <span className="ms-2">円</span>
