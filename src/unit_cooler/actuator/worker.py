@@ -60,7 +60,7 @@ def queue_put(message_queue, message, liveness_file):
 
 
 def sleep_until_next_iter(start_time, interval_sec):
-    sleep_sec = max(interval_sec - (time.time() - start_time), 0.2)
+    sleep_sec = max(interval_sec - (time.time() - start_time), 0.5)
     logging.debug("Seep %.1f sec...", sleep_sec)
     time.sleep(sleep_sec)
 
