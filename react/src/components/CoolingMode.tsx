@@ -164,6 +164,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                                     <AnimatedNumber
                                         value={currentFlow}
                                         decimals={2}
+                                        duration={0.9}
                                         className=""
                                     />
                                     <span className="ms-1">L/min</span>

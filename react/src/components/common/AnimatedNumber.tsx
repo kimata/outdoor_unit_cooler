@@ -12,7 +12,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   value,
   decimals = 1,
   className = '',
-  duration = 0.8
+  duration = 3.0
 }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const spring = useSpring(value, {
