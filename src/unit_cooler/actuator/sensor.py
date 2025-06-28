@@ -15,21 +15,39 @@ if os.environ.get("DUMMY_MODE", "false") != "true":  # pragma: no cover
 else:
 
     class FD_Q10C:  # noqa: N801
-        def __init__(self, lock_file="DUMMY", timeout=2):  # noqa: D107
-            pass
+        # ワーカーごとの電源状態を管理する辞書（初期値はTrue）
+        _power_states = {}
 
-        def get_value(self, force_power_on=True):  # noqa: ARG002
+        def __init__(self, lock_file="DUMMY", timeout=2):  # noqa: D107, ARG002
+            worker_id = self._get_worker_id()
+            self._power_states[worker_id] = True
+
+        def _get_worker_id(self):
+            """現在のワーカーIDを取得"""
+            return os.environ.get("PYTEST_XDIST_WORKER", "")
+
+        def get_value(self, force_power_on=True):
             global pin_no
+            worker_id = self._get_worker_id()
+
+            # force_power_on=Trueで呼ばれた場合、電源状態をTrueに設定
+            if force_power_on:
+                self._power_states[worker_id] = True
+
             if my_lib.rpi.gpio.input(pin_no) == unit_cooler.const.VALVE_STATE.OPEN.value:
                 return 1 + random.random() * 1.5  # noqa: S311
             else:
                 return 0
 
         def get_state(self):
-            return True
+            worker_id = self._get_worker_id()
+
+            return self._power_states[worker_id]
 
         def stop(self):
-            return
+            worker_id = self._get_worker_id()
+            # stopが呼ばれたら電源状態をFalseに設定
+            self._power_states[worker_id] = False
 
 
 def init(pin_no_):
