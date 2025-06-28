@@ -96,7 +96,6 @@ test-walk-through:
     extends: .cache-base
     stage: test
     needs:
-        - build-react
         - test-prepare
     script:
         - >

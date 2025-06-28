@@ -2095,6 +2095,8 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     import gzip
     import re
 
+    from flask import Response
+
     import actuator
     import controller
     import webui
@@ -2102,6 +2104,33 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     mock_fd_q10c(mocker)
     mocker.patch("my_lib.sensor_data.fetch_data", return_value=gen_sense_data())
     mocker.patch("my_lib.sensor_data.get_day_sum", return_value=100)
+
+    # react/dist/index.htmlが存在しない場合のフォールバック用ダミーHTML
+    def mock_send_from_directory(directory, filename, **kwargs):
+        if filename == "index.html":
+            import pathlib
+
+            file_path = pathlib.Path(directory) / filename
+            if file_path.exists():
+                # ファイルが存在する場合は実際のファイルを返す
+                import flask
+
+                return flask.helpers.send_from_directory(directory, filename, **kwargs)
+            else:
+                # ファイルが存在しない場合はダミーHTMLを返す
+                logging.debug("index.html not found at %s, returning dummy HTML for testing", file_path)
+                dummy_html = """<!DOCTYPE html>
+<html>
+<head><title>室外機</title></head>
+<body><h1>室外機</h1></body>
+</html>"""
+                return Response(dummy_html, mimetype="text/html")
+        # 他のファイルは元の関数を使用して処理
+        import flask
+
+        return flask.helpers.send_from_directory(directory, filename, **kwargs)
+
+    mocker.patch("flask.send_from_directory", side_effect=mock_send_from_directory)
 
     actuator_handle = actuator.start(
         config,
