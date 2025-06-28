@@ -26,6 +26,7 @@ import time
 
 import flask
 import flask_cors
+import my_lib.proc_util
 
 SCHEMA_CONFIG = "config.schema"
 
@@ -48,6 +49,9 @@ def signal_handler(signum, _frame):
         worker_thread.join(timeout=5)
         if worker_thread.is_alive():
             logging.warning("Worker thread did not finish in time")
+
+    # 子プロセスを終了
+    my_lib.proc_util.kill_child()
 
     # プロセス終了
     logging.info("Graceful shutdown completed")
@@ -200,3 +204,6 @@ if __name__ == "__main__":
 
             unit_cooler.webui.worker.term()
             worker_thread.join(timeout=3)
+
+        # 子プロセスを終了
+        my_lib.proc_util.kill_child()

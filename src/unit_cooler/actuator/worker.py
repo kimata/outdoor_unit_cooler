@@ -45,8 +45,6 @@ def set_last_control_message(message):
     thread_local.last_control_message = message
 
 
-# デバッグ用関数は削除予定
-
 should_terminate = threading.Event()
 
 
