@@ -1,5 +1,5 @@
 /* @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap'); */
-@import url("https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Merriweather&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Fira+Code:wght@300;400;500;600;700&display=swap");
 
 body {
     margin: 0;
@@ -21,7 +21,7 @@ body {
 }
 
 .digit {
-    font-family: "Merriweather" !important;
+    font-family: "Fira Code" !important;
 }
 
 code {

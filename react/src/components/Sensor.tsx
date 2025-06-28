@@ -28,6 +28,9 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
     const sensorRow = (label: string, sensorData: ApiResponse.SensorData, unit: React.JSX.Element) => {
         let date = dayjs(sensorData.time);
 
+        // 照度の場合は値に応じて小数点桁数を調整
+        const decimals = label === "lux" && sensorData.value >= 10 ? 0 : 1;
+
         return (
             <tr className="row" key={label}>
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
@@ -35,7 +38,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                     <b>
                         <AnimatedNumber
                             value={sensorData.value || 0}
-                            decimals={1}
+                            decimals={decimals}
                         />
                     </b>
                 </td>
