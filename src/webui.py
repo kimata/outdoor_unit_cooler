@@ -34,10 +34,7 @@ SCHEMA_CONFIG = "config.schema"
 worker_thread = None
 
 
-def signal_handler(signum, _frame):
-    """シグナルハンドラー: CTRL-Cや終了シグナルを受け取った際の処理"""
-    logging.info("Received signal %d, shutting down gracefully...", signum)
-
+def term():
     # ワーカーの終了フラグを設定
     import unit_cooler.webui.worker
 
@@ -56,6 +53,13 @@ def signal_handler(signum, _frame):
     # プロセス終了
     logging.info("Graceful shutdown completed")
     os._exit(0)
+
+
+def signal_handler(signum, _frame):
+    """シグナルハンドラー: CTRL-Cや終了シグナルを受け取った際の処理"""
+    logging.info("Received signal %d, shutting down gracefully...", signum)
+
+    term()
 
 
 def create_app(config, arg):
@@ -198,12 +202,4 @@ if __name__ == "__main__":
         logging.info("Received KeyboardInterrupt, shutting down...")
         signal_handler(signal.SIGINT, None)
     finally:
-        # 最終的な終了処理
-        if worker_thread and worker_thread.is_alive():
-            import unit_cooler.webui.worker
-
-            unit_cooler.webui.worker.term()
-            worker_thread.join(timeout=3)
-
-        # 子プロセスを終了
-        my_lib.proc_util.kill_child()
+        term()
