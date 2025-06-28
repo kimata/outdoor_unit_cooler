@@ -34,15 +34,21 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
         return (
             <tr className="row" key={label}>
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
-                <td className="text-end col-3 digit">
-                    <b>
-                        <AnimatedNumber
-                            value={sensorData.value || 0}
-                            decimals={decimals}
-                            useComma={label === "lux"}
-                        />
-                    </b>
-                    <small className="ms-1">{unit}</small>
+                <td className="text-end col-3">
+                    <div className="sensor-value">
+                        <div className="sensor-number digit">
+                            <b>
+                                <AnimatedNumber
+                                    value={sensorData.value || 0}
+                                    decimals={decimals}
+                                    useComma={label === "lux"}
+                                />
+                            </b>
+                        </div>
+                        <div className="sensor-unit">
+                            <small>{unit}</small>
+                        </div>
+                    </div>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
                 <td className="text-start col-4 text-nowrap">

@@ -26,6 +26,24 @@ body {
     font-feature-settings: "tnum";
 }
 
+.sensor-value {
+    display: inline-flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    width: 100%;
+}
+
+.sensor-number {
+    text-align: right;
+    min-width: 4.5em;
+}
+
+.sensor-unit {
+    margin-left: 0.25rem;
+    min-width: 2.5em;
+    text-align: left;
+}
+
 code {
     font-family:
         source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
