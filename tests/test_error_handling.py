@@ -10,7 +10,7 @@ import my_lib.webapp.config
 import pytest
 import requests
 
-from tests.test_helpers import _find_unused_port
+from tests.test_helpers import _find_unused_port, mock_react_index_html
 
 my_lib.webapp.config.URL_PREFIX = "/unit_cooler"
 
@@ -236,12 +236,15 @@ def test_queue_cleanup_handling(config):
 # ======== WebUI API Tests ========
 
 
-def test_webui_api_endpoints(config):
+def test_webui_api_endpoints(mocker, config):
     """Test WebUI API endpoints comprehensively"""
     import threading
     import time
 
     import webui
+
+    # Mock react index.html fallback
+    mock_react_index_html(mocker)
 
     # Find available port
     test_port = _find_unused_port()

@@ -487,3 +487,39 @@ POWER_OFF_FIELDS = {
     "temp": None,  # Will use gen_sense_data([35]) in actual usage
     "power": None,  # Will use gen_sense_data([0]) in actual usage
 }
+
+
+def mock_react_index_html(mocker):
+    """
+    Mock flask.send_from_directory to handle react/dist/index.html fallback.
+
+    Returns actual file if it exists, otherwise returns dummy HTML containing "室外機".
+    This allows tests to pass even when React build hasn't been completed.
+    """
+    from flask import Response
+
+    def mock_send_from_directory(directory, filename, **kwargs):
+        if filename == "index.html":
+            import pathlib
+
+            file_path = pathlib.Path(directory) / filename
+            if file_path.exists():
+                # ファイルが存在する場合は実際のファイルを返す
+                import flask
+
+                return flask.helpers.send_from_directory(directory, filename, **kwargs)
+            else:
+                # ファイルが存在しない場合はダミーHTMLを返す
+                logging.debug("index.html not found at %s, returning dummy HTML for testing", file_path)
+                dummy_html = """<!DOCTYPE html>
+<html>
+<head><title>室外機</title></head>
+<body><h1>室外機</h1></body>
+</html>"""
+                return Response(dummy_html, mimetype="text/html")
+        # 他のファイルは元の関数を使用して処理
+        import flask
+
+        return flask.helpers.send_from_directory(directory, filename, **kwargs)
+
+    mocker.patch("flask.send_from_directory", side_effect=mock_send_from_directory)
