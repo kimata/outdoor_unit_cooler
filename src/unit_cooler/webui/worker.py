@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 import logging
+import threading
 import traceback
 
 import my_lib.footprint
 
 import unit_cooler.const
 import unit_cooler.pubsub.subscribe
+
+# グローバル終了フラグ
+should_terminate = threading.Event()
+
+
+def term():
+    """終了フラグを設定する関数"""
+    should_terminate.set()
+    logging.info("Termination flag set for webui worker")
 
 
 def queue_put(message_queue, message, liveness_file):
@@ -26,11 +36,13 @@ def subscribe_worker(config, control_host, pub_port, message_queue, liveness_fil
 
     ret = 0
     try:
+        # 終了フラグを渡してstart_clientを呼び出し
         unit_cooler.pubsub.subscribe.start_client(
             control_host,
             pub_port,
             lambda message: queue_put(message_queue, message, liveness_file),
             msg_count,
+            should_terminate,
         )
     except Exception:
         logging.exception("Failed to receive control message")

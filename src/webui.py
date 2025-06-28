@@ -20,6 +20,8 @@ import logging
 import multiprocessing
 import os
 import pathlib
+import signal
+import sys
 import threading
 import time
 
@@ -27,6 +29,29 @@ import flask
 import flask_cors
 
 SCHEMA_CONFIG = "config.schema"
+
+# グローバル変数でワーカースレッドを管理
+worker_thread = None
+
+
+def signal_handler(signum, _frame):
+    """シグナルハンドラー: CTRL-Cや終了シグナルを受け取った際の処理"""
+    logging.info("Received signal %d, shutting down gracefully...", signum)
+
+    # ワーカーの終了フラグを設定
+    import unit_cooler.webui.worker
+
+    unit_cooler.webui.worker.term()
+
+    # ワーカースレッドの終了を待つ
+    if worker_thread and worker_thread.is_alive():
+        logging.info("Waiting for worker thread to finish...")
+        worker_thread.join(timeout=5)
+        if worker_thread.is_alive():
+            logging.warning("Worker thread did not finish in time")
+
+    logging.info("Graceful shutdown completed")
+    sys.exit(0)
 
 
 def create_app(config, arg):
@@ -57,6 +82,7 @@ def create_app(config, arg):
     import unit_cooler.webui.worker
 
     message_queue = multiprocessing.Manager().Queue(10)
+    global worker_thread  # noqa: PLW0603
     worker_thread = threading.Thread(
         target=unit_cooler.webui.worker.subscribe_worker,
         args=(
@@ -68,6 +94,7 @@ def create_app(config, arg):
             setting["msg_count"],
         ),
     )
+    worker_thread.daemon = True
     worker_thread.start()
 
     # NOTE: アクセスログは無効にする
@@ -141,6 +168,10 @@ if __name__ == "__main__":
 
     config = my_lib.config.load(config_file, pathlib.Path(SCHEMA_CONFIG))
 
+    # シグナルハンドラーを登録
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     app = create_app(
         config,
         {
@@ -153,5 +184,9 @@ if __name__ == "__main__":
         },
     )
 
-    # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
-    app.run(host="0.0.0.0", threaded=True, use_reloader=True, port=config["webui"]["webapp"]["port"])  # noqa: S104
+    try:
+        # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
+        app.run(host="0.0.0.0", threaded=True, use_reloader=True, port=config["webui"]["webapp"]["port"])  # noqa: S104
+    except KeyboardInterrupt:
+        logging.info("Received KeyboardInterrupt, shutting down...")
+        signal_handler(signal.SIGINT, None)
