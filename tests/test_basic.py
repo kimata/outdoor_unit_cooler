@@ -731,8 +731,8 @@ def test_actuator_normal(  # noqa: PLR0913
     )
 
     # Start both components with reduced speedup for normal operation
-    component_manager.start_actuator(config, server_port, log_port, speedup=20, msg_count=5)
-    component_manager.start_controller(config, server_port, real_port, speedup=20, msg_count=5)
+    component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=5)
+    component_manager.start_controller(config, server_port, real_port, speedup=100, msg_count=5)
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
@@ -1156,8 +1156,8 @@ def test_actuator_no_test(  # noqa: PLR0913
     # NOTE: mock で差し替えたセンサーを使わせるため、ダミーモードを取り消す
     mocker.patch.dict("os.environ", {"DUMMY_MODE": "false"})
 
-    component_manager.start_actuator(config, server_port, log_port, msg_count=2)
-    component_manager.start_controller(config, server_port, real_port, msg_count=2)
+    component_manager.start_actuator(config, server_port, log_port, speedup=100, msg_count=2)
+    component_manager.start_controller(config, server_port, real_port, speedup=100, msg_count=2)
 
     time.sleep(1)
 
