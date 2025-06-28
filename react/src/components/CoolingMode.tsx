@@ -44,25 +44,25 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
 
     // Refetch valve status when log update event occurs
     useEffect(() => {
-        if (isReady && stat.mode.duty.enable) {
+        if (isReady && stat.mode?.duty?.enable) {
             refetchValveStatus();
         }
     }, [logUpdateTrigger, isReady, refetchValveStatus]);
 
     // Calculate remaining time
     useEffect(() => {
-        if (!isReady || !stat.mode.duty.enable || valveLoading) {
+        if (!isReady || !stat.mode?.duty?.enable || valveLoading) {
             setRemainingTime(0);
             return;
         }
 
         const isOpen = valveStatus.state === "OPEN";
-        const maxDuration = isOpen ? stat.mode.duty.on_sec : stat.mode.duty.off_sec;
+        const maxDuration = isOpen ? (stat.mode?.duty?.on_sec ?? 0) : (stat.mode?.duty?.off_sec ?? 0);
         const elapsed = valveStatus.duration;
         const remaining = Math.max(0, maxDuration - elapsed);
 
         setRemainingTime(remaining);
-    }, [isReady, stat.mode.duty.enable, stat.mode.duty.on_sec, stat.mode.duty.off_sec, valveStatus, valveLoading]);
+    }, [isReady, stat.mode?.duty?.enable, stat.mode?.duty?.on_sec, stat.mode?.duty?.off_sec, valveStatus, valveLoading]);
 
     // Real-time countdown update
     useEffect(() => {
@@ -117,7 +117,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                     <div className="col-6">
                         <span className="me-1">Open:</span>
                         <AnimatedNumber
-                            value={Math.round(mode.duty.on_sec / 60)}
+                            value={Math.round((mode.duty?.on_sec ?? 0) / 60)}
                             decimals={0}
                             className="display-6 digit"
                         />
@@ -126,7 +126,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                     <div className="col-6">
                         <span className="me-1">Close:</span>
                         <AnimatedNumber
-                            value={Math.round(mode.duty.off_sec / 60)}
+                            value={Math.round((mode.duty?.off_sec ?? 0) / 60)}
                             decimals={0}
                             className="display-6 digit"
                         />
@@ -138,12 +138,12 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
     };
 
     const valveStatusDisplay = () => {
-        if (valveLoading || valveError || !stat.mode.duty.enable) {
+        if (valveLoading || valveError || !stat.mode?.duty?.enable) {
             return null;
         }
 
         const isOpen = valveStatus.state === "OPEN";
-        const maxDuration = isOpen ? stat.mode.duty.on_sec : stat.mode.duty.off_sec;
+        const maxDuration = isOpen ? (stat.mode?.duty?.on_sec ?? 0) : (stat.mode?.duty?.off_sec ?? 0);
         const progress = maxDuration > 0 ? ((maxDuration - remainingTime) / maxDuration) * 100 : 0;
 
         return (
