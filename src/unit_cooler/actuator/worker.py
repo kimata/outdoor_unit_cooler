@@ -29,7 +29,24 @@ import unit_cooler.const
 import unit_cooler.pubsub.subscribe
 import unit_cooler.util
 
-last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
+# スレッドローカル変数として定義
+thread_local = threading.local()
+
+
+def get_last_control_message():
+    """スレッドローカルなlast_control_messageを取得"""
+    if not hasattr(thread_local, "last_control_message"):
+        thread_local.last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
+    return thread_local.last_control_message
+
+
+def set_last_control_message(message):
+    """スレッドローカルなlast_control_messageを設定"""
+    thread_local.last_control_message = message
+
+
+# デバッグ用関数は削除予定
+
 should_terminate = threading.Event()
 
 
@@ -70,7 +87,6 @@ def subscribe_worker(config, control_host, pub_port, message_queue, liveness_fil
 
 # NOTE: バルブの状態をモニタするワーカ
 def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count=0):
-    global last_control_message
     global should_terminate
 
     logging.info("Start monitor worker")
@@ -98,7 +114,7 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
             mist_condition = unit_cooler.actuator.monitor.get_mist_condition()
             unit_cooler.actuator.monitor.check(handle, mist_condition, need_logging)
             unit_cooler.actuator.monitor.send_mist_condition(
-                handle, mist_condition, last_control_message, dummy_mode
+                handle, mist_condition, get_last_control_message(), dummy_mode
             )
 
             my_lib.footprint.update(liveness_file)
@@ -127,7 +143,6 @@ def monitor_worker(config, liveness_file, dummy_mode=False, speedup=1, msg_count
 
 # NOTE: バルブを制御するワーカ
 def control_worker(config, message_queue, liveness_file, dummy_mode=False, speedup=1, msg_count=0):  # noqa: PLR0913
-    global last_control_message  # noqa: PLW0603
     global should_terminate
 
     logging.info("Start control worker")
@@ -143,11 +158,13 @@ def control_worker(config, message_queue, liveness_file, dummy_mode=False, speed
         while True:
             start_time = time.time()
 
-            last_control_message = unit_cooler.actuator.control.get_control_message(
-                handle, last_control_message
+            current_message = unit_cooler.actuator.control.get_control_message(
+                handle, get_last_control_message()
             )
 
-            unit_cooler.actuator.control.execute(config, last_control_message)
+            set_last_control_message(current_message)
+
+            unit_cooler.actuator.control.execute(config, current_message)
 
             my_lib.footprint.update(liveness_file)
 

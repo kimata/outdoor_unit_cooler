@@ -169,7 +169,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="row align-items-center mb-2">
+                <div className="row align-items-center mb-1">
                     <div className="col-12">
                         <div className="progress-label-container">
                             <div className="progress" style={{ height: "2em" }}>
@@ -197,7 +197,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
 
                 {/* Warning Message */}
                 {remainingTime <= 5 && remainingTime > 0 && (
-                    <div className="text-center">
+                    <div className="text-center mt-1">
                         <small className="text-warning">まもなく切り替え</small>
                     </div>
                 )}
