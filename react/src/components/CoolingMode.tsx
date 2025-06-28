@@ -69,18 +69,11 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
         if (remainingTime <= 0) return;
 
         const timer = setInterval(() => {
-            setRemainingTime(prev => {
-                const newValue = Math.max(0, prev - 1);
-                // Refresh when countdown reaches zero
-                if (newValue === 0) {
-                    refetchValveStatus();
-                }
-                return newValue;
-            });
+            setRemainingTime(prev => Math.max(0, prev - 1));
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [remainingTime, refetchValveStatus]);
+    }, [remainingTime]);
 
     // Update flow when valve is OPEN
     useEffect(() => {
