@@ -64,6 +64,7 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                                 <AnimatedNumber
                                     value={props.airconData.value || 0}
                                     decimals={0}
+                                    useComma={true}
                                 />
                             </b>
                             <small className="ms-2">W</small>

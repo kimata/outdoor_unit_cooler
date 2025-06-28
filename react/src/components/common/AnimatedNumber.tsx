@@ -6,13 +6,15 @@ interface AnimatedNumberProps {
   decimals?: number;
   className?: string;
   duration?: number;
+  useComma?: boolean;
 }
 
 export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   value,
   decimals = 1,
   className = '',
-  duration = 10.0
+  duration = 10.0,
+  useComma = false
 }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const spring = useSpring(value, {
@@ -20,7 +22,16 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
     bounce: 0.1
   });
 
-  const display = useTransform(spring, (latest) => latest.toFixed(decimals));
+  const display = useTransform(spring, (latest) => {
+    const fixedValue = latest.toFixed(decimals);
+    if (useComma) {
+      return parseFloat(fixedValue).toLocaleString('ja-JP', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+    return fixedValue;
+  });
 
   useEffect(() => {
     spring.set(value);
@@ -28,10 +39,11 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
   useEffect(() => {
     const unsubscribe = display.on('change', (latest) => {
-      setDisplayValue(parseFloat(latest));
+      const numericValue = useComma ? parseFloat(latest.replace(/,/g, '')) : parseFloat(latest);
+      setDisplayValue(numericValue);
     });
     return unsubscribe;
-  }, [display]);
+  }, [display, useComma]);
 
   return (
     <motion.span

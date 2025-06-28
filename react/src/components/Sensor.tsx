@@ -39,6 +39,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                         <AnimatedNumber
                             value={sensorData.value || 0}
                             decimals={decimals}
+                            useComma={label === "lux"}
                         />
                     </b>
                 </td>
