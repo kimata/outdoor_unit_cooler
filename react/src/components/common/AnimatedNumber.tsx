@@ -36,8 +36,11 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   return (
     <motion.span
       className={className}
-      initial={{ scale: 1 }}
-      animate={{ scale: value !== displayValue ? [1, 1.05, 1] : 1 }}
+      initial={{ scale: 1, y: 0 }}
+      animate={{
+        scale: value !== displayValue ? [1, 1.05, 1] : 1,
+        y: value !== displayValue ? [0, -8, 0] : 0
+      }}
       transition={{ duration: 0.3 }}
     >
       {display.get()}
