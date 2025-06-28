@@ -41,10 +41,10 @@ controller:
               hostname: 和室エアコン
             - name: 洋室A
               measure: hems.sharp
-              hostname: 祐翔エアコン
+              hostname: 洋室Aエアコン
             - name: 洋室B
               measure: hems.sharp
-              hostname: 絢香エアコン
+              hostname: 洋室Bエアコン
     watering:
         measure: sensor.rasp
         hostname: rasp-cooler-1
