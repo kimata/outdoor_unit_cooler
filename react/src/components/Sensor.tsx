@@ -28,12 +28,12 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
     const sensorRow = (label: string, sensorData: ApiResponse.SensorData, unit: React.JSX.Element) => {
         let date = dayjs(sensorData.time);
 
-        // 照度の場合は値に応じて小数点桁数を調整
-        const decimals = label === "lux" && sensorData.value >= 10 ? 0 : 1;
+        // 照度・日射量の場合は値に応じて小数点桁数を調整
+        const decimals = (label === "lux" && sensorData.value >= 10) || (label === "solar_rad" && sensorData.value >= 10) ? 0 : 1;
 
         return (
             <tr className="row" key={label}>
-                <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
+                <td className="text-start col-3" style={{overflow: 'visible', whiteSpace: 'nowrap'}}>{sensorData.name}</td>
                 <td className="text-end col-4">
                     <div className="sensor-value">
                         <div className="sensor-number digit">
