@@ -32,9 +32,14 @@ import unit_cooler.util
 # スレッドローカル変数として定義
 thread_local = threading.local()
 
+# メッセージの初期値
+MESSAGE_INIT = {"mode_index": 0, "state": unit_cooler.const.COOLING_STATE.IDLE}
+
 
 def get_last_control_message():
     """スレッドローカルなlast_control_messageを取得"""
+    if not hasattr(thread_local, "last_control_message"):
+        thread_local.last_control_message = MESSAGE_INIT.copy()
     return thread_local.last_control_message
 
 
@@ -234,7 +239,7 @@ def start(executor, worker_def):
     should_terminate.clear()
     thread_list = []
 
-    thread_local.last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
+    thread_local.last_control_message = MESSAGE_INIT.copy()
 
     for worker_info in worker_def:
         future = executor.submit(*worker_info["param"])
