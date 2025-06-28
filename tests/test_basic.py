@@ -983,6 +983,12 @@ def test_actuator_power_off_1(  # noqa: PLR0913
     move_to(time_machine, 3, 3)
 
     time.sleep(0.5)  # Reduced from 2 for testing
+    move_to(time_machine, 3, 4)
+
+    time.sleep(0.5)  # Reduced from 2 for testing
+    move_to(time_machine, 3, 5)
+
+    time.sleep(0.5)  # Reduced from 2 for testing
 
     component_manager.wait_and_term_controller()
     component_manager.wait_and_term_actuator()
