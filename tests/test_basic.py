@@ -762,6 +762,7 @@ def test_actuator_duty_disable(  # noqa: PLR0913
     check_standard_post_test(config)
 
 
+@pytest.mark.order(7)
 def test_actuator_log(  # noqa: PLR0913, PLR0915
     standard_mocks,  # noqa: ARG001
     component_manager,
@@ -907,6 +908,7 @@ def test_actuator_log(  # noqa: PLR0913, PLR0915
     check_standard_post_test(config)
 
 
+@pytest.mark.order(8)
 def test_actuator_send_error(  # noqa: PLR0913
     standard_mocks, component_manager, config, server_port, real_port, log_port
 ):
@@ -942,6 +944,7 @@ def test_actuator_mode_const(  # noqa: PLR0913
     check_notify_slack(None)
 
 
+@pytest.mark.order(9)
 def test_actuator_power_off_1(  # noqa: PLR0913
     standard_mocks, component_manager, time_machine, config, server_port, real_port, log_port
 ):
@@ -993,6 +996,7 @@ def test_actuator_power_off_1(  # noqa: PLR0913
     check_work_log("長い間バルブが閉じられていますので、流量計の電源を OFF します。")
 
 
+@pytest.mark.order(10)
 def test_actuator_power_off_2(  # noqa: PLR0913
     mocker, component_manager, time_machine, config, server_port, real_port, log_port
 ):
@@ -1340,6 +1344,7 @@ def test_actuator_flow_unknown_2(mocker, config, server_port, real_port, log_por
     check_notify_slack("流量計が使えません。")
 
 
+@pytest.mark.order(2)
 def test_actuator_leak(  # noqa: PLR0913
     mocker, time_machine, config, server_port, real_port, log_port
 ):
@@ -1645,6 +1650,7 @@ def test_actuator_emit_error(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
+@pytest.mark.order(3)
 def test_actuator_notify_hazard(  # noqa: PLR0913
     mocker, time_machine, config, server_port, real_port, log_port
 ):
@@ -2092,6 +2098,7 @@ def test_actuator_restart(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
+@pytest.mark.order(1)
 def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR0915
     import gzip
     import re
@@ -2193,6 +2200,7 @@ def test_webui(mocker, config, server_port, real_port, log_port):  # noqa: PLR09
     check_notify_slack(None)
 
 
+@pytest.mark.order(4)
 def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_port):
     import actuator
     import controller
@@ -2263,6 +2271,7 @@ def test_webui_dummy_mode(standard_mocks, config, server_port, real_port, log_po
     check_notify_slack(None)
 
 
+@pytest.mark.order(5)
 def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
     import pathlib
 
@@ -2329,6 +2338,7 @@ def test_webui_queue_overflow(mocker, config, server_port, real_port, log_port):
     check_notify_slack(None)
 
 
+@pytest.mark.order(6)
 def test_webui_day_sum(mocker, config, server_port, real_port, log_port):
     import actuator
     import controller
