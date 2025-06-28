@@ -132,61 +132,23 @@ test-walk-through:
     needs:
         - generate-tag
         - build-image
+.test-controller-base:
+    extends: .docker-test-base
+    stage: test
+    script:
+        - >
+            docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}
+            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG}
+            ./src/controller.py ${CONTROLLER_ARGS}
 test-controller-sample:
-    extends: .docker-test-base
-    stage: test
-    script:
-        - >
-            docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}
-            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG}
-            ./src/controller.py -c config.example.yaml -N -n 1 -t 10
+    extends: .test-controller-base
+    variables:
+        CONTROLLER_ARGS: "-c config.example.yaml -N -n 1 -t 10"
 test-controller-regular:
-    extends: .docker-test-base
-    stage: test
-    script:
-        - >
-            docker run --rm --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}
-            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG}
-            ./src/controller.py -N -n 1 -t 10
-test-actuator-sample:
-    extends: .docker-test-base
-    stage: test
+    extends: .test-controller-base
     variables:
-        CONTROL_HOST: 192.168.0.20
-        CURL_IMAGE: curlimages/curl:8.1.2
-    script:
-        - >
-            docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1
-            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
-        - >
-            CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
-            ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - 'echo "Controller: ${CTRL_IP}"'
-        - >
-            docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2
-            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG}
-            ./src/actuator.py -n 3 -d -c config.example.yaml
-            -s $(docker inspect
-            --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
-            ${CI_JOB_NAME}-${CI_JOB_ID}-1)
-        - sleep 10
-        # NOTE: Fail した時の原因究明用にこの時点のログを保存する
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_1.txt
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-2 > actuator_log.txt
-        - >
-            docker run --rm ${CURL_IMAGE} --head
-            http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
-            ${CI_JOB_NAME}-${CI_JOB_ID}-2):5001/unit_cooler/api/log_view
-        - docker attach --no-stdin ${CI_JOB_NAME}-${CI_JOB_ID}-2
-        - docker logs ${CI_JOB_NAME}-${CI_JOB_ID}-1 > controller_log_2.txt
-        - docker stop ${CI_JOB_NAME}-${CI_JOB_ID}-1
-    artifacts:
-        when: always
-        paths:
-            - controller_log_1.txt
-            - controller_log_2.txt
-            - actuator_log.txt
-test-actuator-regular:
+        CONTROLLER_ARGS: "-N -n 1 -t 10"
+.test-actuator-base:
     extends: .docker-test-base
     stage: test
     variables:
@@ -194,7 +156,7 @@ test-actuator-regular:
     script:
         - >
             docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-1
-            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d
+            --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG} ./src/controller.py -d -t 2
         - >
             CTRL_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
             ${CI_JOB_NAME}-${CI_JOB_ID}-1)
@@ -202,7 +164,7 @@ test-actuator-regular:
         - >
             docker run --rm --detach=true --tty=true --name ${CI_JOB_NAME}-${CI_JOB_ID}-2
             --label job=${CI_JOB_NAME} ${CI_REGISTRY_IMAGE}:${TAG}
-            ./src/actuator.py -n 3 -d
+            ./src/actuator.py -n 3 -d -t 2 ${ACTUATOR_ARGS}
             -s $(docker inspect
             --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
             ${CI_JOB_NAME}-${CI_JOB_ID}-1)
@@ -227,6 +189,15 @@ test-actuator-regular:
             - controller_log_1.txt
             - controller_log_2.txt
             - actuator_log.txt
+test-actuator-sample:
+    extends: .test-actuator-base
+    variables:
+        CONTROL_HOST: 192.168.0.20
+        ACTUATOR_ARGS: "-c config.example.yaml"
+test-actuator-regular:
+    extends: .test-actuator-base
+    variables:
+        ACTUATOR_ARGS: ""
 test-webui-docker:
     extends: [.docker-test-base, .cache-base]
     stage: test
