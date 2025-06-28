@@ -75,7 +75,7 @@ actuator:
                 max: 0.01
             # 元栓を閉じてからこの時間経過したら、流量センサの電源を落とす
             power_off_sec: 7200
-        interval_sec: 30
+        interval_sec: 1
         hazard:
             file: /dev/shm/unit_cooler.hazard
         liveness:
@@ -99,7 +99,7 @@ actuator:
             host: proxy.green-rabbit.net
         sense:
             giveup: 5
-        interval_sec: 5
+        interval_sec: 1
         liveness:
             file: /dev/shm/healthz.actuator.monitor
     log_server:
