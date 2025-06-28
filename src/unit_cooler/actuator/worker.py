@@ -35,8 +35,6 @@ thread_local = threading.local()
 
 def get_last_control_message():
     """スレッドローカルなlast_control_messageを取得"""
-    if not hasattr(thread_local, "last_control_message"):
-        thread_local.last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
     return thread_local.last_control_message
 
 
@@ -235,6 +233,8 @@ def start(executor, worker_def):
 
     should_terminate.clear()
     thread_list = []
+
+    thread_local.last_control_message = {"mode_index": -1, "state": unit_cooler.const.COOLING_STATE.IDLE}
 
     for worker_info in worker_def:
         future = executor.submit(*worker_info["param"])
