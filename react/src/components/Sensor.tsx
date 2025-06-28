@@ -34,7 +34,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
         return (
             <tr className="row" key={label}>
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
-                <td className="text-end col-3">
+                <td className="text-end col-4">
                     <div className="sensor-value">
                         <div className="sensor-number digit">
                             <b>
@@ -51,8 +51,8 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                     </div>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
-                <td className="text-start col-4 text-nowrap">
-                    <small className="ms-1">{dateText(date)}</small>
+                <td className="text-start col-3 text-nowrap">
+                    <small>{dateText(date)}</small>
                 </td>
             </tr>
         );
@@ -79,10 +79,10 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                     <thead>
                         <tr className="row">
                             <th className="col-3">センサー</th>
-                            <th className="col-3">
+                            <th className="col-4">
                                 値
                             </th>
-                            <th colSpan={2} className="col-6">
+                            <th colSpan={2} className="col-5">
                                 最新更新日時
                             </th>
                         </tr>
