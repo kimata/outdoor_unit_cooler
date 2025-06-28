@@ -34,7 +34,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
         return (
             <tr className="row" key={label}>
                 <td className="text-start col-3 text-nowrap">{sensorData.name}</td>
-                <td className="text-end col-2 digit">
+                <td className="text-end col-3 digit">
                     <b>
                         <AnimatedNumber
                             value={sensorData.value || 0}
@@ -42,13 +42,11 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                             useComma={label === "lux"}
                         />
                     </b>
-                </td>
-                <td className="text-start col-2">
-                    <small>{unit}</small>
+                    <small className="ms-1">{unit}</small>
                 </td>
                 <td className="text-start col-2">{date.fromNow()}</td>
-                <td className="text-start col-3 text-nowrap">
-                    <small>{dateText(date)}</small>
+                <td className="text-start col-4 text-nowrap">
+                    <small className="ms-1">{dateText(date)}</small>
                 </td>
             </tr>
         );
@@ -75,10 +73,10 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                     <thead>
                         <tr className="row">
                             <th className="col-3">センサー</th>
-                            <th colSpan={2} className="col-4">
+                            <th className="col-3">
                                 値
                             </th>
-                            <th colSpan={2} className="col-5">
+                            <th colSpan={2} className="col-6">
                                 最新更新日時
                             </th>
                         </tr>
