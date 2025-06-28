@@ -75,20 +75,20 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
         return () => clearInterval(timer);
     }, [remainingTime]);
 
-    // Update flow when valve is OPEN
+    // Update flow when valve is OPEN or when CLOSE but flow > 0
     useEffect(() => {
-        if (valveStatus.state === "OPEN") {
+        if (valveStatus.state === "OPEN" || (valveStatus.state === "CLOSE" && currentFlow > 0)) {
             // Initial fetch
             refetchFlowStatus();
 
-            // Update every second while OPEN
+            // Update every second while OPEN or CLOSE with flow > 0
             const flowTimer = setInterval(() => {
                 refetchFlowStatus();
             }, 1000);
 
             return () => clearInterval(flowTimer);
         }
-    }, [valveStatus.state, refetchFlowStatus]);
+    }, [valveStatus.state, refetchFlowStatus, currentFlow]);
 
     // Update currentFlow state when flowStatus changes
     useEffect(() => {
@@ -152,7 +152,7 @@ const CoolingMode = React.memo(({ isReady, stat, logUpdateTrigger }: Props) => {
                             }}
                         >
                             <span>{valveStatus.state}</span>
-                            {isOpen && (
+                            {(isOpen || currentFlow > 0) && (
                                 <span className="fw-normal" style={{ fontSize: '0.875rem' }}>
                                     <AnimatedNumber
                                         value={currentFlow}
