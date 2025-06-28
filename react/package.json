@@ -11,6 +11,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@number-flow/react": "^0.5.10",
         "bootstrap": "^5.3.6",
         "chart.js": "^4.4.9",
         "dayjs": "^1.11.13",

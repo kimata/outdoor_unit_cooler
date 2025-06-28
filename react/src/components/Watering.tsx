@@ -1,9 +1,9 @@
 import React from "react";
 import watering_icon from "../assets/watering.png";
+import NumberFlow, { continuous } from '@number-flow/react';
 
 import { ApiResponse } from "../lib/ApiResponse";
 import { Loading } from "./common/Loading";
-import { AnimatedNumber } from "./common/AnimatedNumber";
 import { StatComponentProps } from "../types/common";
 
 const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
@@ -22,9 +22,10 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                         className="text-start display-1 ms-4"
                                         data-testid="watering-amount-info"
                                     >
-                                        <AnimatedNumber
+                                        <NumberFlow
                                             value={watering.amount}
-                                            decimals={1}
+                                            format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                                            plugins={[continuous]}
                                             className="fw-bold digit"
                                         />
                                         <span className="display-5 ms-2">L</span>
@@ -35,9 +36,10 @@ const Watering = React.memo(({ isReady, stat }: StatComponentProps) => {
                                         className="text-start ms-4 text-muted"
                                         data-testid="watering-price-info"
                                     >
-                                        <AnimatedNumber
+                                        <NumberFlow
                                             value={watering.price}
-                                            decimals={1}
+                                            format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                                            plugins={[continuous]}
                                             className="fw-bold display-6 digit"
                                         />
                                         <span className="ms-2">円</span>

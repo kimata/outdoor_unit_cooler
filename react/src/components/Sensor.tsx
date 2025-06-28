@@ -35,7 +35,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
             <tr className="row" key={label}>
                 <td className="text-start col-4" style={{overflow: 'visible', whiteSpace: 'nowrap'}}>{sensorData.name}</td>
                 <td className="text-end col-3">
-                    <div className="sensor-value">
+                    <div className="sensor-value" style={{whiteSpace: 'nowrap'}}>
                         <div className="sensor-number digit">
                             <b>
                                 <AnimatedNumber
@@ -45,7 +45,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                                 />
                             </b>
                         </div>
-                        <div className="sensor-unit">
+                        <div className="sensor-unit" style={{whiteSpace: 'nowrap'}}>
                             <small>{unit}</small>
                         </div>
                     </div>
