@@ -121,13 +121,7 @@ def create_app(config, arg):
             pass
 
         def notify_terminate():  # pragma: no cover
-            # ワーカーの終了処理
-            import unit_cooler.webui.worker
-
-            unit_cooler.webui.worker.term()
-            if worker_thread and worker_thread.is_alive():
-                worker_thread.join(timeout=3)
-
+            term()
             my_lib.webapp.log.info("🏃 アプリを再起動します。")
             my_lib.webapp.log.term()
 
