@@ -21,7 +21,6 @@ import multiprocessing
 import os
 import pathlib
 import signal
-import sys
 import threading
 import time
 
@@ -50,8 +49,9 @@ def signal_handler(signum, _frame):
         if worker_thread.is_alive():
             logging.warning("Worker thread did not finish in time")
 
+    # プロセス終了
     logging.info("Graceful shutdown completed")
-    sys.exit(0)
+    os._exit(0)
 
 
 def create_app(config, arg):
@@ -94,7 +94,6 @@ def create_app(config, arg):
             setting["msg_count"],
         ),
     )
-    worker_thread.daemon = True
     worker_thread.start()
 
     # NOTE: アクセスログは無効にする
@@ -114,6 +113,13 @@ def create_app(config, arg):
             pass
 
         def notify_terminate():  # pragma: no cover
+            # ワーカーの終了処理
+            import unit_cooler.webui.worker
+
+            unit_cooler.webui.worker.term()
+            if worker_thread and worker_thread.is_alive():
+                worker_thread.join(timeout=3)
+
             my_lib.webapp.log.info("🏃 アプリを再起動します。")
             my_lib.webapp.log.term()
 
@@ -168,10 +174,6 @@ if __name__ == "__main__":
 
     config = my_lib.config.load(config_file, pathlib.Path(SCHEMA_CONFIG))
 
-    # シグナルハンドラーを登録
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
     app = create_app(
         config,
         {
@@ -184,9 +186,17 @@ if __name__ == "__main__":
         },
     )
 
+    # Flaskアプリケーションを実行
     try:
         # NOTE: スクリプトの自動リロード停止したい場合は use_reloader=False にする
         app.run(host="0.0.0.0", threaded=True, use_reloader=True, port=config["webui"]["webapp"]["port"])  # noqa: S104
     except KeyboardInterrupt:
         logging.info("Received KeyboardInterrupt, shutting down...")
         signal_handler(signal.SIGINT, None)
+    finally:
+        # 最終的な終了処理
+        if worker_thread and worker_thread.is_alive():
+            import unit_cooler.webui.worker
+
+            unit_cooler.webui.worker.term()
+            worker_thread.join(timeout=3)
