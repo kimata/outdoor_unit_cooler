@@ -50,7 +50,7 @@ const Sensor = React.memo(({ isReady, stat }: Props) => {
                         </div>
                     </div>
                 </td>
-                <td className="text-start col-2">{date.fromNow()}</td>
+                <td className="text-end col-2">{date.fromNow()}</td>
                 <td className="text-start col-3 text-nowrap">
                     <small>{dateText(date)}</small>
                 </td>
