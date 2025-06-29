@@ -56,7 +56,7 @@ const AirConditioner = React.memo(({ isReady, stat }: Props) => {
                                 aria-valuemax={1200}
                                 initial={{ width: previousWidth + "%" }}
                                 animate={{ width: currentWidth + "%" }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                transition={{ duration: 30.0, ease: "easeOut" }}
                             ></motion.div>
                         </div>
                         <div className="progress-label digit">

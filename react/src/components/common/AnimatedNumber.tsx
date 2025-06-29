@@ -13,7 +13,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   value,
   decimals = 1,
   className = '',
-  duration = 5.0,
+  duration = 30.0,
   useComma = false
 }) => {
   const [displayValue, setDisplayValue] = useState(value);
