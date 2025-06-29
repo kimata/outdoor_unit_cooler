@@ -83,10 +83,25 @@ def get_flow(force_power_on=True):
     except Exception:
         logging.exception("バグの可能性あり。")
         flow = None
+        # エラーメトリクス記録
+        try:
+            from unit_cooler.actuator.api.metrics import record_error
+
+            record_error("sensor_read_error", "Flow sensor read failed")
+        except ImportError:
+            pass
 
     if flow is not None:
         logging.info("Valve flow = %.2f", flow)
     else:
         logging.info("Valve flow = UNKNOWN")
+
+    # センサー読み取りメトリクス記録
+    try:
+        from unit_cooler.actuator.api.metrics import record_sensor_read
+
+        record_sensor_read("flow_sensor", flow)
+    except ImportError:
+        pass
 
     return flow

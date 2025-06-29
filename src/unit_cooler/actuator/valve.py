@@ -100,6 +100,14 @@ def set_state(valve_state):
             if os.environ.get("TEST") == "true":
                 ctrl_hist.append(curr_state)
 
+            # メトリクス記録
+            try:
+                from unit_cooler.actuator.api.metrics import record_valve_operation
+
+                record_valve_operation("state_change", valve_state.name)
+            except ImportError:
+                pass
+
         my_lib.rpi.gpio.output(pin_no, valve_state.value)
 
         if valve_state == unit_cooler.const.VALVE_STATE.OPEN:

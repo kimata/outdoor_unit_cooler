@@ -420,10 +420,13 @@
                                     "properties": {
                                         "log_file_path": {
                                             "type": "string"
+                                        },
+                                        "metrics_db_path": {
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "log_file_path"
+                                        "log_file_path", "metrics_db_path"
                                     ]
                                 }
                             },
