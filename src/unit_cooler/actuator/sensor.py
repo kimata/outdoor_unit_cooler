@@ -24,7 +24,7 @@ else:
 
         def _get_worker_id(self):
             """現在のワーカーIDを取得"""
-            return os.environ.get("PYTEST_XDIST_WORKER", "")
+            return os.environ.get("PYTEST_XDIST_WORKER", "main")
 
         def get_value(self, force_power_on=True):
             global pin_no
