@@ -513,7 +513,7 @@ def mock_react_index_html(mocker):
                 logging.debug("index.html not found at %s, returning dummy HTML for testing", file_path)
                 dummy_html = """<!DOCTYPE html>
 <html>
-<head><title>室外機</title></head>
+<head><title>室外機自動冷却システム</title></head>
 <body><h1>室外機</h1></body>
 </html>"""
                 return Response(dummy_html, mimetype="text/html")
