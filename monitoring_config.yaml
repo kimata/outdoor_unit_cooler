@@ -1,0 +1,58 @@
+# 室外機冷却システム監視設定ファイル
+# 既存アプリケーションに影響を与えない外部監視システム用の設定
+
+# メトリクス収集設定
+monitoring:
+    enabled: true # 監視機能の有効/無効
+    interval_seconds: 60 # メトリクス収集間隔（秒）
+    history_size: 1440 # 履歴保持数（24時間分）
+
+    # 収集対象の選択
+    collect_system_metrics: true # システムリソース監視
+    collect_application_metrics: true # アプリケーション監視
+    collect_log_metrics: true # ログ解析
+
+# エクスポート設定
+export:
+    prometheus: true # Prometheus形式でのメトリクス出力
+    influxdb: false # InfluxDBへの直接送信（将来拡張用）
+    json: true # JSON形式でのメトリクス出力
+
+# 閾値設定（アラート用）
+thresholds:
+    # CPU関連
+    cpu_warning: 80.0 # CPU使用率警告閾値（%）
+    cpu_critical: 95.0 # CPU使用率臨界閾値（%）
+
+    # メモリ関連
+    memory_warning: 85.0 # メモリ使用率警告閾値（%）
+    memory_critical: 95.0 # メモリ使用率臨界閾値（%）
+
+    # 温度関連（Raspberry Pi用）
+    temperature_warning: 70.0 # CPU温度警告閾値（℃）
+    temperature_critical: 85.0 # CPU温度臨界閾値（℃）
+
+    # ディスク関連
+    disk_warning: 85.0 # ディスク使用率警告閾値（%）
+    disk_critical: 95.0 # ディスク使用率臨界閾値（%）
+
+# アラート設定
+alerts:
+    enabled: true # アラート機能の有効/無効
+    min_severity: "warning" # 最小アラートレベル (warning/critical)
+
+    # 通知設定（将来拡張用）
+    slack_webhook: "" # Slack Webhook URL
+    email_enabled: false # メール通知
+
+# 異常検知設定（将来拡張用）
+anomaly_detection:
+    enabled: false # 統計的異常検知の有効/無効
+    sensitivity: 0.95 # 検知感度
+    window_size: 100 # 分析ウィンドウサイズ
+
+# デバッグ設定
+debug:
+    log_level: "INFO" # ログレベル (DEBUG/INFO/WARNING/ERROR)
+    verbose_metrics: false # 詳細メトリクス出力
+    output_directory: "/tmp/unit_cooler_monitoring" # 出力ディレクトリ
