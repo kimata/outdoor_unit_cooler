@@ -1,0 +1,40 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.4, pytest-8.4.1, pluggy-1.6.0 -- /home/kimata/github/outdoor_unit_cooler/.venv/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.4', 'Platform': 'Linux-5.15.0-117-generic-x86_64-with-glibc2.35', 'Packages': {'pytest': '8.4.1', 'pluggy': '1.6.0'}, 'Plugins': {'flaky': '3.8.1', 'mock': '3.14.1', 'html': '4.1.1', 'ordering': '0.6', 'timeout': '2.4.0', 'base-url': '2.1.0', 'time-machine': '2.16.0', 'playwright': '0.7.0', 'xdist': '3.7.0', 'cov': '6.2.1', 'metadata': '3.1.1'}, 'Base URL': ''}
+rootdir: /home/kimata/github/outdoor_unit_cooler
+configfile: pyproject.toml
+plugins: flaky-3.8.1, mock-3.14.1, html-4.1.1, ordering-0.6, timeout-2.4.0, base-url-2.1.0, time-machine-2.16.0, playwright-0.7.0, xdist-3.7.0, cov-6.2.1, metadata-3.1.1
+timeout: 300.0s
+timeout method: signal
+timeout func_only: False
+created: 2/2 workers
+2 workers [1 item]
+
+scheduling tests via LoadScheduling
+
+tests/test_basic.py::test_actuator_open /home/kimata/github/outdoor_unit_cooler/.venv/lib/python3.12/site-packages/coverage/control.py:915: CoverageWarning: No data was collected. (no-data-collected)
+  self._warn("No data was collected.", slug="no-data-collected")
+
+[gw0] [100%] PASSED tests/test_basic.py::test_actuator_open
+
+=============================== warnings summary ===============================
+tests/test_basic.py::test_actuator_open
+tests/test_basic.py::test_actuator_open
+tests/test_basic.py::test_actuator_open
+tests/test_basic.py::test_actuator_open
+tests/test_basic.py::test_actuator_open
+  /home/kimata/github/outdoor_unit_cooler/src/unit_cooler/metrics/collector.py:222: DeprecationWarning: The default datetime adapter is deprecated as of Python 3.12; see the sqlite3 documentation for suggested replacement recipes
+    conn.execute(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.4-final-0 ________________
+
+Coverage HTML written to dir tests/evidence/coverage
+============================= slowest 10 durations =============================
+34.70s call     tests/test_basic.py::test_actuator_open
+1.40s setup    tests/test_basic.py::test_actuator_open
+0.17s teardown tests/test_basic.py::test_actuator_open
+- Generated html report: file:///home/kimata/github/outdoor_unit_cooler/tests/evidence/index.htm -
+======================== 1 passed, 5 warnings in 37.87s ========================
